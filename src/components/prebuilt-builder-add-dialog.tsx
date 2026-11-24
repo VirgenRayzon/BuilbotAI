@@ -20,13 +20,13 @@ import { ScrollArea } from "./ui/scroll-area";
 import { Sparkles, Cpu, Zap } from "lucide-react";
 import type { Part, PrebuiltSystem } from "@/lib/types";
 
-// Refactored Modules
 import { usePrebuiltForm, type PrebuiltBuilderAddFormSchema } from "./prebuilt-builder/use-prebuilt-form";
 export type { PrebuiltBuilderAddFormSchema };
 import { IdentityFields } from "./prebuilt-builder/identity-fields";
 import type { CreatedProduct } from '@/lib/product-identity';
 import { ProductIdentification } from './product-identification';
 import { ComponentFields } from "./prebuilt-builder/component-fields";
+import { InventorySaveSuccessDialog } from "./inventory-save-success-dialog";
 
 interface PrebuiltBuilderAddDialogProps {
     children: React.ReactNode;
@@ -36,23 +36,24 @@ interface PrebuiltBuilderAddDialogProps {
     title?: string;
 }
 
-/**
- * Prebuilt Builder Add/Edit Dialog Orchestrator
- * This component manages the dialog state and coordinates form logic, 
- * identity fields, and component selection modules.
- */
 export function PrebuiltBuilderAddDialog({ children, onSave, parts, initialData, title }: PrebuiltBuilderAddDialogProps) {
     const [open, setOpen] = useState(false);
     const [openSlot, setOpenSlot] = useState<string | null>(null);
     const [elapsedTime, setElapsedTime] = useState(0);
     const [showTelemetry, setShowTelemetry] = useState(false);
     const startTimeRef = useRef<number>(0);
+    const saveStartRef = useRef<number | null>(null);
+    const [savedSystem, setSavedSystem] = useState<{ name: string; seconds: number; url?: string } | null>(null);
 
     const { form, isAiPending, isSaving, aiDuration, tokensUsed, handleAiAssist, onSubmit } = usePrebuiltForm({
         parts,
         initialData,
         onSave,
-        onClose: () => setOpen(false)
+        onClose: () => setOpen(false),
+        onCreated: (name, saved) => {
+            setSavedSystem({ name, seconds: (performance.now() - (saveStartRef.current ?? performance.now())) / 1000, url: saved?.adminUrl });
+            saveStartRef.current = null;
+        },
     });
 
     const inventory = useMemo(() => {
@@ -90,12 +91,11 @@ export function PrebuiltBuilderAddDialog({ children, onSave, parts, initialData,
         }
     };
 
-    return (
+    return <>
         <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogTrigger asChild>{children}</DialogTrigger>
             <DialogContent onEscapeKeyDown={event => { if (isSaving) event.preventDefault(); }} onPointerDownOutside={event => { if (isSaving) event.preventDefault(); }} className="sm:max-w-5xl p-0 gap-0 overflow-hidden border-primary/20 bg-background/95 backdrop-blur-xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.3)] rounded-3xl [&>button.absolute]:hidden">
 
-                {/* ── Header ── */}
                 <DialogHeader className="px-8 pt-8 pb-6 border-b border-border/40 bg-muted/20 flex-row items-center gap-4 space-y-0">
                     <div className="p-3 rounded-2xl bg-primary/10 border border-primary/20 shadow-inner">
                         <Cpu className="h-6 w-6 text-primary" />
@@ -126,7 +126,6 @@ export function PrebuiltBuilderAddDialog({ children, onSave, parts, initialData,
                                     <span>{aiDuration.toFixed(1)}s TURNAROUND TIME</span>
                                 </button>
 
-                                {/* Tooltip Content */}
                                 <div className={cn(
                                     "absolute right-0 top-full mt-2 w-64 p-3 rounded-xl border border-cyan-500/20 bg-slate-950/95 backdrop-blur-xl shadow-2xl transition-all duration-300 z-50 text-[10px] font-mono text-zinc-300 space-y-1.5 leading-relaxed text-left",
                                     showTelemetry ? "opacity-100 pointer-events-auto scale-100" : "opacity-0 pointer-events-none scale-95"
@@ -200,7 +199,7 @@ export function PrebuiltBuilderAddDialog({ children, onSave, parts, initialData,
                         <ScrollArea className="h-[68vh]">
                             <div className="px-10 py-8 space-y-10">
                                 <IdentityFields form={form} />
-                                <ProductIdentification category="PC" product={initialData}/>
+                                <ProductIdentification category="PC" product={initialData} compact />
                                 <ComponentFields 
                                     form={form} 
                                     inventory={inventory} 
@@ -220,6 +219,7 @@ export function PrebuiltBuilderAddDialog({ children, onSave, parts, initialData,
                                 </DialogClose>
                                 <Button
                                     type="submit"
+                                    onClick={() => { saveStartRef.current = performance.now(); }}
                                     disabled={isSaving || isAiPending}
                                     size="lg"
                                     className="rounded-xl px-10 font-bold uppercase tracking-[0.15em] text-xs h-12 shadow-xl shadow-primary/20 hover:shadow-primary/30 active:scale-95 transition-all duration-200"
@@ -232,7 +232,16 @@ export function PrebuiltBuilderAddDialog({ children, onSave, parts, initialData,
                 </Form>
             </DialogContent>
         </Dialog>
-    );
+        {savedSystem && (
+            <InventorySaveSuccessDialog
+                itemType="system"
+                name={savedSystem.name}
+                seconds={savedSystem.seconds}
+                url={savedSystem.url}
+                onClose={() => setSavedSystem(null)}
+            />
+        )}
+    </>;
 }
 
 function FormStats({ form }: { form: any }) {

@@ -62,15 +62,10 @@ export const PlaceHolderImages: ImagePlaceholder[] = [
   }
 ];
 
-/**
- * Returns a high-quality, category-specific local placeholder image
- * for computer components when an inventory image is not available.
- */
 export function getComponentPlaceholderImage(category?: string, modelOrName?: string): string {
   const cat = (category || "").toLowerCase().trim();
   const name = (modelOrName || "").toLowerCase().trim();
 
-  // Detect integrated vs discrete graphics
   if (
     cat.includes("gpu") || 
     cat.includes("graphic") || 
@@ -144,7 +139,6 @@ export function getComponentPlaceholderImage(category?: string, modelOrName?: st
     return "/placeholders/components/case.jpg";
   }
 
-  // Fallback if category didn't match, check model name
   if (name.includes("rtx") || name.includes("gtx") || name.includes("radeon") || name.includes("geforce")) {
     return "/placeholders/components/gpu.jpg";
   }

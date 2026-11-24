@@ -6,10 +6,14 @@ import type { Part, PrebuiltSystem } from '../types';
 import type { PublicProduct } from '../public-product-types';
 import type { PublicCatalogPart } from '../public-product-types';
 import type { Transaction } from 'firebase-admin/firestore';
-import { revalidateTag, unstable_cache } from 'next/cache';
+import { INCLUDED_INTEGRATED_GPU_ID, createIntegratedGpuPart } from '../integrated-graphics';
+import { includedCpuCoolerName } from '../included-cpu-cooler';
+import { revalidateTag } from 'next/cache';
+import { VersionedServerCache } from './catalog-cache';
+import { getCatalogMeta } from './catalog-meta-store';
 
 export const PUBLIC_PARTS_CACHE_TAG = 'public-parts-catalog';
-const COMPATIBILITY_SPEC_KEYS = [
+export const COMPATIBILITY_SPEC_KEYS = [
   'Socket', 'socket', 'Memory Type', 'RAM Type', 'Memory', 'Generation', 'Type',
   'NVMe Slots', 'SATA Slots', 'Form Factor', 'Memory Slots', 'Stick Count',
   'Radiator Size', 'Max Radiator Size (mm)', 'Mobo Support',
@@ -31,15 +35,26 @@ export async function resolveSystemParts(system: PrebuiltSystem, transaction?: T
   const selections = Object.entries(system.components || {}).flatMap(([category, value]) =>
     (Array.isArray(value) ? value : [value]).filter(Boolean).map((partId, index) => ({ key: `${category}-${index}`, category, partId })));
   return Promise.all(selections.map(async entry => {
-    if (entry.partId === 'included-stock-cooler') return { ...entry, part: { id: entry.partId, name: 'Included stock cooler', price: 0, category: 'Cooler', stock: Number.MAX_SAFE_INTEGER } as Part };
+    if (entry.category === 'cooler' && entry.partId === 'included-stock-cooler') {
+      const cpuId = system.components?.cpu;
+      if (!cpuId || cpuId.includes('/')) return { ...entry, part: null };
+      const cpuRef = db.doc(inventoryItemPath('CPU', cpuId));
+      const cpuSnap = transaction ? await transaction.get(cpuRef) : await cpuRef.get();
+      const cpu = cpuSnap.exists ? { ...cpuSnap.data(), id: cpuSnap.id, category: 'CPU' } as Part : null;
+      const coolerName = cpu && !cpu.isArchived ? includedCpuCoolerName(cpu) : null;
+      return { ...entry, part: coolerName ? { id: entry.partId, name: coolerName, price: 0, category: 'Cooler', stock: Number.MAX_SAFE_INTEGER } as Part : null };
+    }
+    if (entry.partId === INCLUDED_INTEGRATED_GPU_ID) {
+      const cpuId = system.components?.cpu;
+      if (entry.category !== 'gpu' || !cpuId || cpuId.includes('/')) return { ...entry, part: null };
+      const cpuRef = db.doc(inventoryItemPath('cpu', cpuId));
+      const cpuSnap = transaction ? await transaction.get(cpuRef) : await cpuRef.get();
+      const cpu = cpuSnap.exists ? { ...cpuSnap.data(), id: cpuSnap.id } as Part : null;
+      return { ...entry, part: cpu && !cpu.isArchived ? createIntegratedGpuPart(cpu) : null };
+    }
     try {
       const ref = !entry.partId.includes('/') ? db.doc(inventoryItemPath(entry.category, entry.partId)) : null;
-      let snap = ref ? (transaction ? await transaction.get(ref) : await ref.get()) : null;
-      if (!snap?.exists) {
-        const query = db.collection(inventoryItemsPath(entry.category)).where('name', '==', entry.partId).limit(2);
-        const matches = transaction ? await transaction.get(query) : await query.get();
-        snap = matches.size === 1 ? matches.docs[0] : null;
-      }
+      const snap = ref ? (transaction ? await transaction.get(ref) : await ref.get()) : null;
       return { ...entry, partId: snap?.exists ? snap.id : entry.partId, part: snap?.exists ? { ...snap.data(), id: snap.id } as Part : null };
     } catch { return { ...entry, part: null }; }
   }));
@@ -60,7 +75,31 @@ async function serializeProduct(data: Part & PrebuiltSystem, kind: ProductKind):
   for (const [key, value] of Object.entries(data.specifications || {})) {
     if (typeof value === 'string' || typeof value === 'number') specs[key] = value;
   }
-  const statuses = kind === 'prebuilt' ? getPrebuiltPartStatuses(data, await resolveSystemParts(data)) : [];
+  const resolvedParts: ResolvedPrebuiltPart[] =
+    kind === 'prebuilt'
+      ? data.componentSummaries && data.componentSummaries.length > 0
+        ? data.componentSummaries.map(s => ({
+            key: s.key,
+            category: s.category.toLowerCase(),
+            partId: s.partId,
+            part: s.isArchived
+              ? null
+              : ({
+                  id: s.partId,
+                  productId: s.productId || undefined,
+                  name: s.name,
+                  category: s.category,
+                  brand: 'BuildbotAI',
+                  price: s.price,
+                  stock: s.inStock ? 999 : 0,
+                  imageUrl: s.imageUrl,
+                  specifications: {},
+                  isArchived: false,
+                } as Part),
+          }))
+        : await resolveSystemParts(data)
+      : [];
+  const statuses = kind === 'prebuilt' ? getPrebuiltPartStatuses(data, resolvedParts) : [];
   const report: unknown = data.aiReport;
   const highlights = report && typeof report === 'object' && 'pros' in report && Array.isArray(report.pros)
     ? report.pros.filter((value): value is string => typeof value === 'string') : [];
@@ -88,51 +127,105 @@ function timestampMillis(value: unknown): number {
   return 0;
 }
 
+export function toPublicCatalogPart(data: Part): PublicCatalogPart {
+  const specifications: PublicCatalogPart['specifications'] = {};
+  for (const key of COMPATIBILITY_SPEC_KEYS) {
+    const value = data.specifications?.[key];
+    if (typeof value === 'string' || typeof value === 'number') specifications[key] = value;
+  }
+  return {
+    productId: data.productId!, sku: data.sku || '', qrToken: data.qrToken || '', name: data.name,
+    category: data.category, brand: data.brand || '', price: data.price,
+    inStock: data.stock > 0, createdAt: timestampMillis(data.createdAt),
+    imageUrl: data.imageUrl || data.images?.[0] || '', specifications,
+  };
+}
+
 export async function listPublicProducts(kind: ProductKind): Promise<PublicProduct[]> {
   const db = getAdminFirestore();
-  const snapshots = kind === 'part' ? await Promise.all(INVENTORY_CATEGORY_SLUGS.map(c => db.collection(inventoryItemsPath(c)).get())) : [await db.collection('prebuiltSystems').get()];
+  const snapshots = kind === 'part' ? await Promise.all(INVENTORY_CATEGORY_SLUGS.map(c => db.collection(inventoryItemsPath(c)).get())) : [await db.collection('prebuiltSystems').where('isArchived', '==', false).get()];
   const records = snapshots.flatMap(s => s.docs).filter(d => !d.get('isArchived') && PRODUCT_ID_PATTERN.test(String(d.get('productId'))));
   return Promise.all(records.map(d => serializeProduct(d.data() as Part & PrebuiltSystem, kind)));
 }
 
 async function readPublicPartsCatalog(): Promise<PublicCatalogPart[]> {
   const db = getAdminFirestore();
+  const indexed = process.env.NEXT_PUBLIC_PUBLIC_CATALOG_INDEXED_ENABLED === 'true';
   const snapshots = await Promise.all(INVENTORY_CATEGORY_SLUGS.map(category =>
-    db.collection(inventoryItemsPath(category)).select(
+    (indexed
+      ? db.collection(inventoryItemsPath(category)).where('inventoryQueryVersion', '==', 1).where('isArchived', '==', false).where('publicCatalogEligible', '==', true)
+      : db.collection(inventoryItemsPath(category))).select(
       'isArchived', 'productId', 'sku', 'name', 'category', 'brand', 'price',
-      'stock', 'createdAt', 'imageUrl', 'images', 'specifications'
+      'qrToken', 'stock', 'createdAt', 'imageUrl', 'images', 'specifications'
     ).get()
   ));
 
   return snapshots.flatMap(snapshot => snapshot.docs)
     .filter(document => !document.get('isArchived') && PRODUCT_ID_PATTERN.test(String(document.get('productId'))))
-    .map(document => {
-      const data = document.data() as Part;
-      const specifications: PublicCatalogPart['specifications'] = {};
-      for (const key of COMPATIBILITY_SPEC_KEYS) {
-        const value = data.specifications?.[key];
-        if (typeof value === 'string' || typeof value === 'number') specifications[key] = value;
-      }
-      return {
-        productId: data.productId!, sku: data.sku || '', name: data.name,
-        category: data.category, brand: data.brand || '', price: data.price,
-        inStock: data.stock > 0, createdAt: timestampMillis(data.createdAt),
-        imageUrl: data.imageUrl || data.images?.[0] || '', specifications,
-      };
-    });
+    .map(document => toPublicCatalogPart(document.data() as Part));
 }
 
-export const listPublicPartsCatalog = unstable_cache(
-  readPublicPartsCatalog,
-  ['public-parts-catalog-v1'],
-  { tags: [PUBLIC_PARTS_CACHE_TAG], revalidate: 10 * 60 }
-);
+export async function listRelatedPublicParts(category: string, excludeProductId: string): Promise<PublicCatalogPart[]> {
+  if (!INVENTORY_CATEGORY_SLUGS.includes(category.trim().toLowerCase() as typeof INVENTORY_CATEGORY_SLUGS[number])) return [];
+  const db = getAdminFirestore();
+  const indexed = process.env.NEXT_PUBLIC_PUBLIC_CATALOG_INDEXED_ENABLED === 'true';
+  const collection = db.collection(inventoryItemsPath(category));
+  const query = indexed
+    ? collection.where('inventoryQueryVersion', '==', 1).where('isArchived', '==', false).where('publicCatalogEligible', '==', true).where('stock', '>', 0).limit(9)
+    : collection;
+  const snapshot = await query.select('isArchived', 'productId', 'sku', 'qrToken', 'name', 'category', 'brand', 'price', 'stock', 'createdAt', 'imageUrl', 'images', 'specifications').get();
+  return snapshot.docs
+    .filter(document => !document.get('isArchived') && Number(document.get('stock')) > 0 && document.get('productId') !== excludeProductId && PRODUCT_ID_PATTERN.test(String(document.get('productId'))))
+    .slice(0, 8)
+    .map(document => toPublicCatalogPart(document.data() as Part));
+}
+
+export interface PublicPartsCatalogReaderOptions {
+  loader?: () => Promise<PublicCatalogPart[]>;
+  readVersion?: () => Promise<number>;
+  maxCheckStalenessMs?: number;
+  onInvalidate?: () => void;
+}
+
+export interface PublicPartsCatalogReader {
+  listPublicPartsCatalog: () => Promise<PublicCatalogPart[]>;
+  invalidatePublicPartsCatalog: () => void;
+  getCache: () => VersionedServerCache<PublicCatalogPart[]>;
+}
+
+export function createPublicPartsCatalogReader(
+  options?: PublicPartsCatalogReaderOptions
+): PublicPartsCatalogReader {
+  const cache = new VersionedServerCache<PublicCatalogPart[]>({
+    maxCheckStalenessMs: options?.maxCheckStalenessMs,
+  });
+  const loader = options?.loader ?? readPublicPartsCatalog;
+  const readVersion = options?.readVersion ?? (async () => (await getCatalogMeta()).catalogVersion);
+
+  return {
+    listPublicPartsCatalog: async () => cache.getOrLoad(loader, readVersion),
+    invalidatePublicPartsCatalog: () => {
+      cache.invalidateLocal();
+      if (options?.onInvalidate) {
+        options.onInvalidate();
+      } else {
+        try {
+          revalidateTag(PUBLIC_PARTS_CACHE_TAG);
+        } catch {
+          // Safely ignore missing Next.js request context outside server requests
+        }
+      }
+    },
+    getCache: () => cache,
+  };
+}
+
+const defaultPublicPartsCatalogReader = createPublicPartsCatalogReader();
+
+export async function listPublicPartsCatalog(): Promise<PublicCatalogPart[]> {
+  return defaultPublicPartsCatalogReader.listPublicPartsCatalog();
+}
 
 export function invalidatePublicPartsCatalog() {
-  try {
-    revalidateTag(PUBLIC_PARTS_CACHE_TAG);
-  } catch (error) {
-    // A completed inventory write must still be reported as successful.
-    console.error('[public-parts-catalog] Cache invalidation failed:', error);
-  }
+  defaultPublicPartsCatalogReader.invalidatePublicPartsCatalog();
 }

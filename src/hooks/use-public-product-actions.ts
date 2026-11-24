@@ -3,19 +3,20 @@ import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useUserProfile } from '@/context/user-profile';
 import { submitProductReservation, customizePublicProduct } from '@/app/public-product-actions';
-import { productUrl } from '@/lib/product-identity';
 import type { PublicProduct } from '@/lib/public-product-types';
+import { usePublicFeatureAuth } from '@/hooks/use-public-feature-auth';
 
 export function usePublicProductActions(product: PublicProduct) {
   const { authUser, profile, loading } = useUserProfile();
   const router = useRouter();
+  const { requireAuth } = usePublicFeatureAuth();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const operation = useRef<string | null>(null);
   const isStaff = Boolean(profile?.isManager || profile?.isSuperAdmin);
-  const run = async (customize: boolean) => {
+  const runAuthenticated = async (customize: boolean) => {
     if (busy || loading) return;
-    if (!authUser) { router.push(`/signin?returnTo=${encodeURIComponent(productUrl(product.kind, product.productId))}`); return; }
+    if (!authUser) return;
     setBusy(true); setError('');
     try {
       const idToken = await authUser.getIdToken();
@@ -32,5 +33,6 @@ export function usePublicProductActions(product: PublicProduct) {
     } catch (err) { setError(err instanceof Error ? err.message : 'Unable to complete this action.'); }
     finally { setBusy(false); }
   };
+  const run = (customize: boolean) => requireAuth(() => { void runAuthenticated(customize); });
   return { busy, error, isStaff, loading, signedIn: Boolean(authUser), reserve: () => run(false), customize: () => run(true) };
 }

@@ -1,5 +1,9 @@
 # Custom builder workflow
 
+## Simple explanation
+
+This flowchart shows how a customer makes a custom PC build. The customer searches the parts list and adds one item for each needed part type. The app checks whether the selected parts work together and keeps the build in the browser. A complete build can be saved, reviewed by AI, downloaded, or sent as a reservation. The customer can also open the floating chat to ask questions about the current build.
+
 The `/builder` server page prefetches the catalog and mounts the client builder; inventory can also load through client Firestore hooks. Selection is kept in browser storage (`src/app/builder/page.tsx`, `builder-page.tsx`, `hooks/use-inventory-query.ts`, `hooks/use-builder-logic.ts`).
 
 ```mermaid
@@ -34,6 +38,12 @@ flowchart TD
   ClearModal -- Confirm --> Clear[Remove selected parts and persist empty build] --> Browse
   Review --> Chat[Open floating chat; submit, retry, copy or add suggested part]
   Chat --> Browse
+  Browse -- Leave builder --> Finish([END])
+  Saved --> Finish
+  Reservation --> Finish
+  Advisor --> Finish
+  File --> Finish
+  PdfError --> Finish
 ```
 
 The compatibility filter and add/remove checks use `src/lib/compatibility.ts`; performance indicators use `src/lib/bottleneck.ts` and `src/lib/fps-estimator.ts`. Favorite loading or prebuilt customization passes part IDs to the builder and may warn about missing or unavailable catalog records (`src/components/your-build.tsx`, `src/app/builder/hooks/use-builder-logic.ts`). PDF generation verifies a Firebase ID token and reloads canonical items and image bytes (`src/app/api/builder/download/route.ts`). The floating chatbot is documented [separately](ai-system/ai-chatbot-flowchart.md).

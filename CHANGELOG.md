@@ -2,12 +2,222 @@
 
 All notable changes to this project will be documented in this file.
 
+## [2026-11-15]
+
+### Features
+- **compatibility**: Refine compatibility checks and enhance 2D layout canvas rendering ([8d48562](https://github.com/VirgenRayzon/BuilbotAI/commit/8d48562))
+- **builder**: Add 2D interactive PC build layout tab and component visualization ([41ab8a2](https://github.com/VirgenRayzon/BuilbotAI/commit/41ab8a2))
+
+## [2026-11-14]
+
+### Refactoring
+- **auth**: Modularize signup flows, password strength meter, and builder loading states ([7e6e7fa](https://github.com/VirgenRayzon/BuilbotAI/commit/7e6e7fa))
+- **admin**: Modularize prebuilt/part editors and account management portal ([3da4fa5](https://github.com/VirgenRayzon/BuilbotAI/commit/3da4fa5))
+
+## [2026-11-13]
+
+### Features
+- **admin**: Enhance order card controls, admin queries, and prebuilt pagination ([eb3814e](https://github.com/VirgenRayzon/BuilbotAI/commit/eb3814e))
+
+### Refactoring
+- **ui**: Extract reusable LoaderCard component for loading states ([62f7e16](https://github.com/VirgenRayzon/BuilbotAI/commit/62f7e16))
+- **checkout**: Modularize page into focused sub-components and custom hook ([3a1b6ca](https://github.com/VirgenRayzon/BuilbotAI/commit/3a1b6ca))
+
+## [2026-11-12]
+
+### Features
+- **db**: Configure Firestore native TTL policies and version-pin AI recommendation cache ([75b1073](https://github.com/VirgenRayzon/BuilbotAI/commit/75b1073))
+- **prebuilts**: Paginate prebuiltSystems and embed denormalized componentSummaries ([07221a9](https://github.com/VirgenRayzon/BuilbotAI/commit/07221a9))
+- **analytics**: Decouple SalesAnalytics onto daily/monthly rollups and bounded server export ([2bc2bbe](https://github.com/VirgenRayzon/BuilbotAI/commit/2bc2bbe))
+- **orders**: Replace expanding admin orders listener with cursor pagination and count badges ([1296998](https://github.com/VirgenRayzon/BuilbotAI/commit/1296998))
+
+### Bug Fixes
+- **db**: Resolve final review polish items for archive cursor, backfill lazy db, and UTC chart formatting ([d6f72d0](https://github.com/VirgenRayzon/BuilbotAI/commit/d6f72d0))
+- **security**: Strip id from keyRequests document payload and harden guest client IP extraction against spoofing ([c35cfea](https://github.com/VirgenRayzon/BuilbotAI/commit/c35cfea))
+- **audit**: Wire UI filters through server queries, accurately compute displayCount, and add tie-breaker direction tests ([f7f7434](https://github.com/VirgenRayzon/BuilbotAI/commit/f7f7434))
+- **types**: Replace any on holdExpiresAt with browser-safe strict timestamp type ([1e5ce65](https://github.com/VirgenRayzon/BuilbotAI/commit/1e5ce65))
+- **prebuilts**: Address review findings for dedicated catalog action, synthetic stock sentinel, price/name indexes, zero-write drift sync, and isArchived stamping ([a3719dc](https://github.com/VirgenRayzon/BuilbotAI/commit/a3719dc))
+- **analytics**: Address review findings for provider refund transaction, reversal sign, component bounds, and export revenue data ([c824ce6](https://github.com/VirgenRayzon/BuilbotAI/commit/c824ce6))
+- **orders**: Address Task 4 review findings for auth race condition, filter drop, and archive leakage ([2559b08](https://github.com/VirgenRayzon/BuilbotAI/commit/2559b08))
+
+### Refactoring
+- **cache**: Wire multi-instance reader factories and eliminate duplicate test algorithms ([d386219](https://github.com/VirgenRayzon/BuilbotAI/commit/d386219))
+
+### Performance Improvements
+- **audit**: Convert staff and user audit logs to cursor-paginated queries ([08e5bf9](https://github.com/VirgenRayzon/BuilbotAI/commit/08e5bf9))
+- **checkout**: Index holdExpiresAt sweeps and decouple popularity writes from stock transactions ([1bbb26d](https://github.com/VirgenRayzon/BuilbotAI/commit/1bbb26d))
+
+### Miscellaneous
+- Retire legacy catalog fallbacks, tighten firestore.rules, and rate-limit AI endpoints ([46d4e44](https://github.com/VirgenRayzon/BuilbotAI/commit/46d4e44))
+
+## [2026-11-11]
+
+### Features
+- **db**: Add version-keyed multi-instance caches and bounded catalog search ([fcefe3e](https://github.com/VirgenRayzon/BuilbotAI/commit/fcefe3e))
+- **db**: Add catalogMeta version counter and normalized searchKeywords v2 ([e61048d](https://github.com/VirgenRayzon/BuilbotAI/commit/e61048d))
+
+### Bug Fixes
+- **db**: Resolve search cursor drift and index all catalog query combinations ([4767a70](https://github.com/VirgenRayzon/BuilbotAI/commit/4767a70))
+- **builder**: Abort load-favorite-build listener on cleanup ([da8006f](https://github.com/VirgenRayzon/BuilbotAI/commit/da8006f))
+
+### Refactoring
+- Remove unused imports, local variables, and dead server actions ([9c45060](https://github.com/VirgenRayzon/BuilbotAI/commit/9c45060))
+- Remove unreachable components, unused UI primitives, and unused assets ([e2efdaa](https://github.com/VirgenRayzon/BuilbotAI/commit/e2efdaa))
+
+### Miscellaneous
+- Enable multi-instance App Hosting scaling after cache coherence verification ([a0b6e67](https://github.com/VirgenRayzon/BuilbotAI/commit/a0b6e67))
+- Ignore .worktrees directory ([1ae16d5](https://github.com/VirgenRayzon/BuilbotAI/commit/1ae16d5))
+- Strip remaining inline and block comments ([8cf6a9d](https://github.com/VirgenRayzon/BuilbotAI/commit/8cf6a9d))
+- Remove scratch files, test suites, mockups, and unused scripts ([d495d00](https://github.com/VirgenRayzon/BuilbotAI/commit/d495d00))
+
+## [2026-11-08]
+
+### Features
+- **production**: Add /api/health endpoint, dynamic robots.ts, and sitemap.ts ([0c6712a](https://github.com/VirgenRayzon/BuilbotAI/commit/0c6712a))
+
+### Bug Fixes
+- **builder**: Extract handleLoadFavorite to top-level useCallback for stable scope ([542c560](https://github.com/VirgenRayzon/BuilbotAI/commit/542c560))
+- **ai**: Enforce exact hardware model matching during part detail extraction ([663816f](https://github.com/VirgenRayzon/BuilbotAI/commit/663816f))
+
+### Refactoring
+- **assets**: Deduplicate static images and remove unused team image copies ([a9acc45](https://github.com/VirgenRayzon/BuilbotAI/commit/a9acc45))
+
+### Documentation
+- **plans**: Record deployment readiness plan and execution plan ([b2fdeda](https://github.com/VirgenRayzon/BuilbotAI/commit/b2fdeda))
+
+### Miscellaneous
+- Clean all trailing inline comments and reorganize imports in ai flows ([9bf0028](https://github.com/VirgenRayzon/BuilbotAI/commit/9bf0028))
+- Clean comments across scratch, tests, and execution directories ([a67eb54](https://github.com/VirgenRayzon/BuilbotAI/commit/a67eb54))
+- Deep clean all JSDoc, block, and JSX comments across src ([bf9d8c5](https://github.com/VirgenRayzon/BuilbotAI/commit/bf9d8c5))
+- Add GitHub Actions continuous integration quality gate workflow ([b5462bb](https://github.com/VirgenRayzon/BuilbotAI/commit/b5462bb))
+- Link storage.rules in firebase.json and add .env.example ([8d604e8](https://github.com/VirgenRayzon/BuilbotAI/commit/8d604e8))
+- Add production security headers and enforce strict build gates in next.config.ts ([3bf18ea](https://github.com/VirgenRayzon/BuilbotAI/commit/3bf18ea))
+- Clean obsolete developer comments and dead commented-out code across src ([aae2e1d](https://github.com/VirgenRayzon/BuilbotAI/commit/aae2e1d))
+- Ignore playwright and test artifacts in gitignore ([882f556](https://github.com/VirgenRayzon/BuilbotAI/commit/882f556))
+- Remove redundant root scratch files, mock designs, and untrack test results ([5fbb78b](https://github.com/VirgenRayzon/BuilbotAI/commit/5fbb78b))
+
+## [2026-11-07]
+
+### Features
+- Enhance catalog category selection and public auth handling ([403ae51](https://github.com/VirgenRayzon/BuilbotAI/commit/403ae51))
+- **builder**: Add live catalog recommendations with budget reservations ([f0933ff](https://github.com/VirgenRayzon/BuilbotAI/commit/f0933ff))
+- Require sign-in for public feature actions ([402cd03](https://github.com/VirgenRayzon/BuilbotAI/commit/402cd03))
+- Explain public feature sign-in redirects ([34da1c7](https://github.com/VirgenRayzon/BuilbotAI/commit/34da1c7))
+- Add public feature sign-in policy ([8bdb062](https://github.com/VirgenRayzon/BuilbotAI/commit/8bdb062))
+
+### Documentation
+- Add finetuned gemini system report ([196c6c6](https://github.com/VirgenRayzon/BuilbotAI/commit/196c6c6))
+- Document public feature authentication ([827ac8e](https://github.com/VirgenRayzon/BuilbotAI/commit/827ac8e))
+
+### Miscellaneous
+- Normalize test result metadata ([6006032](https://github.com/VirgenRayzon/BuilbotAI/commit/6006032))
+- Checkpoint current workspace changes ([5e31fbf](https://github.com/VirgenRayzon/BuilbotAI/commit/5e31fbf))
+
+## [2026-11-06]
+
+### Features
+- Enable indexed public catalog after parity checks ([6844727](https://github.com/VirgenRayzon/BuilbotAI/commit/6844727))
+- Enable paged admin inventory after parity checks ([77662d5](https://github.com/VirgenRayzon/BuilbotAI/commit/77662d5))
+- Stage indexed inventory and public catalog pagination ([36e1e56](https://github.com/VirgenRayzon/BuilbotAI/commit/36e1e56))
+
+### Miscellaneous
+- Record and verify inventory scaling rollout ([0e37aa7](https://github.com/VirgenRayzon/BuilbotAI/commit/0e37aa7))
+
+## [2026-11-04]
+
+### Features
+- **ui**: Implement route-specific loading layouts, skeletons, and AI advisor model updates ([f50c258](https://github.com/VirgenRayzon/BuilbotAI/commit/f50c258))
+- **ai**: Update AI model settings, resolver, and Gemini API skill ([3521c80](https://github.com/VirgenRayzon/BuilbotAI/commit/3521c80))
+
+### Bug Fixes
+- **auth**: Eliminate public auth header flicker and unify protected page loading states ([1aff477](https://github.com/VirgenRayzon/BuilbotAI/commit/1aff477))
+
+## [2026-11-03]
+
+### Features
+- Refine catalog validation, search empty states, and order checkout UX ([d9c3d08](https://github.com/VirgenRayzon/BuilbotAI/commit/d9c3d08))
+
+## [2026-11-02]
+
+### Features
+- **orders**: Unify order management, payment integrity, refunds, and financial reporting ([36ac65e](https://github.com/VirgenRayzon/BuilbotAI/commit/36ac65e))
+
+## [2026-11-01]
+
+### Features
+- **landing**: Update team section and add team assets ([cac74c0](https://github.com/VirgenRayzon/BuilbotAI/commit/cac74c0))
+- **landing**: Revamp landing page with featured products, shopping paths, and assets ([a46af0c](https://github.com/VirgenRayzon/BuilbotAI/commit/a46af0c))
+
+## [2026-10-31]
+
+### Features
+- **ai-advisor**: Add build critique api route and enhance smart budget logic ([1b836d5](https://github.com/VirgenRayzon/BuilbotAI/commit/1b836d5))
+
+## [2026-10-30]
+
+### Features
+- Enhance chat conversation context and builder recommendations ([4f218c3](https://github.com/VirgenRayzon/BuilbotAI/commit/4f218c3))
+- **builder**: Add live recommendations, budget slider, and updated system flowcharts ([3065a5e](https://github.com/VirgenRayzon/BuilbotAI/commit/3065a5e))
+
+### Bug Fixes
+- **fonts**: Simplify variable font configuration for next/font build ([e5483f9](https://github.com/VirgenRayzon/BuilbotAI/commit/e5483f9))
+
+## [2026-10-27]
+
+### Features
+- **builder**: Add integrated graphics support and enhance compatibility validation ([900a253](https://github.com/VirgenRayzon/BuilbotAI/commit/900a253))
+- **system-access**: Add server-side authentication route and update system access flow ([2da7923](https://github.com/VirgenRayzon/BuilbotAI/commit/2da7923))
+
+### Bug Fixes
+- **builder**: Respect site settings for table image optimization and add catalog image directive ([72f395f](https://github.com/VirgenRayzon/BuilbotAI/commit/72f395f))
+
+## [2026-10-26]
+
+### Features
+- **ui**: Refine admin and catalog spacing, toolbars, and layout polish ([aac085a](https://github.com/VirgenRayzon/BuilbotAI/commit/aac085a))
+
+### Bug Fixes
+- **admin**: Refine tab header alignment and qr scanner dialog layout ([4fd0f67](https://github.com/VirgenRayzon/BuilbotAI/commit/4fd0f67))
+- **admin**: Resolve mobile sidebar header layout and update docs ([8c92ef1](https://github.com/VirgenRayzon/BuilbotAI/commit/8c92ef1))
+
+## [2026-10-24]
+
+### Features
+- **qr**: Improve product identity, QR inventory flows, and AI disclaimers ([b8a999a](https://github.com/VirgenRayzon/BuilbotAI/commit/b8a999a))
+- **ecommerce**: Add cart and checkout flow with enhanced UI polish ([94538fc](https://github.com/VirgenRayzon/BuilbotAI/commit/94538fc))
+
+### Refactoring
+- **pre-builts**: Modularize details page components and refine showcase ([7782b91](https://github.com/VirgenRayzon/BuilbotAI/commit/7782b91))
+
+## [2026-10-23]
+
+### Features
+- **auth**: Add auth background component and styling to signin and signup pages ([083242b](https://github.com/VirgenRayzon/BuilbotAI/commit/083242b))
+- Replace shield icon with red-highlighted Netcodex emblem on system-access ([05b9757](https://github.com/VirgenRayzon/BuilbotAI/commit/05b9757))
+- Show full navigation header across parts, products, and prebuilts ([02efb12](https://github.com/VirgenRayzon/BuilbotAI/commit/02efb12))
+- Rebrand storefront to Netcodex, sync official FAQs, and enlarge logo ([1d4fd86](https://github.com/VirgenRayzon/BuilbotAI/commit/1d4fd86))
+
+### Bug Fixes
+- **assets**: Resolve broken logo and branding images on deployed environment ([180ff33](https://github.com/VirgenRayzon/BuilbotAI/commit/180ff33))
+- **prebuilt-builder**: Clean up bundled stock cooler when CPU is removed ([97cb2b7](https://github.com/VirgenRayzon/BuilbotAI/commit/97cb2b7))
+- Prevent dual tab highlighting on /admin/prebuilt-builder ([af7051a](https://github.com/VirgenRayzon/BuilbotAI/commit/af7051a))
+
+### Styling & UI/UX
+- **theme**: Refine UI spacing, theme provider, and component styling ([bda8157](https://github.com/VirgenRayzon/BuilbotAI/commit/bda8157))
+
+## [2026-10-22]
+
+### Features
+- **qr**: Improve qr scanner decoding, error handling, and test coverage ([5544f4f](https://github.com/VirgenRayzon/BuilbotAI/commit/5544f4f))
+
 ## [2026-10-21]
 
 ### Features
+- Overhaul contact inbox messenger exchange, qr inventory table columns, and conversation deletion ([84bf7e7](https://github.com/VirgenRayzon/BuilbotAI/commit/84bf7e7))
 - **qr**: Implement QR inventory tracking, public parts catalog, and customer support portal ([850169d](https://github.com/VirgenRayzon/BuilbotAI/commit/850169d))
 
 ### Bug Fixes
+- Resolve favicon conflict, close product focus modal on edit, and sanitize test mock token ([b168996](https://github.com/VirgenRayzon/BuilbotAI/commit/b168996))
 - **ui**: Update pricing currency formatting and prebuilt card details ([3676b14](https://github.com/VirgenRayzon/BuilbotAI/commit/3676b14))
 
 ## [2026-10-20]

@@ -22,10 +22,8 @@ import {
     Zap,
     Brain,
     MessageSquare,
-    ChevronDown,
     ChevronUp,
     X,
-    SlidersHorizontal,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { useUserProfile } from '@/context/user-profile';
@@ -79,40 +77,39 @@ function InfoPopover({ message, label = 'More information' }: { message: string;
     );
 }
 
-// Standard available Gemini API models with specs & badges
 export const AVAILABLE_GEMINI_MODELS = [
     {
         id: 'gemini-3.8-flash',
         name: 'Gemini 3.8 Flash',
-        tag: 'Latest Gen',
-        tagColor: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
+        tag: 'Default',
+        tagColor: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/30',
         badgeVariant: 'default' as const,
-        description: 'The latest model recommended for updated features and improvements via the Interactions API.',
+        description: 'Recommended default model for BuildbotAI. Next-generation speed, advanced reasoning, and full multimodal capabilities.',
         speed: 'Next-Gen Speed',
         contextWindow: '1M tokens',
         icon: Zap,
     },
     {
-        id: 'gemini-2.5-flash',
-        name: 'Gemini 2.5 Flash',
-        tag: 'Default',
-        tagColor: 'bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 border-cyan-500/30',
-        badgeVariant: 'default' as const,
-        description: 'Marked as the recommended default, serving as the live fallback engine for chat and AI tools.',
+        id: 'gemini-3.5-flash-lite',
+        name: 'Gemini 3.5 Flash-Lite',
+        tag: 'Efficient',
+        tagColor: 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30',
+        badgeVariant: 'outline' as const,
+        description: 'New cost-effective model replacing 2.5 Flash ($0.30/1M tokens, audio down to $0.30/1M). Stricter parameter validation.',
         speed: 'Ultra Fast',
         contextWindow: '1M tokens',
-        icon: Zap,
+        icon: Sparkles,
     },
     {
-        id: 'gemini-2.5-pro',
-        name: 'Gemini 2.5 Pro',
-        tag: 'Reasoning',
-        tagColor: 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30',
-        badgeVariant: 'secondary' as const,
-        description: 'Fully operational for complex architectural reasoning and intricate compatibility validation.',
-        speed: 'High Intelligence',
-        contextWindow: '2M tokens',
-        icon: Brain,
+        id: 'gemini-2.5-flash',
+        name: 'Gemini 2.5 Flash',
+        tag: 'Deprecated',
+        tagColor: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30',
+        badgeVariant: 'outline' as const,
+        description: 'Deprecated by Google AI Studio. Retires Dec 1, 2026 and automatically redirects to Gemini 3.5 Flash-Lite.',
+        speed: 'Legacy',
+        contextWindow: '1M tokens',
+        icon: AlertTriangle,
     },
     {
         id: 'gemini-1.5-flash',
@@ -185,15 +182,14 @@ export function AiModelSettings() {
         featureModelRouting: activeFeatureRouting,
     } = useSiteSettings();
 
-    // Active engine tab: choose whether to view/configure the Gemini catalog or Fine-Tuned projects
     const [activeEngineTab, setActiveEngineTab] = useState<'gemini' | 'finetuned'>(() => {
         return activeAiProvider === 'finetuned' ? 'finetuned' : 'gemini';
     });
-    const [selectedGeminiModel, setSelectedGeminiModel] = useState<string>(
-        activeGeminiModel || 'gemini-2.5-flash'
-    );
+    const [selectedGeminiModel, setSelectedGeminiModel] = useState<string>(() => {
+        const model = activeGeminiModel || 'gemini-3.8-flash';
+        return (model === 'gemini-2.5-pro' || model === 'gemini-2.5-flash') ? 'gemini-3.8-flash' : model;
+    });
 
-    // Per-feature model routing state
     const [featureRouting, setFeatureRouting] = useState<FeatureModelRouting>(() => {
         if (activeFeatureRouting) return activeFeatureRouting;
         return {
@@ -203,7 +199,6 @@ export function AiModelSettings() {
         };
     });
 
-    // Fine-tuned projects state
     const [projects, setProjects] = useState<FineTunedProject[]>(() => {
         if (activeProjects && activeProjects.length > 0) return activeProjects;
         return [
@@ -223,13 +218,11 @@ export function AiModelSettings() {
         return projects[0]?.id || 'default-prod-endpoint';
     });
 
-    // Form inputs for adding a new fine-tuned project
     const [newProjectName, setNewProjectName] = useState('');
     const [newProjectEndpoint, setNewProjectEndpoint] = useState('');
     const [isAddingProject, setIsAddingProject] = useState(false);
     const [projectToDelete, setProjectToDelete] = useState<FineTunedProject | null>(null);
 
-    // Saving and testing states
     const [savingAiSettings, setSavingAiSettings] = useState(false);
     const [isAiDirty, setIsAiDirty] = useState(false);
     const [testingConnection, setTestingConnection] = useState(false);
@@ -248,9 +241,10 @@ export function AiModelSettings() {
         };
     } | null>(null);
 
-    // Synchronize from context
     useEffect(() => {
-        if (activeGeminiModel) setSelectedGeminiModel(activeGeminiModel);
+        if (activeGeminiModel) {
+            setSelectedGeminiModel((activeGeminiModel === 'gemini-2.5-pro' || activeGeminiModel === 'gemini-2.5-flash') ? 'gemini-3.8-flash' : activeGeminiModel);
+        }
     }, [activeGeminiModel]);
 
     useEffect(() => {
@@ -271,11 +265,9 @@ export function AiModelSettings() {
         }
     }, [activeFeatureRouting]);
 
-    // Active project lookup
     const currentActiveProject = projects.find((p) => p.id === activeProjectId) || projects[0];
     const currentTunedEndpoint = currentActiveProject?.endpoint || DEFAULT_PROJECT_ENDPOINT;
 
-    // Routing metrics across all features
     const routingValues = Object.values(featureRouting);
     const allVertex = routingValues.length > 0 && routingValues.every((v) => v === 'finetuned');
     const allGemini = routingValues.length > 0 && routingValues.every((v) => v === 'default');
@@ -285,7 +277,6 @@ export function AiModelSettings() {
             ? 'gemini'
             : 'hybrid';
 
-    // Bulk preset actions
     const handleRouteAll = (mode: 'default' | 'finetuned') => {
         setFeatureRouting({
             chatbot: mode,
@@ -299,7 +290,6 @@ export function AiModelSettings() {
         });
     };
 
-    // Handle adding a new named project
     const handleAddProject = () => {
         const trimmedName = newProjectName.trim();
         const trimmedEndpoint = newProjectEndpoint.trim();
@@ -344,7 +334,6 @@ export function AiModelSettings() {
         });
     };
 
-    // Handle confirming project deletion
     const handleConfirmDeleteProject = () => {
         if (!projectToDelete) return;
         const targetId = projectToDelete.id;
@@ -364,7 +353,6 @@ export function AiModelSettings() {
         });
     };
 
-    // Test Model Connection
     const handleTestConnection = async () => {
         setTestingConnection(true);
         setTestResult(null);
@@ -406,7 +394,6 @@ export function AiModelSettings() {
         }
     };
 
-    // Save and Apply Settings
     const handleSaveAiModelSettings = async () => {
         setSavingAiSettings(true);
         try {
@@ -465,7 +452,6 @@ export function AiModelSettings() {
     return (
         <TooltipProvider delayDuration={150}>
             <Card className="border-slate-200 dark:border-white/10 bg-white dark:bg-[#111722] shadow-sm">
-                {/* COMPACT CARD HEADER */}
                 <CardHeader className="p-3 border-b border-slate-100 dark:border-white/5">
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
                         <div className="flex items-center gap-2">
@@ -505,7 +491,6 @@ export function AiModelSettings() {
                 </CardHeader>
 
                 <CardContent className="p-3 space-y-3">
-                    {/* SECTION 1: ENGINE STRIP & MODEL CATALOG */}
                     <div className="space-y-2.5">
                         <div className="flex items-center justify-between">
                             <Label className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
@@ -517,9 +502,7 @@ export function AiModelSettings() {
                             </span>
                         </div>
 
-                        {/* HIGH-DENSITY ENGINE SELECTOR TABS */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            {/* GEMINI ENGINE BUTTON */}
                             <div
                                 role="button"
                                 tabIndex={0}
@@ -570,7 +553,6 @@ export function AiModelSettings() {
                                 </Badge>
                             </div>
 
-                            {/* VERTEX AI ENGINE BUTTON */}
                             <div
                                 role="button"
                                 tabIndex={0}
@@ -622,7 +604,6 @@ export function AiModelSettings() {
                             </div>
                         </div>
 
-                        {/* COMPACT GEMINI MODEL CARDS VIEW */}
                         {activeEngineTab === 'gemini' && (
                             <div className="p-2.5 rounded-xl border border-cyan-500/20 bg-cyan-500/[0.02] dark:bg-cyan-500/[0.03] space-y-2">
                                 <div className="flex items-center justify-between">
@@ -686,10 +667,23 @@ export function AiModelSettings() {
                                         );
                                     })}
                                 </div>
+
+                                {selectedGeminiModel === 'gemini-2.5-flash' && (
+                                    <div className="flex items-start gap-2.5 p-2.5 rounded-lg border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300 text-xs">
+                                        <AlertTriangle className="h-4 w-4 shrink-0 text-amber-500 mt-0.5" />
+                                        <div className="space-y-1">
+                                            <span className="font-semibold text-amber-800 dark:text-amber-200">
+                                                Deprecation Notice: Gemini 2.5 Flash
+                                            </span>
+                                            <p className="text-[11px] leading-relaxed text-amber-800/90 dark:text-amber-300/90">
+                                                Google AI Studio announced that <strong>Gemini 2.5 Flash</strong> is retiring on <strong>December 1, 2026</strong> and will automatically redirect to <strong>Gemini 3.5 Flash-Lite</strong>. Please switch your active model to <strong>Gemini 3.8 Flash</strong> (recommended default) or <strong>Gemini 3.5 Flash-Lite</strong> and click <em>Apply AI Settings</em>.
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
                             </div>
                         )}
 
-                        {/* COMPACT VERTEX PROJECTS VIEW */}
                         {activeEngineTab === 'finetuned' && (
                             <div className="p-2.5 rounded-xl border border-amber-500/30 bg-amber-50/20 dark:bg-amber-950/10 space-y-2.5">
                                 <div className="flex items-center justify-between gap-2">
@@ -708,7 +702,6 @@ export function AiModelSettings() {
                                     </Button>
                                 </div>
 
-                                {/* COLLAPSIBLE ADD PROJECT PANEL */}
                                 {isAddingProject && (
                                     <div className="p-2.5 rounded-lg border border-amber-400/30 bg-white dark:bg-[#161d2b] shadow-sm space-y-2">
                                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -760,7 +753,6 @@ export function AiModelSettings() {
                                     </div>
                                 )}
 
-                                {/* COMPACT PROJECTS LIST */}
                                 {projects.length === 0 ? (
                                     <div className="p-4 text-center rounded-lg border border-dashed border-amber-300 dark:border-amber-500/30 bg-white/50 dark:bg-black/20 space-y-1.5">
                                         <p className="text-xs font-bold text-slate-900 dark:text-white">No Fine-Tuned Projects Registered</p>
@@ -833,7 +825,6 @@ export function AiModelSettings() {
                         )}
                     </div>
 
-                    {/* SECTION 2: WORKLOAD ROUTING MATRIX (HIGH DENSITY ROWS) */}
                     <div className="p-2.5 rounded-xl border border-indigo-500/20 bg-indigo-500/[0.02] dark:bg-indigo-500/[0.03] space-y-2.5">
                         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                             <div className="flex items-center gap-1.5">
@@ -844,7 +835,6 @@ export function AiModelSettings() {
                                 <InfoPopover label="Workload Routing" message="Assign each platform feature to either Default Gemini API or Fine-Tuned Vertex AI." />
                             </div>
 
-                            {/* QUICK PRESET TOOLBAR */}
                             <div className="flex items-center gap-1.5 self-end sm:self-auto">
                                 <Button
                                     size="sm"
@@ -867,7 +857,6 @@ export function AiModelSettings() {
                             </div>
                         </div>
 
-                        {/* COMPACT MATRIX ROWS */}
                         <div className="space-y-1.5">
                             {AI_FEATURES_CONFIG.map((feat) => {
                                 const currentRoute = featureRouting[feat.key] || 'default';
@@ -901,7 +890,6 @@ export function AiModelSettings() {
                                             </div>
                                         </div>
 
-                                        {/* INLINE SEGMENTED TOGGLE */}
                                         <div className="inline-flex rounded-lg border border-slate-200 dark:border-white/10 p-0.5 bg-slate-100 dark:bg-black/30 shrink-0 self-end sm:self-center">
                                             <button
                                                 type="button"
@@ -938,7 +926,6 @@ export function AiModelSettings() {
                         </div>
                     </div>
 
-                    {/* SECTION 3: FOOTER ACTIONS & DIAGNOSTICS */}
                     <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 pt-1">
                         <Button
                             type="button"
@@ -983,7 +970,6 @@ export function AiModelSettings() {
                         </div>
                     </div>
 
-                    {/* CONNECTION TEST RESULT BANNER */}
                     {testResult && (
                         <div
                             className={`p-2.5 rounded-xl border text-xs space-y-1.5 relative ${testResult.success
@@ -1062,7 +1048,6 @@ export function AiModelSettings() {
                     )}
                 </CardContent>
 
-                {/* CONFIRM DELETE PROJECT DIALOG */}
                 <AlertDialog open={!!projectToDelete} onOpenChange={(open) => !open && setProjectToDelete(null)}>
                     <AlertDialogContent className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl">
                         <AlertDialogHeader>

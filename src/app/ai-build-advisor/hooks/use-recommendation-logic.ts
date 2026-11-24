@@ -14,6 +14,8 @@ import { Cpu, Server, CircuitBoard, MemoryStick, Database, Power, RectangleVerti
 import { getComponentPlaceholderImage } from "@/lib/placeholder-images";
 import { parsePesoBudget } from '@/lib/parse-peso-budget';
 import { checkFullBuildCompatibility } from '@/lib/compatibility';
+import { INCLUDED_INTEGRATED_GPU_ID, createIntegratedGpuComponent } from '@/lib/integrated-graphics';
+import { useUserProfile } from '@/context/user-profile';
 
 const componentIcons: Record<string, any> = {
   cpu: Cpu, gpu: Server, motherboard: CircuitBoard, ram: MemoryStick, 
@@ -38,10 +40,8 @@ function summarizeCatalogDescription(value: string): string {
     return `${excerpt.slice(0, excerpt.lastIndexOf(' ') || 180).trimEnd()}…`;
 }
 
-/**
- * Hook to handle streaming AI build recommendations and live matching.
- */
 export function useRecommendationLogic(isAiKillSwitch: boolean, allParts: Part[]) {
+    const { authUser } = useUserProfile();
     const { toast } = useToast();
     const router = useRouter();
     const [savedBuild, setSavedBuild] = useState<Build | null>(null);
@@ -57,14 +57,13 @@ export function useRecommendationLogic(isAiKillSwitch: boolean, allParts: Part[]
     const firstCardReportedRef = useRef(false);
     const lastRequestRef = useRef<AiBuildAdvisorRecommendationsInput | null>(null);
 
-    // Restore only recent recommendations; stock and prices can change.
     useEffect(() => {
         try {
             const cached = localStorage.getItem('pc_ai_build_recommendation');
             if (cached) {
                 const entry = JSON.parse(cached);
                 const maxAgeMs = entry.input?.allowAiSearch ? 60 * 60 * 1000 : 5 * 60 * 1000;
-                if (entry.version === 2 && !entry.input?.allowWebSearch && entry.build && entry.timestamp && Date.now() - entry.timestamp < maxAgeMs) {
+                if (entry.version === 3 && !entry.input?.allowWebSearch && entry.build && entry.timestamp && Date.now() - entry.timestamp < maxAgeMs) {
                     setSavedBuild(entry.build);
                 } else {
                     localStorage.removeItem('pc_ai_build_recommendation');
@@ -153,6 +152,7 @@ function getSmartDescription(type: string, modelName: string): string {
             : fallbackImage;
 
         const externalSpecs: Record<string, string | number> = {};
+        if (type === 'cpu' && component.integratedGraphics) externalSpecs['Integrated Graphics'] = component.integratedGraphics;
         if (type === 'motherboard') {
             if (component.formFactor) externalSpecs['Form Factor'] = component.formFactor;
             if (component.nvmeSlots !== undefined) externalSpecs['NVMe Slots'] = component.nvmeSlots;
@@ -185,7 +185,18 @@ function getSmartDescription(type: string, modelName: string): string {
     }, [allParts]);
 
     const fetchRecommendations: typeof fetch = useCallback(async (input, init) => {
-        const response = await fetch(input, init);
+        let headers = new Headers(init?.headers);
+        if (authUser) {
+            try {
+                const token = await authUser.getIdToken();
+                if (token) {
+                    headers.set('Authorization', `Bearer ${token}`);
+                }
+            } catch {
+                // proceed without token on retrieval error
+            }
+        }
+        const response = await fetch(input, { ...init, headers });
         const encodedResearch = response.headers.get('x-build-advisor-web-research');
         if (response.ok && encodedResearch) {
             try {
@@ -198,7 +209,7 @@ function getSmartDescription(type: string, modelName: string): string {
             }
         }
         return response;
-    }, []);
+    }, [authUser]);
 
     const { object, submit, isLoading, stop, error: streamError } = useObject({
         api: '/api/ai/build-advisor/recommendations',
@@ -209,17 +220,20 @@ function getSmartDescription(type: string, modelName: string): string {
             progressToastRef.current = null;
             console.error("[useRecommendationLogic] Stream error:", err);
             let msg = err.message || "Failed to get recommendations.";
-            try { msg = JSON.parse(msg).error || msg; } catch { /* Non-JSON provider error. */ }
+            try { msg = JSON.parse(msg).error || msg; } catch {}
             setErrorMessage(msg);
             toast({ variant: "destructive", title: "Error", description: msg });
         },
         onFinish: (result) => {
             if (result.object) {
                 const finalObj = result.object;
+                const recommendedCpu = processComponent(finalObj.cpu, 'cpu');
                 const completedBuild: Build = {
                     summary: finalObj.summary || "",
-                    cpu: processComponent(finalObj.cpu, "cpu"),
-                    gpu: processComponent(finalObj.gpu, "gpu"),
+                    cpu: recommendedCpu,
+                    gpu: finalObj.gpu.partId === INCLUDED_INTEGRATED_GPU_ID && recommendedCpu
+                        ? createIntegratedGpuComponent(recommendedCpu)
+                        : processComponent(finalObj.gpu, "gpu"),
                     motherboard: processComponent(finalObj.motherboard, "motherboard"),
                     ram: processComponent(finalObj.ram, "ram"),
                     storage: processComponent(finalObj.storage, "storage"),
@@ -234,7 +248,7 @@ function getSmartDescription(type: string, modelName: string): string {
                 const components = ['cpu', 'gpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooler'] as const;
                 const missingStoreIds = !request?.allowAiSearch && components.some(category => !finalObj[category]?.partId);
                 const unknownStoreIds = allParts.length > 0 && components.some(category =>
-                    !!finalObj[category]?.partId && !allParts.some(part => part.id === finalObj[category]?.partId && !part.isArchived &&
+                    !!finalObj[category]?.partId && finalObj[category]?.partId !== INCLUDED_INTEGRATED_GPU_ID && !allParts.some(part => part.id === finalObj[category]?.partId && !part.isArchived &&
                         (typeof part.stock !== 'number' || part.stock > 0)));
                 const actualTotal = components.reduce((sum, category) => sum + (completedBuild[category]?.price || 0), 0);
                 const compatibility = !unknownStoreIds
@@ -253,7 +267,7 @@ function getSmartDescription(type: string, modelName: string): string {
                     progressToastRef.current?.dismiss();
                     progressToastRef.current = null;
                     const message = missingStoreIds || unknownStoreIds
-                        ? 'The AI could not verify every suggested part against store inventory. Please try again.'
+                        ? 'Could not verify every suggested part against current store inventory. Please try again.'
                         : compatibility.length > 0
                             ? `The suggested parts have a compatibility issue: ${compatibility[0].message}`
                         : `This build exceeds your budget of ₱${budget?.toLocaleString()}. Please try again or enable Flexible Budget.`;
@@ -265,7 +279,7 @@ function getSmartDescription(type: string, modelName: string): string {
                 if (!request?.allowWebSearch) {
                     try {
                         localStorage.setItem('pc_ai_build_recommendation', JSON.stringify({
-                            version: 2,
+                            version: 3,
                             build: completedBuild,
                             input: request,
                             timestamp: Date.now(),
@@ -281,11 +295,32 @@ function getSmartDescription(type: string, modelName: string): string {
             } else {
                 progressToastRef.current?.dismiss();
                 progressToastRef.current = null;
+                let errorMsg = "The AI model finished without generating complete build recommendations.";
+                if (result.error) {
+                    const rawMsg = result.error.message || String(result.error);
+                    try {
+                        const parsed = JSON.parse(rawMsg);
+                        if (Array.isArray(parsed) && parsed[0]?.message) {
+                            const path = parsed[0].path?.join('.') || 'output';
+                            errorMsg = `Validation error in ${path}: ${parsed[0].message}`;
+                        } else {
+                            errorMsg = rawMsg;
+                        }
+                    } catch {
+                        errorMsg = rawMsg;
+                    }
+                }
+                console.error("[useRecommendationLogic] Incomplete recommendation output:", result.error || errorMsg);
+                setErrorMessage(errorMsg);
+                toast({
+                    variant: 'destructive',
+                    title: 'Recommendations Failed',
+                    description: errorMsg,
+                });
             }
         }
     });
 
-    // Elapsed timer logic
     useEffect(() => {
         let interval: NodeJS.Timeout;
         if (isLoading) {
@@ -332,7 +367,7 @@ function getSmartDescription(type: string, modelName: string): string {
     }, [stop, toast]);
 
     const handleGetRecommendations = useCallback((data: AiBuildAdvisorRecommendationsInput) => {
-        if (isAiKillSwitch) {
+        if (isAiKillSwitch && data.allowAiSearch) {
             toast({ title: "AI Disabled", description: "AI is disabled by Administrator.", variant: "destructive" });
             return;
         }
@@ -351,13 +386,15 @@ function getSmartDescription(type: string, modelName: string): string {
         submit(data);
     }, [isAiKillSwitch, submit, toast]);
 
-    // Live reactive build
     const build = useMemo<Build | null>(() => {
         if (isLoading && object) {
+            const cpu = processComponent(object.cpu, 'cpu');
             return {
                 summary: object.summary || "Synthesizing build recommendations...",
-                cpu: processComponent(object.cpu, "cpu"),
-                gpu: processComponent(object.gpu, "gpu"),
+                cpu,
+                gpu: object.gpu?.partId === INCLUDED_INTEGRATED_GPU_ID && cpu
+                    ? createIntegratedGpuComponent(cpu)
+                    : processComponent(object.gpu, "gpu"),
                 motherboard: processComponent(object.motherboard, "motherboard"),
                 ram: processComponent(object.ram, "ram"),
                 storage: processComponent(object.storage, "storage"),
@@ -371,8 +408,12 @@ function getSmartDescription(type: string, modelName: string): string {
         const categories = ['cpu', 'gpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooler'] as const;
         const refreshed = { ...savedBuild };
         for (const category of categories) {
+            if (category === 'gpu' && savedBuild.gpu?.id === INCLUDED_INTEGRATED_GPU_ID) continue;
             const part = savedBuild[category];
             if (part) refreshed[category] = processComponent({ ...part, partId: part.id, estimatedPrice: part.price }, category);
+        }
+        if (savedBuild.gpu?.id === INCLUDED_INTEGRATED_GPU_ID && refreshed.cpu) {
+            refreshed.gpu = createIntegratedGpuComponent(refreshed.cpu);
         }
         return refreshed;
     }, [isLoading, object, savedBuild, processComponent, allParts.length]);
@@ -389,7 +430,7 @@ function getSmartDescription(type: string, modelName: string): string {
         if (newBuild && !lastRequestRef.current?.allowWebSearch) {
             try {
                 localStorage.setItem('pc_ai_build_recommendation', JSON.stringify({
-                    version: 2,
+                            version: 3,
                     build: newBuild,
                     input: lastRequestRef.current,
                     timestamp: Date.now(),
@@ -401,7 +442,6 @@ function getSmartDescription(type: string, modelName: string): string {
     }, []);
 
     const setTotalPrice = useCallback((_price: number) => {
-        // Managed reactively via useMemo
     }, []);
 
     const effectiveError = errorMessage || (streamError ? streamError.message : null);

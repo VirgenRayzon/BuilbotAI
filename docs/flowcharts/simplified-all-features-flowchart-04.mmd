@@ -17,3 +17,6 @@ flowchart TD
   AResult -- Yes --> AShow[/Render, apply or save feature result/]
   AResult -- No --> AFail[/Feature-specific error, retry or fallback/]
   ADormant([Smart Budget source exists]) --> AUnreachable[/No page import found; not a reachable user feature/]
+  AShow --> Finish([END])
+  AFail --> Finish
+  AUnreachable --> Finish

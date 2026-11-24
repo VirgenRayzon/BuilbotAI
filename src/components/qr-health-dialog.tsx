@@ -1,16 +1,41 @@
 'use client';
 import { useState } from 'react';
 import Link from 'next/link';
-import { Button, Group, Modal, Pagination, Paper, Stack, Text } from '@mantine/core';
+import { ActionIcon, Button, Group, Modal, Pagination, Paper, Stack, Text, Tooltip } from '@mantine/core';
 import { QrCode } from 'lucide-react';
 import { useQRHealth } from '@/hooks/use-qr-health';
 
-export function QRHealthDialog() {
-  const [opened, setOpened] = useState(false);
+interface QRHealthDialogProps {
+  trigger?: (open: () => void) => React.ReactNode;
+  opened?: boolean;
+  onClose?: () => void;
+}
+
+export function QRHealthDialog({ trigger, opened: controlledOpened, onClose }: QRHealthDialogProps = {}) {
+  const [internalOpened, setInternalOpened] = useState(false);
+  const opened = controlledOpened ?? internalOpened;
+  const setOpened = (nextOpened: boolean) => {
+    if (controlledOpened === undefined) {
+      setInternalOpened(nextOpened);
+    }
+    if (!nextOpened) {
+      onClose?.();
+    }
+  };
   const [page, setPage] = useState(1);
   const { report, error, busy, run } = useQRHealth();
   return <>
-    <Button variant="default" radius="md" size="xs" mih={44} leftSection={<QrCode size={16}/>} onClick={() => setOpened(true)}>QR health</Button>
+    {trigger ? trigger(() => setOpened(true)) : <Tooltip label="QR Health" withArrow position="top">
+      <ActionIcon
+        variant="default"
+        radius="md"
+        size={36}
+        aria-label="QR health"
+        onClick={() => setOpened(true)}
+      >
+        <QrCode size={16}/>
+      </ActionIcon>
+    </Tooltip>}
     <Modal opened={opened} onClose={() => setOpened(false)} title="QR health" centered radius="lg" size="lg"
       overlayProps={{ backgroundOpacity: 0.65, blur: 5 }}
       classNames={{ content: 'bg-white/95 dark:bg-[#141a23]/95 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-slate-100', header: 'bg-white/95 dark:bg-[#141a23]/95 border-b border-slate-200 dark:border-white/10 p-3', body: '!p-3' }}>

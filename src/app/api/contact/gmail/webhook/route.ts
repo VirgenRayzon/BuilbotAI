@@ -3,6 +3,7 @@ import { OAuth2Client } from 'google-auth-library';
 import * as admin from 'firebase-admin';
 import { getAdminFirestore } from '@/firebase/server-init';
 import { CONTACT_EMAIL_ENABLED } from '@/lib/contact-config';
+import { computeExpiresAt } from '@/lib/ttl-policies';
 import {
   decodeGmailBody,
   getGmailMessage,
@@ -121,6 +122,7 @@ async function appendCustomerEmail(message: GmailMessageDetail) {
       targetId: inquiryDocument.id,
       readBy: [],
       createdAt: now,
+      expiresAt: admin.firestore.Timestamp.fromDate(computeExpiresAt('notifications')),
     });
   });
 }

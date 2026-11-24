@@ -9,9 +9,9 @@ import type { ComponentData } from "@/lib/types";
 import type { TelemetryInfo } from "../types";
 
 const SLEEK_GREETINGS = [
-    "Hi there! I am Buildbot AI, your PC building assistant. How can I help you choose parts or optimize your build today?",
-    "Hello! Ready to check compatibility, analyze bottlenecks, or suggest upgrades for your PC build. What are you looking to build?",
-    "Welcome! I'm Buildbot AI. Need advice on choosing components or balancing your setup? Ask me anything!"
+    (name: string) => `Hi ${name}! I am Buildbot AI, your PC building assistant. How can I help you choose parts or optimize your build today?`,
+    (name: string) => `Hello ${name}! I'm Buildbot AI. Ready to check compatibility, analyze bottlenecks, or suggest upgrades for your PC build. What are you looking to build?`,
+    (name: string) => `Welcome, ${name}! I'm Buildbot AI. Need advice on choosing components or balancing your setup? Ask me anything!`
 ];
 
 export function useFloatingChat(build?: Record<string, ComponentData | ComponentData[] | null>, initiallyOpen = false) {
@@ -24,12 +24,10 @@ export function useFloatingChat(build?: Record<string, ComponentData | Component
     const { authUser, profile, loading: profileLoading } = useUserProfile();
     const { toast } = useToast();
 
-    // Measurement refs
     const requestStartRef = useRef<number>(0);
     const ttftRef = useRef<number>(0);
     const kbTimeRef = useRef<number>(0);
 
-    // AI Kill Switch check from Firestore
     const firestore = useFirestore();
     const settingsDocRef = useMemo(() => {
         if (firestore) return doc(firestore, 'siteSettings', 'main');
@@ -38,7 +36,6 @@ export function useFloatingChat(build?: Record<string, ComponentData | Component
     const { data: settings } = useDoc<any>(settingsDocRef);
     const isAiKillSwitch = settings?.isAiKillSwitch || false;
 
-    // Keep the serializable build details used by the server-side checks.
     const sanitizedBuild = useMemo(() => {
         if (!build) return null;
         const res: Record<string, any> = {};
@@ -77,12 +74,9 @@ export function useFloatingChat(build?: Record<string, ComponentData | Component
         return selected;
     }, [build]);
 
-    // useChat creates its Chat instance once. The transport must read these refs at
-    // request time so restored or newly selected parts reach every new message.
     const requestContextRef = useRef({ profile, sanitizedBuild });
     requestContextRef.current = { profile, sanitizedBuild };
 
-    // Close when other floating actions open
     useEffect(() => {
         const handleOpen = (e: any) => {
             if (e.detail?.type !== 'chat') {
@@ -93,9 +87,6 @@ export function useFloatingChat(build?: Record<string, ComponentData | Component
         return () => window.removeEventListener('floating-action-open', handleOpen);
     }, []);
 
-    // NOTE: Side effects (event dispatch) must stay OUTSIDE the setState updater.
-    // Updaters run during render, so dispatching there triggers setState in other
-    // floating components (e.g. BuilderFloatingAnalytics) mid-render.
     const toggleOpen = useCallback(() => {
         const next = !isOpen;
         setIsOpen(next);
@@ -127,7 +118,18 @@ export function useFloatingChat(build?: Record<string, ComponentData | Component
                 };
             },
             fetch: async (api, options) => {
-                const response = await fetch(api, options);
+                let headers = new Headers(options?.headers);
+                if (authUser) {
+                    try {
+                        const token = await authUser.getIdToken();
+                        if (token) {
+                            headers.set('Authorization', `Bearer ${token}`);
+                        }
+                    } catch {
+                        // proceed without token on retrieval error
+                    }
+                }
+                const response = await fetch(api, { ...options, headers });
                 if (requestStartRef.current > 0 && !ttftRef.current) {
                     ttftRef.current = Date.now() - requestStartRef.current;
                 }
@@ -146,7 +148,6 @@ export function useFloatingChat(build?: Record<string, ComponentData | Component
             }
             setTimerActive(false);
 
-            // Compute and record telemetry
             const tat = requestStartRef.current > 0 ? Date.now() - requestStartRef.current : elapsedTime * 1000;
             const ttft = ttftRef.current || Math.min(2000, tat * 0.3);
             const kbTime = kbTimeRef.current || 0;
@@ -200,14 +201,13 @@ export function useFloatingChat(build?: Record<string, ComponentData | Component
                     ? process.env.NODE_ENV === 'development'
                         ? "The app server isn't responding on port 9002. Start npm run dev and try again."
                         : "Check your connection and try again."
-                    : err.message || "The AI service is temporarily unavailable. Please try again.",
+                    : "The AI service is temporarily unavailable. Please try again.",
             });
         }
     });
 
     const isLoading = status === 'streaming' || status === 'submitted';
 
-    // Timer logic
     useEffect(() => {
         let interval: NodeJS.Timeout;
         if (timerActive) {
@@ -219,7 +219,6 @@ export function useFloatingChat(build?: Record<string, ComponentData | Component
         return () => clearInterval(interval);
     }, [timerActive]);
 
-    // Restore cached history and telemetry on mount
     useEffect(() => {
         const savedTelemetry = localStorage.getItem('pc_chat_telemetry_v1');
         if (savedTelemetry) {
@@ -250,10 +249,13 @@ export function useFloatingChat(build?: Record<string, ComponentData | Component
         }
     }, [setMessages]);
 
-    // Render local welcome greeting when chat is first opened and empty
     useEffect(() => {
-        if (isOpen && messages.length === 0 && !isLoading && !isAiKillSwitch) {
-            const randomGreeting = SLEEK_GREETINGS[Math.floor(Math.random() * SLEEK_GREETINGS.length)];
+        if (isOpen && authUser && !profileLoading && messages.length === 0 && !isLoading && !isAiKillSwitch) {
+            const name = profile?.firstName?.trim()
+                || profile?.name?.trim().split(/\s+/)[0]
+                || authUser.displayName?.trim().split(/\s+/)[0]
+                || 'there';
+            const randomGreeting = SLEEK_GREETINGS[Math.floor(Math.random() * SLEEK_GREETINGS.length)](name);
             const welcomeMsg: UIMessage = {
                 id: `welcome-${Date.now()}`,
                 role: 'assistant',
@@ -266,9 +268,8 @@ export function useFloatingChat(build?: Record<string, ComponentData | Component
                 console.error(e);
             }
         }
-    }, [isOpen, messages.length, isLoading, setMessages, isAiKillSwitch]);
+    }, [isOpen, authUser, profileLoading, profile?.firstName, profile?.name, messages.length, isLoading, setMessages, isAiKillSwitch]);
 
-    // Clear chat on logout
     useEffect(() => {
         if (!profileLoading && !authUser) {
             setMessages([]);
@@ -323,8 +324,6 @@ export function useFloatingChat(build?: Record<string, ComponentData | Component
 
         beginRequest();
         const latestUserMessage = [...messages].reverse().find(message => message.role === 'user');
-        // Regenerating an older message discards later chat history in the SDK.
-        // Re-send older prompts at the end so the rest of the conversation remains available.
         const retry = latestUserMessage?.id === messageId
             ? regenerate({ messageId })
             : sendMessage({ text });

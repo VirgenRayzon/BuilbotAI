@@ -8,12 +8,11 @@ import {
 import { useEffect, useState } from 'react';
 
 export interface UseCollectionOptions {
-  // Define any options here if needed in the future
 }
 
 export function useCollection<T>(
   query: Query | null,
-  options?: UseCollectionOptions
+  _options?: UseCollectionOptions
 ) {
   const [data, setData] = useState<T[] | null>(null);
   const [loading, setLoading] = useState(true);
@@ -48,7 +47,7 @@ export function useCollection<T>(
     );
 
     return () => unsubscribe();
-  }, [query]); // Refetch on query change
+  }, [query]);
 
   return { data, loading, error };
 }

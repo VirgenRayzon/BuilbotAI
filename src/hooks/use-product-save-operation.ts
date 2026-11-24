@@ -1,7 +1,6 @@
 'use client';
 import { useRef } from 'react';
 
-/** Retain an unchanged submission's key across response-loss retries. */
 export function useProductSaveOperation() {
   const saved = useRef<{ contents: string; key: string } | null>(null);
   const getOperation = (values: unknown) => {

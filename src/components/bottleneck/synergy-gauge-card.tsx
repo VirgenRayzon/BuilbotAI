@@ -51,7 +51,6 @@ export function SynergyGaugeCard({ build, resolution, compact = false }: Synergy
         </Badge>
       </Group>
 
-      {/* Animated Progress Bar */}
       <div className="relative h-5 bg-slate-200/90 dark:bg-slate-800/90 rounded-full overflow-hidden border border-slate-300/80 dark:border-white/10 shadow-inner">
         <motion.div
           initial={{ width: 0 }}

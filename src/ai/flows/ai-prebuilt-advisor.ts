@@ -1,11 +1,4 @@
 'use server';
-/**
- * @fileOverview A Genkit flow for providing AI assistance for building a pre-built PC.
- *
- * - aiPrebuiltAdvisor - A function that validates a set of components and suggests a name, description, and price.
- * - AiPrebuiltAdvisorInput - The input type for the aiPrebuiltAdvisor function.
- * - AiPrebuiltAdvisorOutput - The return type for the aiPrebuiltAdvisor function.
- */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
@@ -48,20 +41,14 @@ const prompt = ai.definePrompt({
     schema: AiPrebuiltAdvisorInputSchema,
   },
   output: { schema: AiPrebuiltAdvisorOutputSchema },
-  model: 'googleai/gemini-2.5-flash',
+  model: 'googleai/gemini-3.8-flash',
   config: {
     temperature: 0.2,
-    // Gemini 2.5 uses part of this budget for internal reasoning. A complete
-    // eight-part build with product highlights can otherwise be truncated
-    // after `systemName`, which makes the required structured output invalid.
     maxOutputTokens: 1024,
-    thinkingConfig: {
-      thinkingBudget: 0,
-    },
   },
   prompt: `You write concise product descriptions for complete prebuilt PCs.
 
-Synthesize the saved descriptions of ALL selected components into one cohesive, customer-facing description of 2-3 sentences. Mention meaningful combined benefits, performance positioning, cooling, power delivery, storage, and aesthetics only when supported by the supplied text. Do not list the parts, do not search the web, do not invent specifications, and do not return analysis.
+Synthesize the saved descriptions of ALL selected components into one cohesive, customer-facing description of 2-3 sentences. Mention meaningful combined benefits, performance positioning, cooling, power delivery, storage, and aesthetics only when supported by the supplied text. Included integrated graphics cost ₱0, share system memory, and are not a dedicated graphics card; describe them accurately when present. Do not list the parts, do not search the web, do not invent specifications, and do not return analysis.
 
 {{#if productHighlights}}
 SELECTED COMPONENT PRODUCT DESCRIPTIONS:
@@ -78,7 +65,6 @@ const aiPrebuiltAdvisorFlow = ai.defineFlow(
     outputSchema: AiPrebuiltAdvisorOutputSchema,
   },
   async (input) => {
-    // If no components are provided, we can't do much.
     if (Object.values(input.components).every(c => !c)) {
       throw new Error('At least one component must be selected to get an AI suggestion.');
     }
@@ -94,9 +80,7 @@ const aiPrebuiltAdvisorFlow = ai.defineFlow(
 
       console.log(`[aiPrebuiltAdvisorFlow] Generating structured analysis with ${dynamicModel}...`);
 
-      const { output } = await prompt({
-        ...input,
-      }, { model: dynamicModel });
+      const { output } = await prompt(input, { model: dynamicModel });
 
       if (!output) {
         throw new Error('Failed to get suggestions from the AI.');

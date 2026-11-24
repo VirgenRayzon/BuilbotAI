@@ -17,6 +17,7 @@
 6. Use **Saving, please wait** for new records and **Updating, please wait** for existing records.
 7. Close the dialog only after persistence succeeds. On failure, retain the form and show the error toast.
 8. When AI Autofill cannot verify the exact requested model, keep the part name free of warning prefixes, show a prominent destructive warning, and disable the primary save action. Editing the model name clears the stale warning so the manager can retry verification.
+9. Treat vector-store results as authoritative only when their formatted product name exactly matches the requested model after harmless brand, trademark, punctuation, and generic product-suffix normalization. A nearest-neighbor result for a different variant must be discarded so the existing grounded Google Search fallback can verify newly released hardware.
 
 ## Verification
 
@@ -24,3 +25,4 @@
 - Confirm the primary action exposes its busy label and spinner during an asynchronous save.
 - Confirm outside click, Escape, Cancel, AI actions, and repeated submit cannot close or alter the dialog during that save.
 - Enter a deliberately invalid component model and run AI Autofill. Confirm the warning is visible, the searched name remains clean, and Save Component is disabled.
+- Enter a real model absent from the vector store but close to an indexed model. Confirm AI Autofill runs grounded Google Search instead of rejecting or substituting the nearby model.

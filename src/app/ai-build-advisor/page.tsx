@@ -2,47 +2,34 @@
 
 import React, { useState, useEffect, useRef } from "react";
 import { useTheme } from "@/context/theme-provider";
-import { useRouter } from "next/navigation";
-import { useUserProfile } from "@/context/user-profile";
-import { useLoading } from "@/context/loading-context";
 import { cn } from "@/lib/utils";
 import { Tabs } from "@mantine/core";
 import { CircuitBoard, Sparkles } from "lucide-react";
 import { RouteGuard } from "@/components/auth/route-guard";
 
-// Custom Hooks
 import { useAdvisorData } from "./hooks/use-advisor-data";
 import { useAdvisorState } from "./hooks/use-advisor-state";
 import { getCritiqueCacheKey } from "./hooks/use-critique-logic";
 import { useAdvisorJobs } from "@/context/advisor-jobs-context";
 
-// Components
 import { AdvisorHeader } from "./components/advisor-header";
 import { CritiqueTab } from "./components/critique-tab";
 import { RecommendationTab } from "./components/recommendation-tab";
+import { AdvisorLoadingContent } from "./components/advisor-loading-content";
 
-/**
- * AI Build Advisor Page
- * Orchestrates AI recommendations and build critiques.
- */
 export default function AiBuildAdvisorPage() {
     const { theme } = useTheme();
     const isDark = theme === "dark";
-    const { authUser, profile, loading: userLoading } = useUserProfile();
-    const router = useRouter();
     const [activeTab, setActiveTab] = useState<string | null>('critique');
     const lastLoadedKeyRef = useRef<string>("");
 
-    // Data Layer
     const { allParts, isAiKillSwitch, loading: dataLoading } = useAdvisorData();
 
-    // State Layer
     const {
         builderState, hydrated, handleRemovePart, handleClearBuild,
         resolution, setResolution, workload, setWorkload
     } = useAdvisorState(allParts);
 
-    // Logic Layers
     const { critique, recommendation, setAdvisorData } = useAdvisorJobs();
     const {
         critiqueAnalysis, critiqueDuration, setCritiqueAnalysis, setCritiqueDuration,
@@ -59,8 +46,6 @@ export default function AiBuildAdvisorPage() {
         setAdvisorData(allParts, isAiKillSwitch);
     }, [allParts, isAiKillSwitch, dataLoading, setAdvisorData]);
 
-    // Route Protection handled by RouteGuard wrapper in return
-
     useEffect(() => {
         window.scrollTo(0, 0);
     }, []);
@@ -72,7 +57,6 @@ export default function AiBuildAdvisorPage() {
         return () => window.removeEventListener('hashchange', syncTabWithHash);
     }, []);
 
-    // Automatically load or reset critique when state changes
     useEffect(() => {
         if (!hydrated) return;
         if (!builderState) {
@@ -88,7 +72,6 @@ export default function AiBuildAdvisorPage() {
             return;
         }
 
-        // Guard: If this key has already been processed (either loaded or cleared), do nothing
         if (lastLoadedKeyRef.current === buildKey) {
             return;
         }
@@ -98,21 +81,19 @@ export default function AiBuildAdvisorPage() {
             try {
                 const parsedCache = JSON.parse(cache);
                 if (parsedCache[buildKey]?.timestamp && Date.now() - parsedCache[buildKey].timestamp < 60 * 60 * 1000) {
-                    // Call critique logic to load from cache
                     handleCritique(builderState, false, { intendedUse: workload, performanceLevel: resolution });
                     lastLoadedKeyRef.current = buildKey;
                     return;
                 }
             } catch (e) { }
         }
-        // If not in cache, clear any stale state
         setCritiqueAnalysis(null);
         setCritiqueDuration(null);
         lastLoadedKeyRef.current = buildKey;
     }, [builderState, hydrated, workload, resolution, activeCritiqueKey, critiqueLoading, critiqueAnalysis, handleCritique, setCritiqueAnalysis, setCritiqueDuration]);
 
     return (
-        <RouteGuard requiredPermission="isClientOnly">
+        <RouteGuard requiredPermission="isClientOnly" loadingComponent={<AdvisorLoadingContent />}>
             <div className={cn(
                 "min-h-screen transition-colors duration-500 overflow-x-hidden relative",
                 isDark ? "bg-[#0c0f14] text-slate-50" : "bg-slate-50 text-slate-900"

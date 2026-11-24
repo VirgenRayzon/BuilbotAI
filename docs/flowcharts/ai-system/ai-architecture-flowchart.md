@@ -1,5 +1,9 @@
 # AI architecture
 
+## Simple explanation
+
+This flowchart shows how an AI request moves through the app. A page or tool sends the user’s request to a server action or API route. The system picks the AI model set for that feature. It may also read product data or saved guide data before asking the model. The result is checked and then shown back on the page.
+
 ```mermaid
 flowchart LR
   Browser[/Customer or staff UI/] --> Chat[POST api/chat]
@@ -26,6 +30,7 @@ flowchart LR
   Gemini --> Output[/Structured or streamed AI output/]
   Vertex --> Output
   Output --> Browser
+  Browser -- Request finished --> Finish([END])
 ```
 
 The model resolver reads configured routing for `chatbot`, `buildAdvisor`, and `prebuiltAdvisor`, caches settings briefly, and falls back to the default Gemini model when a fine-tuned endpoint cannot be initialized or is marked degraded (`src/lib/ai-model-resolver.ts`). Genkit flows call `safeGenkitGenerate` where shown in their source. Chat uses AI SDK `streamText`; the advisor route uses AI SDK `generateText` and returns a completed validated JSON object in a `ReadableStream` (`src/app/api/chat/route.ts`, `src/app/api/ai/build-advisor/recommendations/route.ts`).

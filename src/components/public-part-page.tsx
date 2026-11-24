@@ -5,7 +5,7 @@ import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
 import { ActionIcon, Badge, Button, Group, Paper, SimpleGrid, Stack, Text, Title } from '@mantine/core';
 import { ArrowLeft, ExternalLink, Minus, Plus, ShieldCheck, ShoppingCart, Wrench, Zap } from 'lucide-react';
-import type { PublicProduct } from '@/lib/public-product-types';
+import type { PublicProduct, PublicCatalogPart } from '@/lib/public-product-types';
 import { productAdminUrl } from '@/lib/product-identity';
 import { usePublicProductActions } from '@/hooks/use-public-product-actions';
 import { formatCurrency } from '@/lib/utils';
@@ -13,20 +13,53 @@ import { PrebuiltImageView } from '@/app/pre-builts/[id]/components/prebuilt-ima
 import { PartBuilderCompatibilityModal } from './part-builder-compatibility-modal';
 import { useSiteSettings } from '@/context/site-settings-context';
 import { useEcommerce } from '@/context/ecommerce-context';
+import { PartRelatedProducts } from './part-related-products';
+import { usePublicFeatureAuth } from '@/hooks/use-public-feature-auth';
 
-export function PublicPartPage({ product }: { product: PublicProduct }) {
+export function PublicPartPage({
+  product,
+  isAdminPreview = false,
+  relatedParts = [],
+}: {
+  product: PublicProduct;
+  isAdminPreview?: boolean;
+  relatedParts?: PublicCatalogPart[];
+}) {
   const actions = usePublicProductActions(product);
   const { isEcommerceMode } = useSiteSettings();
   const { addToCart, buyNow } = useEcommerce();
+  const { requireAuth } = usePublicFeatureAuth();
   const [compatOpened, setCompatOpened] = useState(false);
   const [quantity, setQuantity] = useState(1);
   const [primaryImage = '', ...galleryImages] = product.images;
 
   const handleAddPartToCart = () => {
     if (!product.inStock) return;
-    addToCart(
-      {
+    requireAuth(() => {
+      addToCart(
+        {
+          id: `part-${product.productId}`,
+          productId: product.productId,
+          kind: 'part',
+          name: product.name,
+          price: product.price,
+          quantity,
+          category: product.category,
+          brand: product.brand,
+          sku: product.sku,
+          imageUrl: primaryImage,
+        },
+        true
+      );
+    });
+  };
+
+  const handleBuyPartNow = () => {
+    if (!product.inStock) return;
+    requireAuth(() => {
+      buyNow({
         id: `part-${product.productId}`,
+        productId: product.productId,
         kind: 'part',
         name: product.name,
         price: product.price,
@@ -35,23 +68,7 @@ export function PublicPartPage({ product }: { product: PublicProduct }) {
         brand: product.brand,
         sku: product.sku,
         imageUrl: primaryImage,
-      },
-      true
-    );
-  };
-
-  const handleBuyPartNow = () => {
-    if (!product.inStock) return;
-    buyNow({
-      id: `part-${product.productId}`,
-      kind: 'part',
-      name: product.name,
-      price: product.price,
-      quantity,
-      category: product.category,
-      brand: product.brand,
-      sku: product.sku,
-      imageUrl: primaryImage,
+      });
     });
   };
 
@@ -59,7 +76,7 @@ export function PublicPartPage({ product }: { product: PublicProduct }) {
     <div className="min-h-screen overflow-x-hidden bg-white text-slate-900 transition-colors dark:bg-[#0c0f14] dark:text-slate-50">
       <div className="pointer-events-none fixed inset-0 opacity-[0.03] dark:invert" style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
       <div className="relative z-10 w-full max-w-[1600px] mx-auto px-4 py-8 sm:px-6 md:px-8 lg:px-8 xl:px-10">
-        <Button component={Link} href="/parts" variant="subtle" color="gray" size="xs" leftSection={<ArrowLeft className="h-3.5 w-3.5" />} className="mb-8 text-xs font-semibold uppercase tracking-wider text-slate-600 hover:text-cyan-600 dark:text-slate-400 dark:hover:text-cyan-400">
+        <Button component={Link} href={isAdminPreview ? "/parts?preview=admin" : "/parts"} variant="subtle" color="gray" size="xs" leftSection={<ArrowLeft className="h-3.5 w-3.5" />} className="mb-8 text-xs font-semibold uppercase tracking-wider text-slate-600 hover:text-cyan-600 dark:text-slate-400 dark:hover:text-cyan-400">
           Back to parts
         </Button>
 
@@ -154,13 +171,13 @@ export function PublicPartPage({ product }: { product: PublicProduct }) {
                 <Button onClick={actions.reserve} loading={actions.busy} disabled={!product.inStock || actions.loading} color="teal" mih={44}>{actions.signedIn ? 'Reserve this item' : 'Sign in to reserve'}</Button>
               )}
 
-              <Button variant="light" color="cyan" mih={44} leftSection={<Wrench className="h-4 w-4" />} onClick={() => setCompatOpened(true)}>
+              <Button variant="light" color="cyan" mih={44} leftSection={<Wrench className="h-4 w-4" />} onClick={() => requireAuth(() => setCompatOpened(true))}>
                 Check with my build
               </Button>
               {actions.error && <Text role="alert" c="red" size="sm">{actions.error}</Text>}
               <Text size="xs" c="dimmed">
                 {isEcommerceMode
-                  ? 'Supports LBC / J&T Nationwide Courier, Same-Day Express, GCash, Maya, QRPh, Card & COD.'
+                  ? 'Supports LBC / J&T Nationwide Courier, Same-Day Express, GCash & Cash on Delivery (COD).'
                   : 'Availability is checked again when you reserve.'}
               </Text>
             </Stack>
@@ -185,6 +202,13 @@ export function PublicPartPage({ product }: { product: PublicProduct }) {
             </SimpleGrid>
           </Paper>
         )}
+
+        <PartRelatedProducts
+          parts={relatedParts}
+          category={product.category}
+          isAdminPreview={isAdminPreview}
+          className="mt-8 border-b-0"
+        />
       </div>
     </div>
   );

@@ -5,9 +5,6 @@ import { useFirestore, useDoc } from '@/firebase';
 import { useInventoryParts } from '@/firebase/firestore/use-inventory-parts';
 import { doc } from 'firebase/firestore';
 
-/**
- * Hook to fetch all inventory data and site settings for the Advisor.
- */
 export function useAdvisorData() {
     const firestore = useFirestore();
 

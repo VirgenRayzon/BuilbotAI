@@ -1,25 +1,28 @@
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useMemo } from 'react';
 import { useFirestore } from '@/firebase';
 import { useCollection } from '@/firebase/firestore/use-collection';
 import { useInventoryParts } from '@/firebase/firestore/use-inventory-parts';
-import { collection } from 'firebase/firestore';
+import { collection, doc, getDoc } from 'firebase/firestore';
+import { inventoryItemPath } from '@/lib/inventory-paths';
 import type { Part, PrebuiltSystem } from '@/lib/types';
 import { useToast } from "@/hooks/use-toast";
-import { 
-    addPart, updatePart, deletePart, archivePart, 
-    bulkArchiveParts, bulkDeleteParts,
-    addPrebuiltSystem, updatePrebuiltSystem, deletePrebuiltSystem, archivePrebuiltSystem,
-    bulkArchivePrebuilts, bulkDeletePrebuilts,
-    createSystemNotification
+import {
+    addPart,
+    updatePart,
+    deletePart,
+    archivePart,
+    addPrebuiltSystem,
+    updatePrebuiltSystem,
+    deletePrebuiltSystem,
+    archivePrebuiltSystem,
+    createSystemNotification,
 } from '@/firebase/database';
 import { createAuditLog } from '@/firebase/audit';
 import { AddPartFormSchema } from '@/hooks/use-part-form';
 import { AddPrebuiltFormSchema } from '@/components/add-prebuilt-dialog';
 import { logAdminAction, clearCatalogCache } from '@/app/actions';
-
-type PartWithoutCategory = Omit<Part, 'category'>;
 
 const componentCategories: { name: Part['category'], selected: boolean }[] = [
     { name: "CPU", selected: true },
@@ -36,24 +39,26 @@ const componentCategories: { name: Part['category'], selected: boolean }[] = [
     { name: "Headset", selected: true },
 ];
 
-/**
- * Hook to manage parts and prebuilt systems inventory.
- */
-export function useInventory(profile: any) {
+function refreshInventoryPage() {
+    window.dispatchEvent(new Event('inventory-page-refresh'));
+}
+
+export function useInventory(profile: any, loadAllParts = true, loadPrebuiltSystems = true) {
     const firestore = useFirestore();
     const { toast } = useToast();
 
-    // Data Fetching
-    const { data: rawParts, loading: partsLoading } = useInventoryParts(firestore);
+    const { data: rawParts, loading: partsLoading } = useInventoryParts(firestore, loadAllParts);
 
-    const prebuiltSystemsQuery = useMemo(() => firestore ? collection(firestore, 'prebuiltSystems') : null, [firestore]);
+    const prebuiltSystemsQuery = useMemo(
+        () => (firestore && loadPrebuiltSystems ? collection(firestore, 'prebuiltSystems') : null),
+        [firestore, loadPrebuiltSystems]
+    );
     const { data: prebuiltSystems, loading: prebuiltsLoading } = useCollection<PrebuiltSystem>(prebuiltSystemsQuery);
 
     const parts = useMemo(() => {
         return rawParts || [];
     }, [rawParts]);
 
-    // Handlers
     const handleAddPart = async (newPartData: AddPartFormSchema, operationId?: string) => {
         if (!firestore) throw new Error('Inventory is not connected. Please retry.');
         const saved = await addPart(firestore, newPartData, operationId);
@@ -69,6 +74,7 @@ export function useInventory(profile: any) {
             details: `Added new part in category ${newPartData.category}`
         }),
         clearCatalogCache()]);
+        refreshInventoryPage();
         return saved;
     };
 
@@ -103,25 +109,26 @@ export function useInventory(profile: any) {
                 : `Updated part in category ${category}`
         });
         await clearCatalogCache();
+        refreshInventoryPage();
     };
 
     const handleAddPartStock = async (partId: string, category: Part['category'], amountToAdd: number) => {
         if (!firestore || amountToAdd === 0) return;
-        const currentPart = parts.find(p => p.id === partId);
-        const currentStock = currentPart?.stock ?? 0;
+        const currentPart = parts.find(p => p.id === partId) ??
+            (await getDoc(doc(firestore, inventoryItemPath(category, partId)))).data() as Part | undefined;
+        if (!currentPart) throw new Error('Part no longer exists. Refresh the inventory and try again.');
+        const currentStock = currentPart.stock ?? 0;
         const newStock = Math.max(0, currentStock + amountToAdd);
         const actualDelta = newStock - currentStock;
         if (actualDelta === 0) return;
         const partName = currentPart?.name || partId;
         const actorName = profile?.name || profile?.email || 'Admin';
 
-        // 1. Update stock in Firestore
         await updatePart(firestore, category, partId, { stock: newStock });
 
         const isReducing = actualDelta < 0;
         const absDelta = Math.abs(actualDelta);
 
-        // 2. Create Audit Log
         await createAuditLog(firestore, {
             actionName: 'updated',
             actorId: profile?.id || 'unknown',
@@ -135,7 +142,6 @@ export function useInventory(profile: any) {
                 : `${actorName} added ${absDelta} stocks of ${partName} (Stock: ${currentStock} -> ${newStock})`
         });
 
-        // 3. Create System Notification for other admins/managers
         await createSystemNotification(
             firestore,
             {
@@ -152,6 +158,7 @@ export function useInventory(profile: any) {
         );
 
         await clearCatalogCache();
+        refreshInventoryPage();
         toast({
             title: isReducing ? "Stock Reduced" : "Stock Added",
             description: `Successfully ${isReducing ? 'reduced' : 'added'} ${absDelta} stock(s) for ${partName}. New stock: ${newStock}.`,
@@ -160,8 +167,10 @@ export function useInventory(profile: any) {
 
     const handleUpdatePartStock = async (partId: string, category: Part['category'], newStock: number) => {
         if (!firestore) return;
-        const currentPart = parts.find(p => p.id === partId);
-        const currentStock = currentPart?.stock ?? 0;
+        const currentPart = parts.find(p => p.id === partId) ??
+            (await getDoc(doc(firestore, inventoryItemPath(category, partId)))).data() as Part | undefined;
+        if (!currentPart) throw new Error('Part no longer exists. Refresh the inventory and try again.');
+        const currentStock = currentPart.stock ?? 0;
         const diff = newStock - currentStock;
         await updatePart(firestore, category, partId, { stock: newStock });
         const partName = currentPart?.name || partId;
@@ -198,6 +207,7 @@ export function useInventory(profile: any) {
         }
 
         await clearCatalogCache();
+        refreshInventoryPage();
     };
 
     const handleDeletePart = async (partId: string, category: Part['category']) => {
@@ -219,6 +229,7 @@ export function useInventory(profile: any) {
             details: `Deleted part in category ${category}`
         });
         await clearCatalogCache();
+        refreshInventoryPage();
     };
 
     const handleArchivePart = async (partId: string, category: Part['category'], isArchived: boolean = true) => {
@@ -247,6 +258,7 @@ export function useInventory(profile: any) {
                 details: `${isArchived ? 'Archived' : 'Restored'} part in category ${category}`
             });
             await clearCatalogCache();
+            refreshInventoryPage();
             toast({ title: isArchived ? "Item Archived" : "Item Restored", description: `${isArchived ? "Moved to archive." : "Restored to stock."}` });
         } catch (error) {
             console.error("Archive error:", error);

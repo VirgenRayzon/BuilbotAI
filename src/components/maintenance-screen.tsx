@@ -6,12 +6,10 @@ import { ShieldAlert, Construction, Settings } from "lucide-react";
 export function MaintenanceScreen() {
   return (
     <div className="fixed inset-0 z-[200] bg-[#020617] flex items-center justify-center p-6 overflow-hidden">
-      {/* Animated Background Elements */}
       <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-cyan-500/10 rounded-full blur-[120px] animate-pulse"></div>
       <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-500/10 rounded-full blur-[120px] animate-pulse delay-1000"></div>
 
       <div className="max-w-2xl w-full relative z-10 text-center space-y-12">
-        {/* Icon Cluster */}
         <div className="relative inline-block">
           <motion.div 
             initial={{ scale: 0.8, opacity: 0 }}
@@ -56,7 +54,6 @@ export function MaintenanceScreen() {
           </motion.p>
         </div>
 
-        {/* Status Card */}
         <motion.div 
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
@@ -72,7 +69,6 @@ export function MaintenanceScreen() {
             <p className="text-sm text-slate-500 font-medium tracking-wide italic">Estimated Downtime: ~30 Minutes</p>
           </div>
           
-          {/* Subtle Progress Bar */}
           <div className="absolute bottom-0 left-0 w-full h-1 bg-white/5">
             <motion.div 
               initial={{ width: "0%" }}

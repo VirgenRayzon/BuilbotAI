@@ -8,6 +8,12 @@ Keep both Build Advisor paths responsive while preserving budget, stock, and com
 
 Create New Build asks for a workload-specific priority after Intended Use. The choices and their model-facing guidance live in `src/lib/build-advisor-goals.ts`. The form sends the chosen guidance as `performanceLevel`; it is also part of the server cache key and local knowledge query. Reset the priority when Intended Use changes, and reject a priority that does not belong to the selected use. Keep each goal concrete enough to influence CPU, GPU, RAM, and storage tradeoffs without adding another model request.
 
+## AI-free recommendations
+
+The AI Recommendations switch defaults on and retains the model-driven, store-first path with optional outside-market parts. When off, the route must branch before model resolution and use `src/lib/rule-based-advisor.ts` against a fresh in-stock inventory fetch. Web Search is unavailable in this mode. The rules-based search must return the same validated output schema, use only inventory IDs (except a verified included integrated GPU), enforce budget and compatibility, and return 422 when no complete build exists. Keep its summary factual and template-based. Do not reuse model-generated results from an older off-mode cache. Measure its latency separately from AI mode.
+
+The power check must sum component draw without counting the PSU's rated wattage as draw. An optimistic per-category minimum is useful only for pruning; final acceptance requires a complete compatible combination. When inventory changes, fetch fresh parts for AI-free decisions rather than relying on the five-minute structured inventory cache.
+
 ## Local verification
 
 1. Start `npm run dev` on port 9002. Start `npm run genkit:dev` to verify Genkit flow registration.

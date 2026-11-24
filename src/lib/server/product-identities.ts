@@ -13,7 +13,6 @@ function newIdentity(category: string) {
     qrToken: randomBytes(16).toString('hex') };
 }
 
-/** All references remain internal. Never change stock while assigning identity. */
 export async function assignProductIdentity(db: Firestore, ref: DocumentReference, kind: ProductKind,
   category: string, create?: { payload: Record<string, unknown>; uid: string; operationId: string; fingerprint: string }): Promise<CreatedProduct> {
   for (let attempt = 0; attempt < 8; attempt++) {
@@ -54,7 +53,6 @@ export async function assignProductIdentity(db: Firestore, ref: DocumentReferenc
         const existingNamedProduct = create && nameSnap.exists ? await tx.get(db.doc(String(nameSnap.get('path')))) : null;
         if (existingNamedProduct?.exists && nameKey(String(existingNamedProduct.get('name'))) === nameKey(name)) throw new Error('A product with this name already exists.');
         if (create?.payload) {
-          // Covers legacy documents before their name locks have been backfilled.
           for (const path of kind === 'part' ? INVENTORY_CATEGORY_SLUGS.map(inventoryItemsPath) : ['prebuiltSystems']) {
             const existing = await tx.get(db.collection(path).select('name'));
             if (existing.docs.some(doc => nameKey(String(doc.get('name'))) === nameKey(name))) throw new Error('A part with this name already exists.');
@@ -69,8 +67,8 @@ export async function assignProductIdentity(db: Firestore, ref: DocumentReferenc
         const identity = { productId, ...random, schemaVersion: 1 };
         const result = { id: ref.id, productId, ...random, adminUrl: productAdminUrl(kind, productId) };
         tx.set(counterRef, { value: Number(counter.get('value') || 0) + 1 });
-        if (create) tx.create(ref, { ...productPayload, ...identity, isArchived: false, createdAt: FieldValue.serverTimestamp() });
-        else tx.update(ref, identity);
+        if (create) tx.create(ref, { ...productPayload, ...identity, ...(kind === 'part' ? { publicCatalogEligible: true } : {}), isArchived: false, createdAt: FieldValue.serverTimestamp() });
+        else tx.update(ref, { ...identity, ...(kind === 'part' ? { publicCatalogEligible: true } : {}) });
         tx.create(publicRef, { path: ref.path, kind, category });
         tx.create(skuRef, { path: ref.path, productId });
         tx.create(qrRef, { productId, enabled: true });

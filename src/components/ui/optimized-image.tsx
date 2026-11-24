@@ -24,8 +24,6 @@ export function OptimizedImage({
     const [error, setError] = useState(false);
     const previousSrcRef = useRef(src);
 
-    // Reset only when an already-mounted image changes. Resetting after the
-    // initial mount can turn the loader back on after a cached image has loaded.
     useEffect(() => {
         if (previousSrcRef.current === src) return;
 
@@ -34,7 +32,6 @@ export function OptimizedImage({
         setError(false);
     }, [src]);
 
-    // Fail-safe: if image hasn't loaded in 3 seconds, clear the loading state
     useEffect(() => {
         if (isLoading && src) {
             const timer = setTimeout(() => setIsLoading(false), 3000);
@@ -42,7 +39,6 @@ export function OptimizedImage({
         }
     }, [isLoading, src]);
 
-    // If no src is provided, show error state immediately
     if (!src) {
         return (
             <div className={cn("relative overflow-hidden bg-muted/30 flex items-center justify-center", className)}>
@@ -61,7 +57,6 @@ export function OptimizedImage({
             !fill && "w-full h-full",
             className
         )}>
-            {/* One quiet rotating indicator keeps image loading feedback consistent. */}
             {isLoading && !error && (
                 <div
                     className="absolute inset-0 z-20 flex items-center justify-center bg-slate-100/85 text-cyan-600 pointer-events-none dark:bg-slate-900/80 dark:text-cyan-400"
@@ -72,9 +67,8 @@ export function OptimizedImage({
                 </div>
             )}
 
-            {/* Error Placeholder Overlay */}
             {error && (
-                <div className="absolute inset-0 flex items-center justify-center bg-muted/30 z-30">
+                <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center bg-muted/30">
                     <div className="text-muted-foreground flex flex-col items-center gap-2">
                         <ImageIcon className="w-8 h-8 opacity-20" />
                         <span className="text-[10px] uppercase font-bold tracking-widest opacity-40">Load Failed</span>

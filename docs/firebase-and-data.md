@@ -29,6 +29,8 @@ The checked-in Firestore rules (`firestore.rules`) use Auth custom claims for ma
 
 ## Firestore collections and relationships
 
+The [Firestore data map](firestore-data-map.md) shows the main document paths and how the app connects them.
+
 Firestore is schemaless; the table summarizes structures evidenced by `src/lib/types.ts`, path helpers, rules, and writers. Fields can vary by document and migration state.
 
 | Path | Key fields / relationship | Use |

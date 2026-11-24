@@ -3,24 +3,23 @@
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Badge, Paper, ActionIcon, Group, Tooltip } from "@mantine/core";
-import { Bold, Italic, List, Heading1, Heading2, Code, Type } from "lucide-react";
+import { Badge, Paper, ActionIcon } from "@mantine/core";
+import { Bold, Italic, List, Heading1, Heading2, Code, Type, CircleAlert } from "lucide-react";
 import { MultiImageUpload } from "./multi-image-upload";
 import { componentCategories } from "@/lib/constants/category-specs";
 import { UseFormReturn } from "react-hook-form";
 import { AddPartFormSchema } from "@/hooks/use-part-form";
 import { cn } from "@/lib/utils";
-import { ProductIdentification } from '../product-identification';
-import type { Part } from '@/lib/types';
 
 interface PartIdentitySectionProps {
   form: UseFormReturn<AddPartFormSchema>;
   onCategoryChange: (category: string) => void;
   justAutofilled?: boolean;
-  product?: Part;
+  duplicatePartName?: string | null;
+  flat?: boolean;
 }
 
-export function PartIdentitySection({ form, onCategoryChange, justAutofilled, product }: PartIdentitySectionProps) {
+export function PartIdentitySection({ form, onCategoryChange, justAutofilled, duplicatePartName, flat = false }: PartIdentitySectionProps) {
   const selectedCategory = form.watch("category");
   const watchedImages = form.watch("images");
   const watchedImageUrl = form.watch("imageUrl");
@@ -35,36 +34,43 @@ export function PartIdentitySection({ form, onCategoryChange, justAutofilled, pr
 
   return (
     <div className="grid grid-cols-12 gap-8 items-start">
-      {/* Left Column: Image Preview */}
-      <div className="col-span-12 md:col-span-4 md:sticky md:top-0">
+      <div className={cn("col-span-12 md:col-span-4 md:sticky", flat ? "md:top-16" : "md:top-0")}>
         <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-cyan-700 dark:text-cyan-400 mb-4 flex items-center gap-2.5">
           <span className="inline-block w-3.5 h-0.5 bg-cyan-500/60 rounded-full" />
           Visual Identity
         </p>
-        <Paper
-          withBorder
-          radius="xl"
-          p="xs"
-          className="bg-slate-50/70 dark:bg-[#111722]/60 border-slate-200 dark:border-white/10 shadow-sm"
-        >
-          <MultiImageUpload
-            images={images}
-            coverImage={coverImage}
-            onImagesChange={(imgs) => {
-              form.setValue("images", imgs, { shouldValidate: true });
-              const currentCover = form.getValues("imageUrl");
-              if (!currentCover || !imgs.includes(currentCover)) {
-                form.setValue("imageUrl", imgs[0] || "", { shouldValidate: true });
-              }
-            }}
-            onCoverImageChange={(cover) => {
-              form.setValue("imageUrl", cover, { shouldValidate: true });
-            }}
-          />
-        </Paper>
+        {(() => {
+          const uploadControl = (
+            <MultiImageUpload
+              images={images}
+              coverImage={coverImage}
+              onImagesChange={(imgs) => {
+                form.setValue("images", imgs, { shouldValidate: true });
+                const currentCover = form.getValues("imageUrl");
+                if (!currentCover || !imgs.includes(currentCover)) {
+                  form.setValue("imageUrl", imgs[0] || "", { shouldValidate: true });
+                }
+              }}
+              onCoverImageChange={(cover) => {
+                form.setValue("imageUrl", cover, { shouldValidate: true });
+              }}
+            />
+          );
+          return flat ? (
+            uploadControl
+          ) : (
+            <Paper
+              withBorder
+              radius="xl"
+              p="xs"
+              className="bg-slate-50/70 dark:bg-[#111722]/60 border-slate-200 dark:border-white/10 shadow-sm"
+            >
+              {uploadControl}
+            </Paper>
+          );
+        })()}
       </div>
 
-      {/* Right Column: Fields */}
       <div className="col-span-12 md:col-span-8 space-y-6">
         <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-cyan-700 dark:text-cyan-400 mb-4 flex items-center gap-2.5">
           <span className="inline-block w-3.5 h-0.5 bg-cyan-500/60 rounded-full" />
@@ -80,14 +86,23 @@ export function PartIdentitySection({ form, onCategoryChange, justAutofilled, pr
                 </FormLabel>
                 <FormControl>
                   <Input 
+                    aria-invalid={Boolean(duplicatePartName)}
+                    aria-describedby={duplicatePartName ? "part-name-duplicate" : undefined}
                     className={cn(
                       "bg-slate-50 dark:bg-[#141a23] border-slate-200 dark:border-white/10 h-10 rounded-xl text-slate-900 dark:text-white placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500/30 transition-all shadow-sm",
+                      duplicatePartName && "border-red-500 focus:border-red-500 focus:ring-red-500/20 dark:border-red-500/70",
                       highlightClass
                     )} 
                     placeholder="e.g., AMD Ryzen 7 7700X" 
                     {...field} 
                   />
                 </FormControl>
+                {duplicatePartName && (
+                  <p id="part-name-duplicate" role="alert" className="flex items-center gap-1.5 text-xs font-medium text-red-600 dark:text-red-400">
+                    <CircleAlert className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+                    “{duplicatePartName}” already exists in the inventory.
+                  </p>
+                )}
                 <FormMessage />
               </FormItem>
             )} />
@@ -136,7 +151,6 @@ export function PartIdentitySection({ form, onCategoryChange, justAutofilled, pr
             </FormItem>
           )} />
 
-          <div className="col-span-2"><ProductIdentification category={selectedCategory} product={product} /></div>
           <FormField control={form.control} name="price" render={({ field }) => (
             <FormItem>
               <FormLabel className="text-[11px] font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">

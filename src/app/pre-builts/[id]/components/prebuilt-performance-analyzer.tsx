@@ -1,19 +1,12 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import dynamic from "next/dynamic";
-import { Text, Group, Select, Badge, Skeleton, Box, Button } from "@mantine/core";
+import { Text, Group, Select, Badge, Box, Button } from "@mantine/core";
 import { Gauge, Monitor, Zap, AlertTriangle, Wrench } from "lucide-react";
 import type { Part, Resolution, WorkloadType, ComponentData } from "@/lib/types";
 import type { PrebuiltPartStatus } from "@/lib/prebuilt-utils";
 
-const FpsPerformanceChart = dynamic(
-  () => import("@/components/bottleneck/fps-performance-chart").then((m) => m.FpsPerformanceChart),
-  {
-    loading: () => <Skeleton height={240} radius="md" />,
-    ssr: false,
-  }
-);
+import { FpsPerformanceChart } from '@/components/bottleneck/fps-performance-chart';
 
 interface PrebuiltPerformanceAnalyzerProps {
   components: Record<string, Part | null>;
@@ -31,7 +24,6 @@ export function PrebuiltPerformanceAnalyzer({
   const [resolution, setResolution] = useState<Resolution>("1080p");
   const [workload, setWorkload] = useState<WorkloadType>("Balanced");
 
-  // Determine CPU availability (must exist and not be marked missing or out-of-stock)
   const cpuStatus = componentStatuses.find((s) => s.category?.toLowerCase() === "cpu");
   const rawCpu = components.cpu || components.CPU || cpuStatus?.part || null;
   const isCpuMissing = !rawCpu || cpuStatus?.issue === "missing";
@@ -41,7 +33,6 @@ export function PrebuiltPerformanceAnalyzer({
   );
   const isCpuAvailable = !isCpuMissing && !isCpuOutOfStock;
 
-  // Determine GPU availability (must exist and not be marked missing or out-of-stock)
   const gpuStatus = componentStatuses.find((s) => s.category?.toLowerCase() === "gpu");
   const rawGpu = components.gpu || components.GPU || gpuStatus?.part || null;
   const isGpuMissing = !rawGpu || gpuStatus?.issue === "missing";
@@ -53,7 +44,6 @@ export function PrebuiltPerformanceAnalyzer({
 
   const isHardwareAvailable = isCpuAvailable && isGpuAvailable;
 
-  // Construct descriptive reason when unavailable
   const unavailableReason = useMemo(() => {
     if (!isCpuAvailable && !isGpuAvailable) {
       return "Both CPU and GPU are missing or out of stock. Both components are required to calculate frame rate benchmarks.";
@@ -73,7 +63,6 @@ export function PrebuiltPerformanceAnalyzer({
     return null;
   }, [isCpuAvailable, isGpuAvailable, isCpuOutOfStock, isGpuOutOfStock, rawCpu, rawGpu, cpuStatus, gpuStatus]);
 
-  // Normalize lowercase category keys from prebuilt components into uppercase standard keys for estimateFPS
   const buildData = useMemo(() => {
     const map: Record<string, ComponentData | null> = {
       CPU: isCpuAvailable ? ((rawCpu as unknown) as ComponentData) : null,
@@ -90,7 +79,6 @@ export function PrebuiltPerformanceAnalyzer({
 
   return (
     <div className="w-full">
-      {/* Header and Controls */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 pb-3.5 border-b border-slate-200/70 dark:border-white/10">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-lg bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 flex items-center justify-center">
@@ -117,7 +105,6 @@ export function PrebuiltPerformanceAnalyzer({
           </div>
         </div>
 
-        {/* Resolution & Workload Dropdown Controls */}
         <Group gap="xs" wrap="nowrap" className="w-full sm:w-auto">
           <Select
             value={resolution}
@@ -155,9 +142,8 @@ export function PrebuiltPerformanceAnalyzer({
         </Group>
       </div>
 
-      {/* Main Performance Content */}
       {loadingParts ? (
-        <Skeleton height={240} radius="md" />
+        <FpsPerformanceChart build={buildData} resolution={resolution} workload={workload} chartHeight={200} withBorder={false} hideHeader className="bg-transparent border-0 shadow-none p-0" loading />
       ) : !isHardwareAvailable ? (
         <div className="py-8 px-4 flex flex-col items-center justify-center text-center rounded-lg border border-dashed border-amber-300/60 dark:border-amber-500/30 bg-amber-50/40 dark:bg-amber-950/10">
           <div className="w-10 h-10 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center mb-3">

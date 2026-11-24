@@ -10,7 +10,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth, useFirestore, executeStaffGoogleAuthInitiate, GoogleIcon } from '@/firebase';
 import { signInWithEmailAndPassword, signOut, setPersistence, browserSessionPersistence } from 'firebase/auth';
-import { addDoc, collection, serverTimestamp } from 'firebase/firestore';
+import { requestManagerKeyAction } from './key-request-actions';
 import {
   Paper,
   Title,
@@ -19,7 +19,6 @@ import {
   PasswordInput,
   Button,
   Alert,
-  ThemeIcon,
   Stack,
   Group,
   SegmentedControl,
@@ -28,13 +27,12 @@ import {
   Modal,
   Loader,
 } from '@mantine/core';
-import { Shield, Mail, Lock, Key, AlertCircle, ArrowLeft, Clock, ShieldAlert } from 'lucide-react';
+import { Mail, Lock, Key, AlertCircle, ArrowLeft, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { UnifiedBackground } from '@/components/landing/unified-background';
 import { useTheme } from '@/context/theme-provider';
 import { cn } from '@/lib/utils';
 import { useUserProfile } from '@/context/user-profile';
-import { authenticateSystemAccessAction } from '@/app/actions';
 import { RequestKeyModal } from './components/request-key-modal';
 import { Logo } from '@/components/logo';
 
@@ -47,6 +45,32 @@ const formSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 type RoleTab = 'manager' | 'superadmin';
 
+type SystemAccessResult = { success?: true; error?: string };
+
+async function authenticateSystemAccess(
+  idToken: string,
+  roleKey: string,
+  requestedRole: RoleTab
+): Promise<SystemAccessResult> {
+  const response = await fetch('/api/system-access/authenticate', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${idToken}`,
+    },
+    body: JSON.stringify({ roleKey, requestedRole }),
+  });
+  const result = (await response.json().catch(() => null)) as SystemAccessResult | null;
+
+  if (!response.ok) {
+    return {
+      error: result?.error ?? 'Unable to verify system access. Please try again.',
+    };
+  }
+
+  return result ?? { error: 'The server returned an invalid authentication response.' };
+}
+
 function SystemAccessContent() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -57,7 +81,6 @@ function SystemAccessContent() {
   const [requestLoading, setRequestLoading] = useState(false);
   const isSubmittingRef = useRef(false);
 
-  // Google admin verification modal state
   const [googleModalOpened, setGoogleModalOpened] = useState(false);
   const [googleUserCredential, setGoogleUserCredential] = useState<any>(null);
   const [googleRoleKey, setGoogleRoleKey] = useState('');
@@ -87,9 +110,7 @@ function SystemAccessContent() {
     };
   }
 
-  // Redirect if already logged in with an active administrator session
   useEffect(() => {
-    // Never auto-redirect while submitting or validating credentials
     if (isSubmittingRef.current || loading || googleLoading) return;
 
     if (!authLoading && authUser && profile) {
@@ -99,7 +120,6 @@ function SystemAccessContent() {
           ? sessionStorage.getItem('buildbot_admin_session_active')
           : null;
 
-      // Only redirect to /admin if the staff user has an active, verified admin session marker in this tab
       if (isStaff && activeAdminMarker === authUser.uid) {
         router.push(returnTo);
       } else if (!isStaff) {
@@ -142,7 +162,7 @@ function SystemAccessContent() {
       const user = userCredential.user;
 
       const idToken = await user.getIdToken();
-      const result = await authenticateSystemAccessAction(idToken, values.roleKey, activeTab);
+      const result = await authenticateSystemAccess(idToken, values.roleKey, activeTab);
 
       if (result.error) {
         if (typeof window !== 'undefined') {
@@ -154,7 +174,6 @@ function SystemAccessContent() {
         return;
       }
 
-      // Key verification SUCCEEDED! Register active admin session in sessionStorage
       if (typeof window !== 'undefined') {
         sessionStorage.setItem('buildbot_admin_session_active', user.uid);
       }
@@ -199,7 +218,7 @@ function SystemAccessContent() {
 
     try {
       const idToken = await user.getIdToken();
-      const result = await authenticateSystemAccessAction(idToken, key.trim(), activeTab);
+      const result = await authenticateSystemAccess(idToken, key.trim(), activeTab);
 
       if (result.error) {
         if (typeof window !== 'undefined') {
@@ -280,7 +299,7 @@ function SystemAccessContent() {
   };
 
   const handleRequestKey = async () => {
-    if (!firestore || !requestEmail) return;
+    if (!requestEmail) return;
     if (!requestEmail.includes('@')) {
       toast({
         title: 'Invalid Email',
@@ -292,18 +311,22 @@ function SystemAccessContent() {
 
     setRequestLoading(true);
     try {
-      await addDoc(collection(firestore, 'keyRequests'), {
-        email: requestEmail,
-        role: 'manager',
-        status: 'pending',
-        requestedAt: serverTimestamp(),
-      });
-      toast({
-        title: 'Request Sent',
-        description: 'Your request for a manager key has been recorded for Super Admin review.',
-      });
-      setIsRequestDialogOpen(false);
-      setRequestEmail('');
+      const idToken = authUser ? await authUser.getIdToken() : undefined;
+      const res = await requestManagerKeyAction(requestEmail, idToken);
+      if (res.success) {
+        toast({
+          title: 'Request Sent',
+          description: 'Your request for a manager key has been recorded for Super Admin review.',
+        });
+        setIsRequestDialogOpen(false);
+        setRequestEmail('');
+      } else {
+        toast({
+          title: 'Request Failed',
+          description: res.error || 'Failed to send request. Please try again later.',
+          variant: 'destructive',
+        });
+      }
     } catch (err) {
       console.error(err);
       toast({
@@ -368,7 +391,6 @@ function SystemAccessContent() {
           className="w-full bg-white/85 dark:bg-[#111722] border-red-500/30 dark:border-red-500/30 shadow-sm relative transition-all"
         >
           <Stack gap="md">
-            {/* Header with Red Netcodex Emblem */}
             <div className="text-center flex flex-col items-center gap-1.5">
               <Link href="/" className="mb-0.5">
                 <Logo showText={false} size="lg" variant="red" />
@@ -384,7 +406,6 @@ function SystemAccessContent() {
               </Text>
             </div>
 
-            {/* Role Switcher using Mantine SegmentedControl */}
             <SegmentedControl
               value={activeTab}
               onChange={handleTabChange}
@@ -404,7 +425,6 @@ function SystemAccessContent() {
               }}
             />
 
-            {/* Social Authentication */}
             <Button
               variant="default"
               size="md"
@@ -426,7 +446,6 @@ function SystemAccessContent() {
               }}
             />
 
-            {/* Session Expiration / Timeout Notice */}
             {reasonNotice && !error && (
               <Alert
                 color="yellow"
@@ -440,7 +459,6 @@ function SystemAccessContent() {
               </Alert>
             )}
 
-            {/* Error Message */}
             {error && (
               <Alert
                 color="red"
@@ -454,7 +472,6 @@ function SystemAccessContent() {
               </Alert>
             )}
 
-            {/* Form */}
             <form onSubmit={handleSubmit(onSubmit)} autoComplete="on">
               <Stack gap="md">
                 <Controller
@@ -525,9 +542,6 @@ function SystemAccessContent() {
                         )}
                       </Group>
                       <PasswordInput
-                        // This is a separate authorization factor, not the account password.
-                        // Naming it as a one-time code prevents password managers from replacing
-                        // the user's saved account password with this role key.
                         autoComplete="one-time-code"
                         placeholder={
                           activeTab === 'manager'
@@ -562,7 +576,6 @@ function SystemAccessContent() {
               </Stack>
             </form>
 
-            {/* Footer Links */}
             <div className="flex flex-col items-center gap-1.5 text-center text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-200 dark:border-white/10">
               <div>
                 New manager with an access key?{' '}
@@ -589,7 +602,6 @@ function SystemAccessContent() {
         </Paper>
       </div>
 
-      {/* Request Manager Key Modal */}
       <RequestKeyModal
         opened={isRequestDialogOpen}
         onClose={() => setIsRequestDialogOpen(false)}
@@ -599,7 +611,6 @@ function SystemAccessContent() {
         loading={requestLoading}
       />
 
-      {/* Google Staff Key Verification Modal */}
       <Modal
         opened={googleModalOpened}
         onClose={() => {

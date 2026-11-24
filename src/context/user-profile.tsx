@@ -1,4 +1,3 @@
-/** Auth identity and server-confirmed Firestore profile for role-based UI. */
 'use client';
 
 import { createContext, useContext, useEffect, useState, type ReactNode } from 'react';
@@ -47,7 +46,6 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
         let missingTimer: ReturnType<typeof setTimeout> | undefined;
         setSnapshot({ uid, status: 'loading', profile: null, error: null });
 
-        // Cached roles may be stale after an account's role changes.
         const timeout = setTimeout(() => {
             if (!active) return;
             setSnapshot(current => current?.uid === uid && current.status === 'loading'
@@ -80,7 +78,6 @@ export function UserProfileProvider({ children }: { children: ReactNode }) {
                     return;
                 }
 
-                // Sign-in may precede the first profile write.
                 sawMissingProfile = true;
                 setSnapshot({ uid, status: 'loading', profile: null, error: null });
                 if (!missingTimer) {

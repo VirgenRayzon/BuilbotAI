@@ -16,8 +16,8 @@ flowchart TD
   Keys --> KeyAction{Save, approve, reject or reset?}
   KeyAction --> KeyWrite[Update authKeys, keyRequests or users] --> Keys
   Tab -- AI, Super Admin --> AI([Model routing and prompt workflows])
-  Tab -- Content, Super Admin --> About[Edit siteContent about and save] --> Tab
   Tab -- Profile safeguards, Super Admin --> Switch{Browser confirm?}
   Switch -- Cancel --> Tab
   Switch -- Confirm --> SiteSettings[Write siteSettings main; toast] --> Tab
   Tab -- Other role attempts privileged tab --> Denied[/Access Restricted toast/] --> Tab
+  Tab -- Leave dashboard --> Finish([END])

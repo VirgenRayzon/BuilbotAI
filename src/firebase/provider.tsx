@@ -67,7 +67,6 @@ function FirebaseErrorListener() {
     return null;
   }
 
-  // This is a basic error display. In a real app, you might use a toast or a modal.
   if (process.env.NODE_ENV === 'development') {
     return (
       <div
@@ -93,7 +92,6 @@ function FirebaseErrorListener() {
 
   return null;
 }
-
 
 export const useFirebase = () => useContext(FirebaseContext);
 export const useFirebaseApp = () => useContext(FirebaseContext).firebaseApp;

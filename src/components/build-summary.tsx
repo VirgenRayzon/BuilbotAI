@@ -1,17 +1,20 @@
 "use client";
 
 import React from "react";
+import { useRouter } from "next/navigation";
 import type { Build, AdvisorWebResearchInfo } from "@/lib/types";
 import { ComponentCard } from "./component-card";
 import { Button } from "@/components/ui/button";
 import { Paper, Text, Group, ThemeIcon, Box } from "@mantine/core";
-import { Sparkles, AlertTriangle, Zap, Bot, Loader2, Cpu, Server, CircuitBoard, MemoryStick, Database, Power, RectangleVertical, Wind, Heart, Search, Bell } from "lucide-react";
+import { Sparkles, AlertTriangle, Zap, Bot, Loader2, Cpu, Server, CircuitBoard, MemoryStick, Database, Power, RectangleVertical, Wind, Heart, Search, Bell, ArrowUpRight } from "lucide-react";
 import { AnimatePresence, motion } from "framer-motion";
 import { cn } from "@/lib/utils";
 import { useUser, useFirestore } from "@/firebase";
 import { collection, addDoc, serverTimestamp } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { BuildRecommendationNotes } from "./build-recommendation-notes";
+import { AiDisclaimer } from "./ai-disclaimer";
+import { ReserveBuildButton } from "./build/reserve-build-button";
 
 interface BuildSummaryProps {
     build: Build | null;
@@ -49,8 +52,8 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
     const user = useUser();
     const firestore = useFirestore();
     const { toast } = useToast();
+    const router = useRouter();
 
-    // Telemetry history for rolling average
     const [telemetryHistory, setTelemetryHistory] = React.useState<number[]>([]);
 
     React.useEffect(() => {
@@ -95,7 +98,6 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
         ? `${Math.abs(diff).toFixed(1)}s ${diff > 0 ? 'faster' : 'slower'} than average`
         : 'On par with average';
 
-    // Reset saved state when build changes
     React.useEffect(() => {
         setIsSaved(false);
     }, [build]);
@@ -138,6 +140,27 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
     const hasAnyStreamedPart = build && COMPONENT_SLOTS.some(s => Boolean((build as any)[s.key]?.model));
     const hasExternalParts = !!build && COMPONENT_SLOTS.some(slot => !!build[slot.key]?.isExternal);
 
+    const openInBuilder = (reserve = false) => {
+        if (!build) return;
+        const parts = COMPONENT_SLOTS.map(({ key, name }) => {
+            const component = build[key];
+            return component ? { category: key === 'gpu' ? 'GPU' : key === 'cpu' ? 'CPU' : key === 'psu' ? 'PSU' : key === 'case' ? 'Case' : name,
+                partId: component.id, name: component.model, price: component.price || 0 } : null;
+        }).filter((part): part is NonNullable<typeof part> => part !== null);
+        const unavailableParts = COMPONENT_SLOTS
+            .filter(({ key }) => !build[key])
+            .map(({ name }) => name);
+        localStorage.setItem('pc_builder_load_favorite', JSON.stringify({
+            name: 'Build Advisor recommendation', parts, totalPrice: totalPrice || 0,
+            loadContext: {
+                type: 'advisor',
+                systemName: 'Build Advisor recommendation',
+                unavailableParts,
+            },
+        }));
+        router.push(reserve ? '/builder?reserve=1' : '/builder');
+    };
+
     return (
         <Paper
             radius="lg"
@@ -145,7 +168,6 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
             shadow="xl"
             className="w-full overflow-hidden bg-white/95 dark:bg-[#0d1117]/95 border-slate-200 dark:border-cyan-500/20 backdrop-blur-xl relative shadow-xl dark:shadow-[0_0_35px_rgba(0,0,0,0.5)]"
         >
-            {/* Header Box */}
             <Box className="p-3 bg-slate-50/90 dark:bg-white/[0.03] border-b border-slate-200 dark:border-white/10">
                 <Group justify="space-between" align="center">
                     <Group gap="xs" align="center">
@@ -157,7 +179,6 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                         </Text>
                     </Group>
 
-                    {/* Turnaround Badge */}
                     {finalResponseTime && !isPending && (
                         <div className="relative group/tooltip">
                             <span className="cursor-help px-3 py-1 rounded-full border border-cyan-300 dark:border-cyan-400/80 bg-cyan-50/80 dark:bg-gradient-to-r dark:from-cyan-950/70 dark:via-cyan-900/60 dark:to-blue-950/70 text-cyan-800 dark:text-cyan-300 font-mono text-xs font-black uppercase tracking-widest select-none shadow-sm dark:shadow-[0_0_15px_rgba(34,211,238,0.45)] hover:shadow-md hover:scale-105 transition-all duration-300 flex items-center gap-1.5">
@@ -186,7 +207,6 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
 
             <div className="p-3 space-y-5">
                 <AnimatePresence mode="wait">
-                    {/* Error State */}
                     {error ? (
                         <motion.div
                             key="error"
@@ -206,7 +226,6 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                             </div>
                         </motion.div>
                     ) : isPending ? (
-                        /* Progressive Streaming Grid View */
                         <motion.div
                             key="streaming"
                             initial={{ opacity: 0 }}
@@ -214,7 +233,6 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                             exit={{ opacity: 0 }}
                             className="space-y-6"
                         >
-                            {/* Streaming Status Banner */}
                             <div className="p-4 rounded-2xl border border-cyan-500/30 bg-cyan-500/10 backdrop-blur-md flex flex-wrap items-center justify-between gap-4">
                                 <div className="flex items-center gap-3">
                                     <div className="p-2.5 rounded-xl bg-cyan-500/20 text-cyan-600 dark:text-cyan-400 shrink-0">
@@ -276,7 +294,6 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                                 </Paper>
                             )}
 
-                            {/* Summary Banner if partially streamed */}
                             {build?.summary && (
                                 <motion.div
                                     initial={{ opacity: 0, y: 10 }}
@@ -293,9 +310,8 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                                 </motion.div>
                             )}
 
-                            {/* Progressive Slots Grid */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
-                                {COMPONENT_SLOTS.map((slot, index) => {
+                                {COMPONENT_SLOTS.map((slot) => {
                                     const compData = build ? (build as any)[slot.key] : null;
                                     const isSlotLoaded = Boolean(compData && compData.model);
 
@@ -344,7 +360,6 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                             </div>
                         </motion.div>
                     ) : !build ? (
-                        /* Empty State */
                         <motion.div
                             key="empty"
                             initial={{ opacity: 0 }}
@@ -367,21 +382,20 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                                         <Text size="sm" className="text-slate-600 dark:text-slate-400 leading-relaxed">
                                             Enter your budget and requirements on the left to start generating your PC build.
                                         </Text>
+                                        <AiDisclaimer centered className="pt-1" />
                                     </div>
                                 </div>
                             </Paper>
                         </motion.div>
                     ) : (
-                        /* Complete Build Ready View */
                         <motion.div
                             key="content"
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
                             className="space-y-5"
                         >
-                            {/* Top Panel Grid: Price Total & Save Control */}
-                            <div className="grid md:grid-cols-2 gap-3">
-                                <div className="h-fit self-start bg-slate-50 dark:bg-[#111722] border border-slate-200 dark:border-white/10 p-3 rounded-xl backdrop-blur-xl flex items-center gap-3 shadow-sm">
+                            <div className="grid gap-3 md:grid-cols-[minmax(260px,0.8fr)_minmax(0,1.2fr)] md:items-center">
+                                <div className="flex items-center gap-3">
                                     <div className="p-4 rounded-xl bg-cyan-500/10 border border-cyan-500/20 w-16 h-16 flex items-center justify-center select-none shrink-0">
                                         <span className="text-3xl font-black font-sans text-cyan-600 dark:text-cyan-400 leading-none">₱</span>
                                     </div>
@@ -393,21 +407,12 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                                     </div>
                                 </div>
 
-                                <div className="bg-slate-50 dark:bg-[#111722] border border-slate-200 dark:border-white/10 p-3 rounded-xl backdrop-blur-xl flex flex-col justify-between gap-3 shadow-sm">
-                                    <div className="flex items-center gap-3">
-                                        <div className="p-2 bg-emerald-500/10 rounded-xl border border-emerald-500/20 shrink-0">
-                                            <Sparkles className="h-5 w-5 text-emerald-500" />
-                                        </div>
-                                        <div className="flex-1">
-                                            <h4 className="font-headline font-bold uppercase tracking-wider text-sm text-slate-900 dark:text-white">Build Ready</h4>
-                                            <p className="text-xs text-slate-500 dark:text-slate-400">Your component recommendations are ready.</p>
-                                        </div>
-                                    </div>
+                                <div className="grid grid-cols-3 gap-2">
                                     {user && (
                                         <Button
                                             variant="outline"
                                             className={cn(
-                                                "h-10 px-5 rounded-xl font-bold uppercase tracking-widest text-[10px] transition-all w-full",
+                                                "h-11 min-w-0 rounded-xl px-2 font-headline text-xs font-bold uppercase tracking-wider transition-all",
                                                 isSaved
                                                     ? "border-rose-500/40 text-rose-500 bg-rose-500/10"
                                                     : "border-rose-500/20 text-rose-500 hover:bg-rose-500/10"
@@ -419,10 +424,16 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                                             {isSaving ? "Saving..." : isSaved ? "Saved to Favorites" : "Save to Favorites"}
                                         </Button>
                                     )}
+                                    <Button variant="outline" className="h-11 min-w-0 rounded-xl px-2 font-headline text-xs font-bold uppercase tracking-wider" onClick={() => openInBuilder()}>
+                                        <ArrowUpRight className="h-3.5 w-3.5 shrink-0 sm:mr-1" /> <span className="truncate">Open in Your Build</span>
+                                    </Button>
+                                    <ReserveBuildButton
+                                        className="w-full"
+                                        onClick={() => openInBuilder(true)}
+                                    />
                                 </div>
                             </div>
 
-                            {/* Summary Section */}
                             <div className="bg-emerald-500/10 rounded-2xl p-4 border border-emerald-500/20 relative overflow-hidden group">
                                 <div className="flex items-center gap-3 mb-4 text-emerald-600 dark:text-emerald-400">
                                     <Sparkles className="h-5 w-5" />
@@ -435,7 +446,6 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
 
                             <BuildRecommendationNotes webResearchInfo={webResearchInfo} hasExternalParts={hasExternalParts} />
 
-                            {/* Components Grid */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
                                 {COMPONENT_SLOTS.map((slot, index) => {
                                     const compData = (build as any)[slot.key];
@@ -456,6 +466,8 @@ export function BuildSummary({ build, isPending, onCancel, elapsedTime, finalRes
                                     );
                                 })}
                             </div>
+
+                            <AiDisclaimer centered />
                         </motion.div>
                     )}
                 </AnimatePresence>

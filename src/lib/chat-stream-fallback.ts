@@ -13,11 +13,6 @@ export function looksCutOff(text: string): boolean {
         || /\b(?:a|an|the|and|or|but|to|for|with|of|in|at|on|by|as)$/i.test(ending);
 }
 
-/**
- * Forward the tuned reply as it arrives. Hold only protocol setup chunks until
- * the first visible content; that leaves room to retry a model that fails
- * before the user has seen any part of its answer.
- */
 export async function forwardTunedChatStream(
     stream: ReadableStream<UIMessageChunk>,
     controller: AbortController,

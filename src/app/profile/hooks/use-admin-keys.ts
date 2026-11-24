@@ -6,9 +6,6 @@ import { collection, query, where, getDocs, deleteDoc, doc, setDoc } from "fireb
 import { useToast } from "@/hooks/use-toast";
 import { useUserProfile } from "@/context/user-profile";
 
-/**
- * Hook to manage Super Admin signup keys.
- */
 export function useAdminKeys() {
     const firestore = useFirestore();
     const { toast } = useToast();

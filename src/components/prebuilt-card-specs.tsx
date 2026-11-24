@@ -1,8 +1,9 @@
 "use client";
+import { PrebuiltSpecsSkeleton, prebuiltCardLayout } from "./loading/prebuilt-card-skeleton";
 
 import { useEffect, useState } from "react";
 import { useFirestore } from "@/firebase";
-import { doc, getDoc, collection, query, where, getDocs } from "firebase/firestore";
+import { doc, getDoc } from "firebase/firestore";
 import type { Part } from "@/lib/types";
 import { 
     Cpu, 
@@ -14,8 +15,10 @@ import {
     RectangleVertical as Case, 
     Wind as Cooler 
 } from "lucide-react";
-import { Text, Group, Stack } from "@mantine/core";
-import { inventoryItemPath, inventoryItemsPath } from "@/lib/inventory-paths";
+import { Collapse } from "@mantine/core";
+import { cn } from "@/lib/utils";
+import { inventoryItemPath } from "@/lib/inventory-paths";
+import { INCLUDED_INTEGRATED_GPU_ID, createIntegratedGpuPart } from '@/lib/integrated-graphics';
 
 interface PrebuiltCardSpecsProps {
     components: {
@@ -68,36 +71,19 @@ export function PrebuiltCardSpecs({ components, expanded = false }: PrebuiltCard
 
                     const lookupSingle = async (val: string) => {
                         try {
+                            if (collectionName === 'GPU' && val === INCLUDED_INTEGRATED_GPU_ID && components.cpu) {
+                                const cpuSnap = await getDoc(doc(firestore, inventoryItemPath('CPU', components.cpu)));
+                                const cpu = cpuSnap.exists() ? { id: cpuSnap.id, ...cpuSnap.data() } as Part : null;
+                                return cpu ? createIntegratedGpuPart(cpu)?.name || 'Integrated Graphics' : 'Integrated Graphics';
+                            }
                             const canonicalRef = doc(firestore, inventoryItemPath(collectionName, val));
                             const snap = await getDoc(canonicalRef);
                             if (snap.exists()) {
                                 return (snap.data() as Part).name;
                             }
-
-                            const canonicalQuery = query(
-                                collection(firestore, inventoryItemsPath(collectionName)),
-                                where("name", "==", val)
-                            );
-                            const querySnap = await getDocs(canonicalQuery);
-                            if (!querySnap.empty) {
-                                return (querySnap.docs[0].data() as Part).name;
-                            }
-
-                            // Keep older prebuilt records readable while legacy inventory
-                            // collections are phased out.
-                            const legacyRef = doc(firestore, collectionName, val);
-                            const legacySnap = await getDoc(legacyRef);
-                            if (legacySnap.exists()) {
-                                return (legacySnap.data() as Part).name;
-                            }
-                            const legacyQuery = query(collection(firestore, collectionName), where("name", "==", val));
-                            const legacyQuerySnap = await getDocs(legacyQuery);
-                            if (!legacyQuerySnap.empty) {
-                                return (legacyQuerySnap.docs[0].data() as Part).name;
-                            }
-                            return "Unknown";
+                            return val;
                         } catch (e) {
-                            return "Unknown";
+                            return val || "Unknown";
                         }
                     };
 
@@ -144,58 +130,72 @@ export function PrebuiltCardSpecs({ components, expanded = false }: PrebuiltCard
         return () => { isMounted = false; };
     }, [firestore, components]);
 
-    if (loading) {
-        return (
-            <div className="space-y-2 py-2 animate-pulse">
-                {[1, 2, 3].map(i => (
-                    <div key={i} className="h-4 bg-slate-200/60 dark:bg-white/5 rounded w-full" />
-                ))}
-            </div>
-        );
-    }
+    if (loading) return <PrebuiltSpecsSkeleton expanded={expanded} />;
 
-    if (!expanded) {
-        return (
-            <div className="space-y-1.5 py-1 text-xs text-slate-500 dark:text-slate-400">
-                <div className="flex items-center gap-2">
-                    <Cpu className="h-3.5 w-3.5 text-cyan-500 shrink-0" />
-                    <span className="truncate" title={specs.cpu || "No CPU listed"}>{specs.cpu || "No CPU listed"}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <Gpu className="h-3.5 w-3.5 text-cyan-500 shrink-0" />
-                    <span className="truncate" title={specs.gpu || "No GPU listed"}>{specs.gpu || "No GPU listed"}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <MemoryStick className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                    <span className="truncate" title={specs.ram || "No RAM listed"}>{specs.ram || "No RAM listed"}</span>
-                    <span className="mx-1 opacity-40">•</span>
-                    <HardDrive className="h-3.5 w-3.5 text-slate-400 shrink-0" />
-                    <span className="truncate" title={specs.storage || "No Storage listed"}>{specs.storage || "No Storage listed"}</span>
-                </div>
-            </div>
-        );
-    }
-
-    const allSpecs = [
+    const coreSpecs = [
         { label: 'CPU', value: specs.cpu, icon: Cpu },
         { label: 'GPU', value: specs.gpu, icon: Gpu },
-        { label: 'Motherboard', value: specs.motherboard, icon: CircuitBoard },
         { label: 'RAM', value: specs.ram, icon: MemoryStick },
         { label: 'Storage', value: specs.storage, icon: HardDrive },
-        { label: 'PSU', value: specs.psu, icon: Psu },
-        { label: 'Case', value: specs.case, icon: Case },
-        { label: 'Cooler', value: specs.cooler, icon: Cooler },
     ].filter(s => s.value && s.value !== "N/A" && s.value !== "Unknown");
 
+    const remainingSpecs = [
+        { label: 'Motherboard', value: specs.motherboard, icon: CircuitBoard },
+        { label: 'Cooler', value: specs.cooler, icon: Cooler },
+        { label: 'PSU', value: specs.psu, icon: Psu },
+        { label: 'Case', value: specs.case, icon: Case },
+    ].filter(s => s.value && s.value !== "N/A" && s.value !== "Unknown");
+
+    if (coreSpecs.length === 0 && remainingSpecs.length === 0) {
+        return (
+            <div className="py-1 text-xs text-slate-400 dark:text-slate-500 italic">
+                No specifications listed
+            </div>
+        );
+    }
+
     return (
-        <div className="space-y-1 py-1 text-xs">
-            {allSpecs.map((s, i) => (
-                <div key={i} className="flex items-center gap-2 py-1 border-b border-slate-200/60 dark:border-white/5 last:border-0">
-                    <s.icon className="h-3.5 w-3.5 text-cyan-500 shrink-0" />
-                    <span className="font-semibold text-slate-700 dark:text-slate-300 shrink-0 text-[11px]">{s.label}:</span>
-                    <span className="truncate text-slate-500 dark:text-slate-400 text-[11px]" title={s.value || ""}>{s.value}</span>
-                </div>
-            ))}
+        <div className="space-y-0 text-xs">
+            <div className="space-y-0.5">
+                {coreSpecs.map((s, i) => (
+                    <div
+                        key={s.label}
+                        className={cn(
+                            prebuiltCardLayout.specRow,
+                            ((expanded && remainingSpecs.length > 0) || i < coreSpecs.length - 1) &&
+                                "border-b border-slate-200/60 dark:border-white/5"
+                        )}
+                    >
+                        <s.icon className="h-3.5 w-3.5 text-cyan-500 shrink-0" />
+                        <span className="font-semibold text-slate-700 dark:text-slate-300 shrink-0 text-[11px]">{s.label}:</span>
+                        <span className="truncate text-slate-500 dark:text-slate-400 text-[11px]" title={s.value || ""}>
+                            {s.value}
+                        </span>
+                    </div>
+                ))}
+            </div>
+
+            {remainingSpecs.length > 0 && (
+                <Collapse in={expanded}>
+                    <div className="space-y-0.5">
+                        {remainingSpecs.map((s, i) => (
+                            <div
+                                key={s.label}
+                                className={cn(
+                                    prebuiltCardLayout.specRow,
+                                    i < remainingSpecs.length - 1 && "border-b border-slate-200/60 dark:border-white/5"
+                                )}
+                            >
+                                <s.icon className="h-3.5 w-3.5 text-cyan-500 shrink-0" />
+                                <span className="font-semibold text-slate-700 dark:text-slate-300 shrink-0 text-[11px]">{s.label}:</span>
+                                <span className="truncate text-slate-500 dark:text-slate-400 text-[11px]" title={s.value || ""}>
+                                    {s.value}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
+                </Collapse>
+            )}
         </div>
     );
 }

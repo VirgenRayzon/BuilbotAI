@@ -1,7 +1,3 @@
-/**
- * StockEditor — Inline stock quantity editor.
- * Supports click-to-edit mode for direct number input. Used in admin inventory views.
- */
 
 "use client";
 

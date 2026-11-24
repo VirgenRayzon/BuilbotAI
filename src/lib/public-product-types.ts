@@ -8,5 +8,5 @@ export type PublicProduct = {
 };
 
 export type PublicCatalogPart = Pick<PublicProduct,
-  'productId' | 'sku' | 'name' | 'category' | 'brand' | 'price' | 'inStock' | 'createdAt' | 'specifications'
+  'productId' | 'sku' | 'qrToken' | 'name' | 'category' | 'brand' | 'price' | 'inStock' | 'createdAt' | 'specifications'
 > & { imageUrl: string };

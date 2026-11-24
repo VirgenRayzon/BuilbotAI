@@ -2,7 +2,7 @@
 
 import React from "react";
 import { Paper, Title, Text, Group, Stack, Badge, Switch, Alert, ThemeIcon } from "@mantine/core";
-import { ServerCrash, PlugZap, BrainCircuit, ShieldAlert, AlertTriangle, ShoppingBag, Sparkles } from "lucide-react";
+import { ServerCrash, PlugZap, BrainCircuit, ShieldAlert, AlertTriangle, WandSparkles } from "lucide-react";
 
 interface EmergencyControlsCardProps {
   emergency: {
@@ -12,8 +12,8 @@ interface EmergencyControlsCardProps {
     handleToggleStorageKillSwitch: () => void;
     isAiKillSwitch: boolean;
     handleToggleAiKillSwitch: () => void;
-    isEcommerceMode?: boolean;
-    handleToggleEcommerceMode?: () => void;
+    isLiveBuilderRecommendationsEnabled: boolean;
+    handleToggleLiveBuilderRecommendations: () => void;
   };
 }
 
@@ -22,8 +22,6 @@ export function EmergencyControlsCard({ emergency }: EmergencyControlsCardProps)
     emergency.isMaintenanceMode ||
     emergency.isStorageKillSwitch ||
     emergency.isAiKillSwitch;
-
-  const isEcommerceActive = Boolean(emergency.isEcommerceMode);
 
   return (
     <Paper
@@ -38,8 +36,8 @@ export function EmergencyControlsCard({ emergency }: EmergencyControlsCardProps)
             <ThemeIcon
               size="md"
               radius="md"
-              color={isAnyActive ? "red" : isEcommerceActive ? "cyan" : "gray"}
-              variant={isAnyActive || isEcommerceActive ? "filled" : "light"}
+              color={isAnyActive ? "red" : "gray"}
+              variant={isAnyActive ? "filled" : "light"}
             >
               <ShieldAlert size={18} />
             </ThemeIcon>
@@ -48,31 +46,19 @@ export function EmergencyControlsCard({ emergency }: EmergencyControlsCardProps)
                 System Safeguards
               </Title>
               <Text size="xs" className="text-slate-600 dark:text-slate-400">
-                Emergency kill switches & platform mode overrides
+                Emergency kill switches & platform controls
               </Text>
             </div>
           </Group>
 
-          <Group gap="xs">
-            {isEcommerceActive && (
-              <Badge
-                color="cyan"
-                variant="light"
-                size="sm"
-                className="uppercase tracking-wider font-bold border border-cyan-500/30"
-              >
-                E-COMMERCE UI ON
-              </Badge>
-            )}
-            <Badge
-              color={isAnyActive ? "red" : "teal"}
-              variant="filled"
-              size="sm"
-              className="uppercase tracking-wider font-bold"
-            >
-              {isAnyActive ? "ALERT ACTIVE" : "ALL SYSTEMS OK"}
-            </Badge>
-          </Group>
+          <Badge
+            color={isAnyActive ? "red" : "teal"}
+            variant="filled"
+            size="sm"
+            className="uppercase tracking-wider font-bold"
+          >
+            {isAnyActive ? "ALERT ACTIVE" : "ALL SYSTEMS OK"}
+          </Badge>
         </Group>
 
         {isAnyActive && (
@@ -88,21 +74,7 @@ export function EmergencyControlsCard({ emergency }: EmergencyControlsCardProps)
           </Alert>
         )}
 
-        {isEcommerceActive && !isAnyActive && (
-          <Alert
-            color="cyan"
-            variant="light"
-            radius="md"
-            icon={<Sparkles size={16} />}
-            title="E-Commerce Storefront Mode Engaged (UI Prototype)"
-            className="border border-cyan-500/30 text-xs"
-          >
-            Storefront buttons now display Shopping Cart, Shipping & Fulfillment (LBC / J&T / Same-Day Express), and Philippine Payment Methods (GCash, Maya, QRPh, Card, COD). No real charges or database mutations occur.
-          </Alert>
-        )}
-
         <Stack gap="sm">
-          {/* Maintenance Mode */}
           <Paper
             p="sm"
             radius="lg"
@@ -142,7 +114,6 @@ export function EmergencyControlsCard({ emergency }: EmergencyControlsCardProps)
             </Group>
           </Paper>
 
-          {/* Chaos / Storage Mode */}
           <Paper
             p="sm"
             radius="lg"
@@ -182,7 +153,6 @@ export function EmergencyControlsCard({ emergency }: EmergencyControlsCardProps)
             </Group>
           </Paper>
 
-          {/* AI Kill Switch */}
           <Paper
             p="sm"
             radius="lg"
@@ -205,7 +175,7 @@ export function EmergencyControlsCard({ emergency }: EmergencyControlsCardProps)
                 </ThemeIcon>
                 <div>
                   <Text size="sm" fw={700} className="text-slate-900 dark:text-slate-100">
-                    AI Neural Kill Switch
+                    AI Kill Switch
                   </Text>
                   <Text size="xs" className="text-slate-600 dark:text-slate-400">
                     Halt Genkit advisor & bot inferencing
@@ -222,14 +192,13 @@ export function EmergencyControlsCard({ emergency }: EmergencyControlsCardProps)
             </Group>
           </Paper>
 
-          {/* E-Commerce Storefront Mode Override */}
           <Paper
             p="sm"
             radius="lg"
             withBorder
             className={`transition-colors ${
-              isEcommerceActive
-                ? "bg-cyan-50/80 dark:bg-cyan-950/20 border-cyan-300 dark:border-cyan-500/30"
+              emergency.isLiveBuilderRecommendationsEnabled
+                ? "bg-yellow-50/80 dark:bg-yellow-950/20 border-yellow-300 dark:border-yellow-500/30"
                 : "bg-slate-50 dark:bg-slate-900/40 border-slate-200 dark:border-white/5"
             }`}
           >
@@ -238,31 +207,31 @@ export function EmergencyControlsCard({ emergency }: EmergencyControlsCardProps)
                 <ThemeIcon
                   size="sm"
                   radius="md"
-                  color={isEcommerceActive ? "cyan" : "gray"}
-                  variant={isEcommerceActive ? "filled" : "light"}
+                  color={emergency.isLiveBuilderRecommendationsEnabled ? "yellow" : "gray"}
+                  variant={emergency.isLiveBuilderRecommendationsEnabled ? "filled" : "light"}
                 >
-                  <ShoppingBag size={14} />
+                  <WandSparkles size={14} />
                 </ThemeIcon>
                 <div>
                   <Group gap={6} align="center">
                     <Text size="sm" fw={700} className="text-slate-900 dark:text-slate-100">
-                      E-Commerce Storefront Mode
+                      Live Builder Recommendations
                     </Text>
-                    <Badge size="xs" variant="light" color="cyan" radius="sm" className="uppercase text-[9px] font-bold">
-                      UI Mode
+                    <Badge size="xs" variant="light" color="yellow" radius="sm" className="uppercase text-[9px] font-bold">
+                      Preview
                     </Badge>
                   </Group>
                   <Text size="xs" className="text-slate-600 dark:text-slate-400">
-                    Enable shopping cart, courier shipping, and PH payment methods UI across storefront
+                    Highlight a best match and best value catalog part in both builders
                   </Text>
                 </div>
               </Group>
               <Switch
-                checked={isEcommerceActive}
-                onChange={emergency.handleToggleEcommerceMode}
-                color="cyan"
+                checked={emergency.isLiveBuilderRecommendationsEnabled}
+                onChange={emergency.handleToggleLiveBuilderRecommendations}
+                color="yellow"
                 size="md"
-                aria-label="Toggle E-Commerce Storefront Mode"
+                aria-label="Toggle Live Builder Recommendations"
               />
             </Group>
           </Paper>

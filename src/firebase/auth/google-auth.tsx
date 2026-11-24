@@ -12,10 +12,8 @@ import {
 } from 'firebase/auth';
 import { Firestore, doc, getDocFromServer, setDoc } from 'firebase/firestore';
 import { syncUserClaimsAction } from '@/app/actions';
+import { splitDisplayName } from '@/lib/user-name';
 
-/**
- * Modern Google 'G' official SVG icon.
- */
 export function GoogleIcon({ className = 'w-4 h-4' }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" aria-hidden="true">
@@ -39,9 +37,6 @@ export function GoogleIcon({ className = 'w-4 h-4' }: { className?: string }) {
   );
 }
 
-/**
- * Returns a configured GoogleAuthProvider instance with account selector prompt and profile scopes.
- */
 export function getGoogleProvider(): GoogleAuthProvider {
   const provider = new GoogleAuthProvider();
   provider.setCustomParameters({ prompt: 'select_account' });
@@ -50,15 +45,10 @@ export function getGoogleProvider(): GoogleAuthProvider {
   return provider;
 }
 
-/**
- * Maps Firebase Auth error codes to helpful, user-friendly messages.
- * Returns null if the error was a user-initiated dismissal (e.g. closing the popup).
- */
 export function formatGoogleAuthError(err: any): string | null {
   if (!err) return null;
   const code = err.code || '';
 
-  // Silent cancellations
   if (
     code === 'auth/popup-closed-by-user' ||
     code === 'auth/cancelled-popup-request'
@@ -95,15 +85,10 @@ export interface CustomerGoogleAuthResult {
   isNewUser?: boolean;
 }
 
-/**
- * Executes customer Google Sign-In / Sign-Up.
- * Enforces local persistence, verifies customer permissions (disallows manager/admin sign-in via public portal),
- * provisions or updates customer profile in Firestore, and syncs custom claims.
- */
 export async function executeCustomerGoogleAuth(
   auth: Auth,
   firestore: Firestore,
-  options?: { isSignUp?: boolean }
+  _options?: { isSignUp?: boolean }
 ): Promise<CustomerGoogleAuthResult> {
   let signedInUserId: string | null = null;
   try {
@@ -130,7 +115,6 @@ export async function executeCustomerGoogleAuth(
     if (userDoc.exists()) {
       const userData = userDoc.data();
 
-      // Protect against staff accounts signing in via customer route
       if (userData.isManager || userData.isSuperAdmin || userData.isAdmin) {
         await signOut(auth);
         return {
@@ -139,10 +123,16 @@ export async function executeCustomerGoogleAuth(
         };
       }
 
-      // Update name/photoURL if missing from previous email sign-ups
       const updates: Record<string, any> = {};
-      if (!userData.name && user.displayName) {
-        updates.name = user.displayName;
+      const parsedName = splitDisplayName(user.displayName);
+      if (!userData.name && parsedName.name) {
+        updates.name = parsedName.name.slice(0, 120);
+      }
+      if (!userData.firstName && parsedName.firstName) {
+        updates.firstName = parsedName.firstName.slice(0, 80);
+      }
+      if (!userData.lastName && parsedName.lastName) {
+        updates.lastName = parsedName.lastName.slice(0, 80);
       }
       if (!userData.photoURL && user.photoURL) {
         updates.photoURL = user.photoURL;
@@ -151,10 +141,13 @@ export async function executeCustomerGoogleAuth(
         await setDoc(userDocRef, updates, { merge: true });
       }
     } else {
-      // First-time customer profile creation
+      const parsedName = splitDisplayName(user.displayName);
+      const resolvedName = parsedName.name || user.email?.split('@')[0] || 'User';
       const newProfile = {
         email: user.email || '',
-        name: user.displayName || user.email?.split('@')[0] || 'User',
+        name: resolvedName.slice(0, 120),
+        ...(parsedName.firstName ? { firstName: parsedName.firstName.slice(0, 80) } : {}),
+        ...(parsedName.lastName ? { lastName: parsedName.lastName.slice(0, 80) } : {}),
         photoURL: user.photoURL || '',
         isManager: false,
         isSuperAdmin: false,
@@ -163,7 +156,6 @@ export async function executeCustomerGoogleAuth(
       await setDoc(userDocRef, newProfile);
     }
 
-    // Sync claims and refresh client token
     const idToken = await user.getIdToken();
     const claimsResult = await syncUserClaimsAction(idToken);
     if ('error' in claimsResult) throw new Error('Unable to verify account permissions. Please try again.');
@@ -208,10 +200,6 @@ export interface StaffGoogleAuthResult {
   needsKeyVerification?: boolean;
 }
 
-/**
- * Initiates Google sign-in for administrative personnel on /system-access.
- * Enforces browserSessionPersistence, verifies that the user is an authorized manager or superadmin in Firestore.
- */
 export async function executeStaffGoogleAuthInitiate(
   auth: Auth,
   firestore: Firestore

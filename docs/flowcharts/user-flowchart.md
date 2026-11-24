@@ -1,5 +1,9 @@
 # User workflow
 
+## Simple explanation
+
+This flowchart shows the main path for a normal customer. The customer can browse parts and ready-made PCs, use the Builder, ask the AI for help, and open Profile. Store Mode also adds a cart, sample checkout, and sample order tracking. Saved builds, reservations, contact replies, and alerts are kept in the customer area. The customer can leave through the sign-out button after a confirmation step.
+
 `RouteGuard` admits a verified customer to `/builder`, `/ai-build-advisor`, and `/pre-builts`; `/profile` admits registered roles but shows customer tabs conditionally. The public pages are also available (`src/lib/auth-utils.ts`, `src/app/profile/page.tsx`).
 
 ```mermaid
@@ -18,23 +22,31 @@ flowchart TD
   Advisor --> AiChoice{Critique or recommendations?}
   AiChoice -- Critique --> Critique[Analyze selected build]
   AiChoice -- Recommendations --> Recs[Enter goal and budget; generate build]
+  Header -- Parts --> Parts[Search and filter parts; open product details]
+  Parts --> StoreMode{Store Mode on?}
+  StoreMode -- No --> ReservePart[Reserve an available part]
+  StoreMode -- Yes --> Cart[Add to cart or buy now]
+  Cart --> Checkout[Sample checkout, receipt and order tracking]
   Header -- Prebuilts --> Prebuilt[Search, filter, sort, open detail]
   Prebuilt --> PrebuiltChoice{Customize or reserve?}
   PrebuiltChoice -- Customize --> Builder
   PrebuiltChoice -- Reserve --> Reservation
   Header -- Profile --> Profile{Profile tab}
   Profile -- Account or settings --> Edit[Update allowed profile fields]
+  Profile -- Contact Inbox --> Inbox[Read inquiry and reply to staff]
   Profile -- Favorites --> Favorites
   Profile -- Reservations --> Reservations[Review status and cancellation path]
   Profile -- Activity --> Activity[Filter and inspect user audit records]
   Header -- Notifications --> Notifications[Read, filter, mark or delete; open order details]
-  Header -- Public pages --> Public[About, team, FAQ, contact]
+  Header -- Public pages --> Public[Home, About, Team, FAQ and Contact]
   Header -- Sign out --> Confirm{Confirm sign-out?}
   Confirm -- Cancel --> Header
   Confirm -- Confirm --> End([Signed out])
   Missing --> Builder
   Reservation --> Reservations
   Favorites --> Builder
+  End --> Finish([END])
+  Header -- Leave app --> Finish
 ```
 
 See [builder](builder-flowchart.md), [prebuilts](prebuilts-flowchart.md), [reservations](reservations-flowchart.md), [profile](profile-flowchart.md), and [AI](ai-system/ai-master-flowchart.md). A staff profile cannot use the customer-only route guard even if signed in.

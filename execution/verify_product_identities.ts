@@ -1,4 +1,3 @@
-/** Read-only cloud audit. Optional local snapshots verify every original catalog field. */
 import 'dotenv/config';
 import { createHash } from 'node:crypto';
 import { readFile, writeFile, mkdir } from 'node:fs/promises';

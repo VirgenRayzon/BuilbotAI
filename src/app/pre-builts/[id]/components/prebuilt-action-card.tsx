@@ -7,6 +7,7 @@ import { ShieldCheck, AlertCircle, ShoppingCart, Zap } from "lucide-react";
 import type { PrebuiltPartStatus } from "@/lib/prebuilt-utils";
 import { useSiteSettings } from "@/context/site-settings-context";
 import { useEcommerce, type EcommerceSubComponent } from "@/context/ecommerce-context";
+import { usePublicFeatureAuth } from "@/hooks/use-public-feature-auth";
 
 interface PrebuiltActionCardProps {
     children?: React.ReactNode;
@@ -47,34 +48,39 @@ export function PrebuiltActionCard({
 }: PrebuiltActionCardProps) {
     const { isEcommerceMode } = useSiteSettings();
     const { addToCart, buyNow } = useEcommerce();
+    const { requireAuth } = usePublicFeatureAuth();
 
     const canPurchase = isComplete && !loadingParts && isInStock && !isReserving;
 
     const handleAddToCart = () => {
         if (!canPurchase) return;
-        addToCart({
-            id: `prebuilt-${systemId}`,
-            kind: "prebuilt",
-            name: systemName,
-            price,
-            tier,
-            imageUrl,
-            components: componentList,
-            includeAssembly: true,
-        }, true);
+        requireAuth(() => {
+            addToCart({
+                id: `prebuilt-${systemId}`,
+                kind: "prebuilt",
+                name: systemName,
+                price,
+                tier,
+                imageUrl,
+                components: componentList,
+                includeAssembly: true,
+            }, true);
+        });
     };
 
     const handleBuyNow = () => {
         if (!canPurchase) return;
-        buyNow({
-            id: `prebuilt-${systemId}`,
-            kind: "prebuilt",
-            name: systemName,
-            price,
-            tier,
-            imageUrl,
-            components: componentList,
-            includeAssembly: true,
+        requireAuth(() => {
+            buyNow({
+                id: `prebuilt-${systemId}`,
+                kind: "prebuilt",
+                name: systemName,
+                price,
+                tier,
+                imageUrl,
+                components: componentList,
+                includeAssembly: true,
+            });
         });
     };
 
@@ -92,7 +98,6 @@ export function PrebuiltActionCard({
             )}
 
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                {/* Price Display */}
                 <div>
                     <Text size="xs" fw={800} c="dimmed" className="mb-1 uppercase tracking-[0.16em]">
                         {priceLabel}
@@ -106,7 +111,6 @@ export function PrebuiltActionCard({
                     </Title>
                 </div>
 
-                {/* Reserve / E-Commerce Buttons aligned beside the price */}
                 <div className="flex items-center gap-2.5 sm:shrink-0">
                     {!isManagerOrAdmin && (
                         isEcommerceMode ? (

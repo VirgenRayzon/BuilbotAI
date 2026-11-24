@@ -80,7 +80,6 @@ export function TermsOfAgreementModal({
       }}
     >
       <Stack gap="md">
-        {/* Banner Announcement with comfortable spacing from the header line */}
         <Paper
           p="sm"
           radius="md"
@@ -95,11 +94,9 @@ export function TermsOfAgreementModal({
           </Group>
         </Paper>
 
-        {/* Scrollable Terms Content */}
         <ScrollArea.Autosize mah={380} offsetScrollbars scrollbarSize={6} type="hover" className="pr-2">
           <Stack gap="md" className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
 
-            {/* Section 1 */}
             <div className="space-y-1.5">
               <Group gap="xs">
                 <Badge size="xs" color="cyan" variant="light" className="font-bold">
@@ -116,7 +113,6 @@ export function TermsOfAgreementModal({
 
             <Divider color="gray.2" className="dark:border-white/10" />
 
-            {/* Section 2 */}
             <div className="space-y-1.5">
               <Group gap="xs">
                 <Badge size="xs" color="indigo" variant="light" className="font-bold">
@@ -141,7 +137,6 @@ export function TermsOfAgreementModal({
 
             <Divider color="gray.2" className="dark:border-white/10" />
 
-            {/* Section 3 */}
             <div className="space-y-1.5">
               <Group gap="xs">
                 <Badge size="xs" color="teal" variant="light" className="font-bold">
@@ -166,7 +161,6 @@ export function TermsOfAgreementModal({
 
             <Divider color="gray.2" className="dark:border-white/10" />
 
-            {/* Section 4 */}
             <div className="space-y-1.5">
               <Group gap="xs">
                 <Badge size="xs" color="red" variant="light" className="font-bold">
@@ -183,7 +177,6 @@ export function TermsOfAgreementModal({
 
             <Divider color="gray.2" className="dark:border-white/10" />
 
-            {/* Section 5 */}
             <div className="space-y-1.5">
               <Group gap="xs">
                 <Badge size="xs" color="orange" variant="light" className="font-bold">
@@ -208,7 +201,6 @@ export function TermsOfAgreementModal({
 
             <Divider color="gray.2" className="dark:border-white/10" />
 
-            {/* Section 6 */}
             <div className="space-y-1.5">
               <Group gap="xs">
                 <Badge size="xs" color="blue" variant="light" className="font-bold">
@@ -225,7 +217,6 @@ export function TermsOfAgreementModal({
 
             <Divider color="gray.2" className="dark:border-white/10" />
 
-            {/* Section 7 */}
             <div className="space-y-1.5">
               <Group gap="xs">
                 <Badge size="xs" color="gray" variant="light" className="font-bold">
@@ -245,7 +236,6 @@ export function TermsOfAgreementModal({
 
         <Divider color="gray.2" className="dark:border-white/10" />
 
-        {/* Checkbox Acknowledgment */}
         <Paper p="sm" radius="md" withBorder className="bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-white/10">
           <Checkbox
             checked={agreedToRead}
@@ -260,7 +250,6 @@ export function TermsOfAgreementModal({
           />
         </Paper>
 
-        {/* Action Buttons */}
         <Group justify="flex-end" gap="xs">
           <Button
             variant="subtle"

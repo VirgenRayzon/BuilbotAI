@@ -1,12 +1,12 @@
-# Settings to manage and configure a Firebase App Hosting backend.
-# https://firebase.google.com/docs/app-hosting/configure
-
 runConfig:
-  # Increase this value if you'd like to automatically spin up
-  # more instances in response to increased traffic.
-  maxInstances: 1
+  # Deployment prerequisite: Firestore composite indexes in firestore.indexes.json must be deployed and active before production scale-out.
+  maxInstances: 3
 
 env:
+  - variable: NEXT_PUBLIC_INVENTORY_PAGINATION_ENABLED
+    value: "true"
+  - variable: NEXT_PUBLIC_PUBLIC_CATALOG_INDEXED_ENABLED
+    value: "true"
   - variable: GOOGLE_API_KEY
     secret: GOOGLE_API_KEY
   - variable: NEXT_PUBLIC_FIREBASE_API_KEY

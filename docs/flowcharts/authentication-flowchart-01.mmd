@@ -19,3 +19,6 @@ flowchart TD
   Reset --> ResetValid{Valid address and reset request succeeds?}
   ResetValid -- No --> ResetError[/Error on reset page/] --> Reset
   ResetValid -- Yes --> ResetDone([Reset email requested])
+  StaffPage --> Finish([END])
+  Builder --> Finish
+  ResetDone --> Finish

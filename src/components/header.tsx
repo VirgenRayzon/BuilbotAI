@@ -46,8 +46,6 @@ import { HeaderMegaMenu } from "./header-mega-menu";
 import { useSignOutTransition } from "@/context/sign-out-transition";
 import { HeaderCartButton } from "./ecommerce/header-cart-button";
 
-// These widgets only render after role verification; public navigation does not
-// need their notification, date formatting, and order-detail code.
 const UserNotifications = dynamic(() => import('./user-notifications').then(module => module.UserNotifications));
 const NotificationCenter = dynamic(() => import('./notification-center').then(module => module.NotificationCenter));
 
@@ -61,13 +59,12 @@ interface NavTab {
 export function Header() {
   const pathname = usePathname();
   const router = useRouter();
-  const { authUser, profile, loading } = useUserProfile();
+  const { authUser, profile, loading, status } = useUserProfile();
   const auth = useAuth();
   const [mounted, setMounted] = useState(false);
   const [userMenuOpened, setUserMenuOpened] = useState(false);
   const [drawerOpened, { toggle: toggleDrawer, close: closeDrawer }] = useDisclosure(false);
   const [signOutModalOpen, setSignOutModalOpen] = useState(false);
-  const [isSigningOut, setIsSigningOut] = useState(false);
   const { startSignOut, cancelSignOut } = useSignOutTransition();
 
   useEffect(() => {
@@ -79,12 +76,11 @@ export function Header() {
     : loading
       ? "#"
       : authUser
-        ? (profile?.isManager || profile?.isSuperAdmin ? "/admin" : "/builder")
+        ? (profile?.isManager || profile?.isSuperAdmin ? "/admin" : "/parts")
         : "/";
 
   const handleSignOut = async () => {
     if (auth) {
-      setIsSigningOut(true);
       setSignOutModalOpen(false);
       startSignOut();
       const isStaff = Boolean(profile?.isSuperAdmin || profile?.isManager);
@@ -103,16 +99,15 @@ export function Header() {
       } catch (error) {
         console.error("Sign out failed:", error);
         cancelSignOut();
-        setIsSigningOut(false);
       }
     }
   };
 
   const mainTabs: NavTab[] = [
+    { href: "/parts", label: "Catalog" },
+    { href: "/pre-builts", label: "Prebuilts" },
     { href: "/builder", label: "Builder" },
     { href: "/ai-build-advisor", label: "Build Advisor" },
-    { href: "/pre-builts", label: "Prebuilts" },
-    { href: "/parts", label: "Catalog" },
   ];
 
   const adminTabs: NavTab[] = [
@@ -132,8 +127,6 @@ export function Header() {
 
   const isStaff = Boolean(profile?.isSuperAdmin || profile?.isManager);
 
-  // Super Admin & Manager only see administrative portals (Dashboard, Prebuilt Builder).
-  // Standard customers see Builder, Build Advisor, and Pre-builts.
   const tabs: NavTab[] = isStaff ? adminTabs : mainTabs;
 
   const activeTabHref = (() => {
@@ -145,18 +138,33 @@ export function Header() {
     return prefixes[0]?.href;
   })();
 
-  // Render HeaderMegaMenu on onboarding/landing page, auth pages, or for unauthenticated visitors on public pages
+  const isAlwaysMegaMenuPage = pathname === "/" ||
+    ["/signin", "/signup", "/system-access", "/system-access/signup", "/forgot-password"].includes(pathname);
   const isPublicCatalogOrInfoPage =
+    pathname === "/builder" ||
     pathname === "/parts" ||
     pathname.startsWith("/parts/") ||
     pathname === "/pre-builts" ||
     pathname.startsWith("/pre-builts/") ||
     ["/about", "/faq", "/team", "/contact"].includes(pathname);
 
+  if (!isAlwaysMegaMenuPage && (!mounted || (status !== 'ready' && status !== 'unauthenticated'))) {
+    return (
+      <header className={classes.header} aria-label="Account loading">
+        <div className={classes.inner}>
+          <Link href="/" className="flex items-center no-underline focus:outline-none">
+            <span className="sm:hidden"><Logo showText={false} size="md" /></span>
+            <span className="hidden sm:block"><Logo /></span>
+          </Link>
+          <div className="h-9 w-24 rounded-md bg-slate-200/60 dark:bg-white/10" aria-hidden="true" />
+        </div>
+      </header>
+    );
+  }
+
   if (
-    pathname === "/" ||
-    ["/signin", "/signup", "/system-access", "/system-access/signup", "/forgot-password"].includes(pathname) ||
-    (!authUser && isPublicCatalogOrInfoPage)
+    isAlwaysMegaMenuPage ||
+    (status === 'unauthenticated' && isPublicCatalogOrInfoPage)
   ) {
     return <HeaderMegaMenu />;
   }
@@ -191,24 +199,24 @@ export function Header() {
     <>
       <header className={classes.header}>
         <div className={classes.inner}>
-          {/* Left: Brand Logo with Blue Robot Icon */}
           <div className="flex-none">
             <Link
               href={logoHref}
               prefetch={false}
               className="flex items-center no-underline focus:outline-none"
             >
-              <Logo />
+              <span className="sm:hidden">
+                <Logo showText={false} size="md" className="[&>div]:rounded-xl [&>div]:border-slate-800 [&>div]:bg-slate-900 [&>div]:shadow-none dark:[&>div]:border-white/10 dark:[&>div]:bg-[#071322]" />
+              </span>
+              <span className="hidden sm:block"><Logo /></span>
             </Link>
           </div>
 
-          {/* Right Section: Aligned Tabs & User Actions */}
           <div className="flex items-center gap-2 md:gap-3">
             {loading ? (
               <Loader2 className="w-5 h-5 animate-spin text-cyan-500/70" />
             ) : authUser ? (
               <>
-                {/* Desktop Tabs aligned with user */}
                 <nav className="hidden sm:flex items-center gap-1" aria-label="Main Navigation">
                   {tabs.map((tab) => {
                     const isActive = tab.href === activeTabHref;
@@ -252,7 +260,6 @@ export function Header() {
                   className="hidden sm:block border-slate-200 dark:border-white/10"
                 />
 
-                {/* Notification Center & E-Commerce Cart */}
                 <div className="flex items-center gap-1.5">
                   <HeaderCartButton />
                   {!profile?.isManager && <UserNotifications />}
@@ -260,7 +267,6 @@ export function Header() {
                   <ThemeToggle />
                 </div>
 
-                {/* Mantine User Dropdown Menu */}
                 <Menu
                   width={260}
                   position="bottom-end"
@@ -309,7 +315,6 @@ export function Header() {
                   </Menu.Target>
 
                   <Menu.Dropdown className="bg-white/95 dark:bg-[#111722]/95 border-slate-200 dark:border-white/10 backdrop-blur-xl shadow-2xl p-1.5 rounded-xl">
-                    {/* User Identity Header */}
                     <div className="px-3 py-2.5 mb-1 border-b border-slate-100 dark:border-white/10">
                       <Text fw={600} size="sm" className="text-slate-900 dark:text-slate-100">
                         {userName}
@@ -331,7 +336,6 @@ export function Header() {
                       </div>
                     </div>
 
-                    {/* Account Section */}
                     <Menu.Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                       Account
                     </Menu.Label>
@@ -344,7 +348,6 @@ export function Header() {
                       Profile
                     </Menu.Item>
 
-                    {/* Non-staff Customer Workspaces */}
                     {!isStaff && (
                       <>
                         <Menu.Item
@@ -359,7 +362,7 @@ export function Header() {
                           onClick={() => router.push("/profile?tab=reservations")}
                           className="rounded-lg text-xs font-medium py-2 hover:bg-slate-100 dark:hover:bg-white/5"
                         >
-                          Reservations
+                          Orders
                         </Menu.Item>
 
                         <Menu.Item
@@ -372,7 +375,6 @@ export function Header() {
                       </>
                     )}
 
-                    {/* Staff Portals: Management Portal */}
                     {isStaff && profile?.isSuperAdmin && (
                       <Menu.Item
                         leftSection={<Sliders size={16} className="text-cyan-500" />}
@@ -413,7 +415,6 @@ export function Header() {
 
                     <Menu.Divider className="my-1 border-slate-100 dark:border-white/10" />
 
-                    {/* Settings Section */}
                     <Menu.Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                       Settings
                     </Menu.Label>
@@ -428,7 +429,6 @@ export function Header() {
 
                     <Menu.Divider className="my-1 border-slate-100 dark:border-white/10" />
 
-                    {/* Session / Danger Zone Section */}
                     <Menu.Label className="text-[10px] font-bold uppercase tracking-wider text-slate-400 dark:text-slate-500">
                       Session
                     </Menu.Label>
@@ -444,7 +444,6 @@ export function Header() {
                   </Menu.Dropdown>
                 </Menu>
 
-                {/* Mobile Hamburger Burger */}
                 <Burger
                   opened={drawerOpened}
                   onClick={toggleDrawer}
@@ -455,7 +454,6 @@ export function Header() {
                 />
               </>
             ) : (
-              /* Public / Logged-out State */
               <div className="flex items-center gap-2">
                 <HeaderCartButton />
                 {pathname === "/signin" || pathname === "/signup" ? (
@@ -488,7 +486,6 @@ export function Header() {
           </div>
         </div>
 
-        {/* Mobile Navigation Drawer */}
         <Drawer
           opened={drawerOpened}
           onClose={closeDrawer}
@@ -690,7 +687,6 @@ export function Header() {
         </Drawer>
       </header>
 
-      {/* Mantine Sign Out Confirmation Modal */}
       <Modal
         opened={signOutModalOpen}
         onClose={() => setSignOutModalOpen(false)}

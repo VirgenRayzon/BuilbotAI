@@ -1,12 +1,14 @@
 import { collection, doc, Firestore, setDoc, getDocs, writeBatch } from "firebase/firestore";
 import type { AuditLog, UserAuditLog, SystemNotification } from "@/lib/types";
+import { computeExpiresAt } from "@/lib/ttl-policies";
 
 export async function createAuditLog(firestore: Firestore, data: Omit<AuditLog, 'id' | 'createdAt'>) {
     const auditRef = doc(collection(firestore, 'auditLogs'));
     const auditLog: AuditLog = {
         ...data,
         id: auditRef.id,
-        createdAt: new Date()
+        createdAt: new Date(),
+        expiresAt: computeExpiresAt('auditLogs'),
     };
     await setDoc(auditRef, auditLog);
 }
@@ -16,16 +18,12 @@ export async function createUserAuditLog(firestore: Firestore, data: Omit<UserAu
     const userLog: UserAuditLog = {
         ...data,
         id: logRef.id,
-        createdAt: new Date()
+        createdAt: new Date(),
+        expiresAt: computeExpiresAt('auditLogs'),
     };
     await setDoc(logRef, userLog);
 }
 
-/**
- * Migration function: Converts existing SystemNotifications into AuditLogs.
- * Note: Only specific types of system notifications are migrated, mainly 
- * item_archived and status_changed, and user_cancelled, depending on what maps well.
- */
 export async function migrateNotificationsToAuditLogs(firestore: Firestore) {
     const notificationsSnap = await getDocs(collection(firestore, 'system_notifications'));
     const notifications = notificationsSnap.docs.map(d => ({ id: d.id, ...d.data() } as SystemNotification));
@@ -36,7 +34,7 @@ export async function migrateNotificationsToAuditLogs(firestore: Firestore) {
     for (const notif of notifications) {
         let actionName: AuditLog['actionName'] = 'other';
         let scope: AuditLog['scope'] = 'System';
-        
+
         if (notif.type === 'item_archived') {
             actionName = notif.title.includes('Restored') ? 'restored' : 'archived';
             scope = notif.title.includes('Prebuilt') ? 'Prebuilt' : 'Part';
@@ -44,11 +42,10 @@ export async function migrateNotificationsToAuditLogs(firestore: Firestore) {
             actionName = 'status_changed';
             scope = 'Order';
         } else if (notif.type === 'user_cancelled') {
-            actionName = 'status_changed'; // user cancelling is essentially an order status change
+            actionName = 'status_changed';
             scope = 'Order';
         }
 
-        // We try to extract resource name from the message if possible
         let resourceName = notif.targetId;
         if (notif.message.includes(': ')) {
             const parts = notif.message.split(': ');
@@ -72,18 +69,18 @@ export async function migrateNotificationsToAuditLogs(firestore: Firestore) {
             resourceName,
             resourceId: notif.targetId,
             details: notif.message,
-            createdAt: notif.createdAt
+            createdAt: notif.createdAt,
+            expiresAt: computeExpiresAt('auditLogs'),
         };
 
         batch.set(auditRef, auditData);
         count++;
 
-        // Commit in chunks of 500 if there are many, but usually there aren't that many in this scope
         if (count % 500 === 0) {
             await batch.commit();
         }
     }
-    
+
     if (count % 500 !== 0) {
         await batch.commit();
     }

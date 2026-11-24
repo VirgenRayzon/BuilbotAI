@@ -1,18 +1,12 @@
-/**
- * usePartForm — Custom hook for AddPartDialog form state and AI autofill logic.
- * Manages Zod-validated form schema, spec value helpers, PSU dimension auto-fill,
- * and AI-driven specification pre-filling via Genkit flows.
- */
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { useForm, UseFormReturn } from "react-hook-form";
+import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useToast } from "@/hooks/use-toast";
 import { getAiPartDetails } from "@/app/actions";
 import { Part } from "@/lib/types";
-import { CATEGORY_SPECS } from "@/lib/constants/category-specs";
 import { normalizeProductDescription } from "@/lib/normalize-product-description";
 
 const specificationSchema = z.object({
@@ -235,22 +229,6 @@ export function usePartForm({ initialData, open, isAiKillSwitch }: UsePartFormPr
         form.setValue("price", result.price, { shouldValidate: true });
         form.setValue("wattage", result.wattage, { shouldValidate: true });
 
-        // Add placeholder image if empty
-        if (!form.getValues("imageUrl")) {
-           const category = (result.category || form.getValues("category") || "PART").toUpperCase();
-           const placeholders: Record<string, string> = {
-             CPU: "https://images.unsplash.com/photo-1591799264318-7e6ef8ddb7ea?q=80&w=800&auto=format&fit=crop",
-             GPU: "https://images.unsplash.com/photo-1587202372775-e229f172b9d7?q=80&w=800&auto=format&fit=crop",
-             RAM: "https://images.unsplash.com/photo-1562976540-1502c2145186?q=80&w=800&auto=format&fit=crop",
-             MOTHERBOARD: "https://images.unsplash.com/photo-1518770660439-4636190af475?q=80&w=800&auto=format&fit=crop",
-             CASE: "https://images.unsplash.com/photo-1547082299-de196ea013d6?q=80&w=800&auto=format&fit=crop",
-             PSU: "https://images.unsplash.com/photo-1591488320449-011701bb6704?q=80&w=800&auto=format&fit=crop",
-             STORAGE: "https://images.unsplash.com/photo-1597852074816-d933c4d2b988?q=80&w=800&auto=format&fit=crop",
-             COOLER: "https://images.unsplash.com/photo-1614935151651-0bea6508db6b?q=80&w=800&auto=format&fit=crop",
-           };
-           const url = placeholders[category] || "https://images.unsplash.com/photo-1550009158-9ebf69173e03?q=80&w=800&auto=format&fit=crop";
-           form.setValue("imageUrl", url, { shouldValidate: true });
-        }
         form.setValue(
           "performanceScore",
           result.performanceScore || (result.performanceTier ? result.performanceTier * 10 : 50),
@@ -354,6 +332,45 @@ export function usePartForm({ initialData, open, isAiKillSwitch }: UsePartFormPr
     });
   };
 
+  const resetPartForm = () => {
+    setAiDuration(null);
+    setTokensUsed(null);
+    setAiComponentWarning(null);
+    form.reset(
+      initialData
+        ? {
+            partName: initialData.name,
+            category: initialData.category,
+            brand: initialData.brand,
+            price: initialData.price,
+            stockCount: initialData.stock,
+            imageUrl: initialData.imageUrl,
+            images: initialData.images || (initialData.imageUrl ? [initialData.imageUrl] : []),
+            wattage: initialData.wattage,
+            performanceScore: initialData.performanceScore,
+            dimensions: initialData.dimensions || { width: 0, height: 0, depth: 0 },
+            specifications: Object.entries(initialData.specifications || {}).map(([key, value]) => ({ key, value: String(value) })),
+            description: normalizeProductDescription(initialData.description),
+            packageType: initialData.packageType || "",
+          }
+        : {
+            partName: "",
+            category: "",
+            brand: "",
+            price: 0,
+            stockCount: 0,
+            imageUrl: "",
+            images: [],
+            wattage: undefined,
+            performanceScore: 50,
+            dimensions: { width: 0, height: 0, depth: 0 },
+            specifications: [],
+            description: "",
+            packageType: "",
+          }
+    );
+  };
+
   return {
     form,
     isAiPending,
@@ -363,6 +380,7 @@ export function usePartForm({ initialData, open, isAiKillSwitch }: UsePartFormPr
     handleGetAiDetails,
     handleCancelAiDetails,
     setSpecValue,
+    resetPartForm,
     selectedCategory,
   };
 }

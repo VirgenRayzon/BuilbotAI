@@ -2,6 +2,10 @@
 
 ## Customer identity
 
+### Simple explanation
+
+This flowchart shows how a customer signs in or creates an account. The customer can use email and password or Google. The app checks the account and loads the customer profile. Staff accounts are stopped from using the customer sign-in page. A valid customer is sent to the Builder or to the page they first asked to open.
+
 ```mermaid
 flowchart TD
   Start([Customer entry]) --> Choice{Sign in, sign up, or reset?}
@@ -24,11 +28,18 @@ flowchart TD
   Reset --> ResetValid{Valid address and reset request succeeds?}
   ResetValid -- No --> ResetError[/Error on reset page/] --> Reset
   ResetValid -- Yes --> ResetDone([Reset email requested])
+  StaffPage --> Finish([END])
+  Builder --> Finish
+  ResetDone --> Finish
 ```
 
 Google customer auth follows the same staff rejection and profile path. Popup cancellation and provider errors return to the form. Sources: `src/app/signin/page.tsx`, `src/app/signup/page.tsx`, `src/app/forgot-password/page.tsx`, `src/firebase/auth/google-auth.tsx`, `src/components/auth/terms-of-agreement-modal.tsx`.
 
 ## Staff access and guards
+
+### Simple explanation
+
+This flowchart shows how Managers and Super Admins enter staff pages. The person chooses a role, signs in, and provides the matching role key. The server checks the account, key, and staff role before opening the dashboard. Page guards and the staff session check block people who do not pass. An idle staff session shows a warning and later signs the person out if they do not stay signed in.
 
 ```mermaid
 flowchart TD
@@ -60,6 +71,8 @@ flowchart TD
   Admin --> Idle{Idle warning?}
   Idle -- Stay logged in --> Admin
   Idle -- Logout or timeout --> Exit([Sign out])
+  RequestDone --> Finish([END])
+  Exit --> Finish
 ```
 
 The live profile is read from `users/{uid}` and client roles are derived by `getEffectiveRole`; Firestore rules use custom claims for privileged writes. The guard is a client navigation guard, while server actions and Firestore rules have separate checks. Sources: `src/app/system-access/page.tsx`, `src/app/system-access/signup/page.tsx`, `src/app/actions.ts` (`authenticateSystemAccessAction`, `registerManagerAction`), `src/context/user-profile.tsx`, `src/lib/auth-utils.ts`, `src/components/auth/route-guard.tsx`, `src/hooks/use-admin-session-guard.ts`, `src/components/auth/session-timeout.tsx`, `firestore.rules`.

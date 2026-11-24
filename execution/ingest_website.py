@@ -5,26 +5,19 @@ import re
 from datetime import datetime
 
 def clean_html(html_content):
-    """
-    Performs basic HTML cleaning to extract readable text.
-    """
-    # Remove script and style elements
     script_re = re.compile('<script.*?>.*?</script>', re.DOTALL | re.IGNORECASE)
     style_re = re.compile('<style.*?>.*?</style>', re.DOTALL | re.IGNORECASE)
     html_content = script_re.sub('', html_content)
     html_content = style_re.sub('', html_content)
 
-    # Process common tags into markdown-ish formatting
     html_content = re.sub(r'<h[1-6].*?>(.*?)</h[1-6]>', r'\n\n# \1\n', html_content, flags=re.IGNORECASE)
     html_content = re.sub(r'<p.*?>', r'\n\n', html_content, flags=re.IGNORECASE)
     html_content = re.sub(r'<br\s*/?>', r'\n', html_content, flags=re.IGNORECASE)
     html_content = re.sub(r'<li>', r'\n- ', html_content, flags=re.IGNORECASE)
 
-    # Strip remaining tags
     clean_re = re.compile('<.*?>', re.DOTALL)
     text = clean_re.sub('', html_content)
 
-    # Clean up whitespace
     text = re.sub(r'\n\s*\n', '\n\n', text)
     text = text.strip()
     
@@ -38,11 +31,9 @@ def main():
     url = sys.argv[1]
     filename = sys.argv[2]
     
-    # Ensure filename has .md extension
     if not filename.endswith('.md'):
         filename += '.md'
 
-    # Target directory
     target_dir = os.path.join(os.getcwd(), 'src', 'knowledge')
     if not os.path.exists(target_dir):
         os.makedirs(target_dir)
@@ -60,7 +51,6 @@ def main():
         raw_content = response.text
         cleaned_text = clean_html(raw_content)
         
-        # Add a header with the source info
         header = f"---\nSource: {url}\nIngested: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n---\n\n"
         
         with open(target_path, 'w', encoding='utf-8') as f:

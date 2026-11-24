@@ -15,3 +15,5 @@ flowchart TD
   Kind -- Super Admin safeguard --> Browser{Native confirm accepted?}
   Browser -- No --> Return
   Browser -- Yes --> Write[Update site setting and show toast] --> Return
+  Return --> Finish([END])
+  Contact --> Finish

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getAdminFirestore } from '@/firebase/server-init';
 import { productReference } from '@/lib/server/public-products';
-import { productAdminUrl, productUrl, PRODUCT_ID_PATTERN, QR_TOKEN_PATTERN } from '@/lib/product-identity';
+import { productAdminUrl, productStockAdminUrl, productUrl, PRODUCT_ID_PATTERN, QR_TOKEN_PATTERN } from '@/lib/product-identity';
 import { qrIdentity } from '@/lib/server/qr-auth';
 import { qrFailure, QRRequestError, QR_RESPONSE_HEADERS } from '@/lib/qr-response';
 
@@ -24,6 +24,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     if (!product.exists) throw new QRRequestError('UNAVAILABLE', 'Product no longer available.', 404);
     if (product.get('productId') !== mapping.productId || product.get('qrToken') !== token) throw new Error('Inconsistent QR mapping');
     if (product.get('isArchived') && !staff) throw new QRRequestError('UNAVAILABLE', 'This product is no longer available.', 410);
-    return NextResponse.json({ destination: staff ? productAdminUrl(target.kind, mapping.productId, Boolean(product.get('isArchived'))) : productUrl(target.kind, mapping.productId) }, { headers: QR_RESPONSE_HEADERS });
+    const isArchived = Boolean(product.get('isArchived'));
+    const staffDestination = target.kind === 'part' && !isArchived
+      ? productStockAdminUrl(mapping.productId)
+      : productAdminUrl(target.kind, mapping.productId, isArchived);
+    return NextResponse.json({ destination: staff ? staffDestination : productUrl(target.kind, mapping.productId) }, { headers: QR_RESPONSE_HEADERS });
   } catch (error) { return qrFailure(error); }
 }

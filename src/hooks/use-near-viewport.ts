@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-/** Activate once, with enough lead time to fetch code/data before scrolling in. */
 export function useNearViewport<T extends HTMLElement>() {
   const ref = useRef<T>(null);
   const [isNear, setIsNear] = useState(false);

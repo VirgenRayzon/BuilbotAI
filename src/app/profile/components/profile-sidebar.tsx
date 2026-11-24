@@ -22,6 +22,11 @@ import {
   MessageCircle,
   LogOut,
   Truck,
+  CreditCard,
+  Wrench,
+  MapPin,
+  XCircle,
+  CheckCircle2,
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/firebase";
@@ -29,14 +34,18 @@ import { signOut } from "firebase/auth";
 import { cn } from "@/lib/utils";
 import type { UserProfile } from "@/lib/types";
 import { useSignOutTransition } from "@/context/sign-out-transition";
-import { useSiteSettings } from "@/context/site-settings-context";
 
 interface ProfileSidebarProps {
   profile: UserProfile | null;
   authUser: any;
   activeTab: string;
   onTabChange: (tab: string) => void;
-  reservationsCount?: number;
+  toPayCount?: number;
+  toShipCount?: number;
+  toBuildCount?: number;
+  toReceiveCount?: number;
+  completedCount?: number;
+  cancelledCount?: number;
   favoritesCount?: number;
   userLogsCount?: number;
   staffLogsCount?: number;
@@ -44,17 +53,19 @@ interface ProfileSidebarProps {
 
 export function ProfileSidebar({
   profile,
-  authUser,
   activeTab,
   onTabChange,
-  reservationsCount = 0,
+  toPayCount = 0,
+  toShipCount = 0,
+  toBuildCount = 0,
+  toReceiveCount = 0,
+  completedCount = 0,
+  cancelledCount = 0,
   favoritesCount = 0,
   userLogsCount = 0,
-  staffLogsCount = 0,
 }: ProfileSidebarProps) {
   const router = useRouter();
   const auth = useAuth();
-  const { isEcommerceMode } = useSiteSettings();
   const [signOutModalOpen, setSignOutModalOpen] = useState(false);
   const [isSigningOut, setIsSigningOut] = useState(false);
   const { startSignOut, cancelSignOut } = useSignOutTransition();
@@ -63,7 +74,6 @@ export function ProfileSidebar({
   const isManager = Boolean(profile?.isManager && !profile?.isSuperAdmin);
   const isRegularUser = !isSuperAdmin && !isManager;
 
-  // Handle Logout
   const handleConfirmSignOut = async () => {
     if (auth) {
       setIsSigningOut(true);
@@ -95,13 +105,19 @@ export function ProfileSidebar({
     badgeColor?: string;
   };
 
-  // 1. Account Items
   const accountItems: NavItem[] = [
     {
       id: "profile",
       label: "Profile",
       icon: User,
       color: "cyan",
+      badge: null,
+    },
+    {
+      id: "address-book",
+      label: "Address Book",
+      icon: MapPin,
+      color: "teal",
       badge: null,
     },
     {
@@ -113,17 +129,63 @@ export function ProfileSidebar({
     },
   ];
 
-  // For regular customers only: Store Reservations (or Orders & Shipments in E-Commerce Mode), Saved Favourites, Activity Logs
+  const ordersAndShipmentsItems: NavItem[] = [];
   if (isRegularUser) {
-    accountItems.push(
+    ordersAndShipmentsItems.push(
       {
-        id: "reservations",
-        label: isEcommerceMode ? "Orders & Shipments" : "Reservations",
-        icon: isEcommerceMode ? Truck : Package,
+        id: "to-pay",
+        label: "To Pay",
+        icon: CreditCard,
+        color: "amber",
+        badge: toPayCount > 0 ? toPayCount : null,
+        badgeColor: "amber",
+      },
+      {
+        id: "to-ship",
+        label: "To Ship",
+        icon: Package,
+        color: "cyan",
+        badge: toShipCount > 0 ? toShipCount : null,
+        badgeColor: "cyan",
+      },
+      {
+        id: "to-build",
+        label: "To Build",
+        icon: Wrench,
+        color: "violet",
+        badge: toBuildCount > 0 ? toBuildCount : null,
+        badgeColor: "violet",
+      },
+      {
+        id: "to-receive",
+        label: "To Receive",
+        icon: Truck,
         color: "blue",
-        badge: reservationsCount > 0 ? reservationsCount : null,
+        badge: toReceiveCount > 0 ? toReceiveCount : null,
         badgeColor: "blue",
       },
+      {
+        id: "completed",
+        label: "Completed",
+        icon: CheckCircle2,
+        color: "teal",
+        badge: completedCount > 0 ? completedCount : null,
+        badgeColor: "teal",
+      },
+      {
+        id: "cancelled",
+        label: "Cancelled",
+        icon: XCircle,
+        color: "red",
+        badge: cancelledCount > 0 ? cancelledCount : null,
+        badgeColor: "red",
+      }
+    );
+  }
+
+  const activityItems: NavItem[] = [];
+  if (isRegularUser) {
+    activityItems.push(
       {
         id: "favorites",
         label: "Saved Favourites",
@@ -150,7 +212,6 @@ export function ProfileSidebar({
     );
   }
 
-  // 2. Administration Items (Super Admin Tools - System Safeguards retained in Profile)
   const adminItems: NavItem[] = [];
   if (isManager || isSuperAdmin) {
     adminItems.push({
@@ -168,14 +229,23 @@ export function ProfileSidebar({
       icon: Activity,
       color: "amber",
       badge: "4 Controls",
-      badgeColor: isEcommerceMode ? "cyan" : "yellow",
+      badgeColor: "amber",
     });
   }
 
-  const allNavItems = [...accountItems, ...adminItems];
+  const allNavItems = [
+    ...accountItems,
+    ...ordersAndShipmentsItems,
+    ...activityItems,
+    ...adminItems,
+  ];
 
   const renderNavButton = (item: NavItem) => {
-    const isActive = activeTab === item.id || (item.id === "profile" && activeTab === "account");
+    const isActive =
+      activeTab === item.id ||
+      (item.id === "profile" && activeTab === "account") ||
+      (item.id === "to-ship" &&
+        (activeTab === "orders" || activeTab === "reservations"));
     const Icon = item.icon;
 
     return (
@@ -218,7 +288,6 @@ export function ProfileSidebar({
 
   return (
     <>
-      {/* MOBILE HORIZONTAL NAVIGATION (< lg) */}
       <div className="block lg:hidden w-full mb-4 sm:mb-6">
         <Paper
           hiddenFrom="lg"
@@ -229,7 +298,11 @@ export function ProfileSidebar({
         >
           <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar px-1">
             {allNavItems.map((item) => {
-              const isActive = activeTab === item.id || (item.id === "profile" && activeTab === "account");
+              const isActive =
+                activeTab === item.id ||
+                (item.id === "profile" && activeTab === "account") ||
+                (item.id === "to-ship" &&
+                  (activeTab === "orders" || activeTab === "reservations"));
               const Icon = item.icon;
 
               return (
@@ -264,7 +337,6 @@ export function ProfileSidebar({
         </Paper>
       </div>
 
-      {/* DESKTOP SIDEBAR (>= lg) */}
       <div className="hidden lg:block w-full">
         <Paper
           visibleFrom="lg"
@@ -274,7 +346,6 @@ export function ProfileSidebar({
           className="flex flex-col justify-between bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 shadow-sm"
         >
           <div className="space-y-5">
-            {/* SECTION 1: ACCOUNT */}
             <div className="space-y-1.5">
               <Text
                 size="xs"
@@ -288,7 +359,36 @@ export function ProfileSidebar({
               </div>
             </div>
 
-            {/* SECTION 2: ADMINISTRATION */}
+            {ordersAndShipmentsItems.length > 0 && (
+              <div className="space-y-1.5 pt-3 border-t border-slate-200 dark:border-white/10">
+                <Text
+                  size="xs"
+                  className="text-[10px] font-bold uppercase tracking-[0.15em] font-mono text-slate-400 dark:text-slate-500 px-3 pb-1"
+                >
+                  Order Workflow
+                </Text>
+
+                <div className="space-y-1">
+                  {ordersAndShipmentsItems.map(renderNavButton)}
+                </div>
+              </div>
+            )}
+
+            {activityItems.length > 0 && (
+              <div className="space-y-1.5 pt-3 border-t border-slate-200 dark:border-white/10">
+                <Text
+                  size="xs"
+                  className="text-[10px] font-bold uppercase tracking-[0.15em] font-mono text-slate-400 dark:text-slate-500 px-3 pb-1"
+                >
+                  Activity & Saved
+                </Text>
+
+                <div className="space-y-1">
+                  {activityItems.map(renderNavButton)}
+                </div>
+              </div>
+            )}
+
             {adminItems.length > 0 && (
               <div className="space-y-1.5 pt-3 border-t border-slate-200 dark:border-white/10">
                 <Text
@@ -303,10 +403,8 @@ export function ProfileSidebar({
                 </div>
               </div>
             )}
-
           </div>
 
-          {/* FOOTER ACTIONS: SESSION */}
           <div className="pt-3 border-t border-slate-200 dark:border-white/10 space-y-1.5 mt-5">
             <Text
               size="xs"
@@ -315,7 +413,6 @@ export function ProfileSidebar({
               Session
             </Text>
 
-            {/* Sign Out Button */}
             <UnstyledButton
               onClick={() => setSignOutModalOpen(true)}
               className="w-full h-[46px] min-h-[46px] max-h-[46px] flex items-center justify-between px-3 rounded-xl text-xs font-headline font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors group"
@@ -337,7 +434,6 @@ export function ProfileSidebar({
         </Paper>
       </div>
 
-      {/* Sign Out Confirmation Modal */}
       <Modal
         opened={signOutModalOpen}
         onClose={() => !isSigningOut && setSignOutModalOpen(false)}
@@ -368,7 +464,7 @@ export function ProfileSidebar({
         }}
       >
         <Text size="xs" className="text-slate-600 dark:text-slate-300 leading-relaxed mt-1">
-          Are you sure you want to sign out of Buildbot AI? You will need your credentials to access your saved PC configurations and store reservations.
+          Are you sure you want to sign out of Buildbot AI? You will need your credentials to access your saved PC configurations and orders.
         </Text>
 
         <Group justify="flex-end" gap="xs" mt="md">

@@ -1,6 +1,6 @@
 "use client";
 
-import { Cpu, X as CloseIcon } from "lucide-react";
+import { X as CloseIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { ComponentData } from "@/lib/types";

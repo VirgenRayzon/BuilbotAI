@@ -1,31 +1,28 @@
-/**
- * database — Firebase Firestore CRUD operations for all data models.
- * Handles parts, prebuilt systems, users, notifications, orders, and sales metrics.
- * Includes image upload pipeline (local base64 and remote URL proxy via server actions).
- */
 
-import { addDoc, collection, deleteDoc, doc, Firestore, getDoc, setDoc, updateDoc, writeBatch } from "firebase/firestore";
+import { collection, deleteDoc, doc, Firestore, getDoc, setDoc, updateDoc, writeBatch } from "firebase/firestore";
 import { getAuth } from "firebase/auth";
 import { getStorage, ref, uploadString, getDownloadURL } from "firebase/storage";
 import type { AddPartFormSchema } from "@/hooks/use-part-form";
 import type { AddPrebuiltFormSchema } from "@/components/add-prebuilt-dialog";
 import type { Part, PrebuiltSystem, UserProfile, SystemNotification } from "@/lib/types";
 import { fetchImageBase64 } from "@/app/image-actions";
-import { inventoryCategoryLabel, inventoryCategoryPath, inventoryItemPath, inventoryItemsPath } from "@/lib/inventory-paths";
+import { inventoryItemPath } from "@/lib/inventory-paths";
 import { saveCatalogProduct } from '@/lib/save-catalog-product';
+import { prebuiltProductSchema } from '@/lib/product-schemas';
 import { updateCatalogPart } from '@/app/product-actions';
+import {
+    extractPrebuiltComponentPartIds,
+    buildPrebuiltComponentSummaries,
+    calculatePrebuiltDerivedPrice,
+} from '@/lib/prebuilt-summaries';
+import { computeExpiresAt } from '@/lib/ttl-policies';
 
-// Uploads an image to Firebase Storage.
-// Local file uploads (data:image) go directly from the client (which has auth context).
-// Remote URLs are fetched via a server action proxy first, then uploaded client-side.
 async function uploadToStorageClient(url: string, storagePath: string, fileNamePrefix?: string): Promise<string> {
     if (!url) return url;
 
     const sanitizedPrefix = fileNamePrefix ? fileNamePrefix.replace(/[^a-z0-9]/gi, '_').toLowerCase() : 'image';
-    // Use the part name as a subfolder: parts/cpu/amd_ryzen_5_9600x/image-123456.webp
     const fullPath = `${storagePath}/${sanitizedPrefix}`;
 
-    // 1. Direct File Upload (Base64 Data URL) — upload from client (user is authenticated here)
     if (url.startsWith("data:image")) {
         console.log(`[Storage] Processing local file upload for path: ${fullPath}`);
         try {
@@ -52,7 +49,6 @@ async function uploadToStorageClient(url: string, storagePath: string, fileNameP
         }
     }
 
-    // 2. Keep URLs already stored in this Firebase bucket.
     if (!/^https?:\/\//i.test(url)) throw new Error("Enter a valid image URL.");
     const parsedUrl = new URL(url);
     const bucket = getStorage().app.options.storageBucket;
@@ -61,7 +57,6 @@ async function uploadToStorageClient(url: string, storagePath: string, fileNameP
         (parsedUrl.hostname === "storage.googleapis.com" && parsedUrl.pathname.startsWith(`/${bucket}/`))
     )) return url;
 
-    // 3. Remote URL — fetch via server action, then upload client-side
     console.log(`[Storage] Processing remote image: ${url} for path: ${storagePath}`);
     try {
         const idToken = await getAuth().currentUser?.getIdToken();
@@ -85,7 +80,6 @@ async function uploadToStorageClient(url: string, storagePath: string, fileNameP
     }
 }
 
-// Maps each category to the spec key that carries its wattage value
 const WATTAGE_SPEC_KEY: Record<string, string> = {
     CPU: 'TDP / Peak Power',
     GPU: 'TGP / Power Draw (W)',
@@ -93,7 +87,6 @@ const WATTAGE_SPEC_KEY: Record<string, string> = {
     Cooler: 'TDP Rating',
 };
 
-// Helper to extract wattage from specifications
 function resolveWattage(category: string, wattage?: number, specifications?: Record<string, string | number>) {
     if (wattage !== undefined) return wattage;
     if (!specifications || !category) return undefined;
@@ -107,7 +100,6 @@ function resolveWattage(category: string, wattage?: number, specifications?: Rec
     return parseFloat(String(val) || '0') || undefined;
 }
 
-// Helper to clean undefined values recursively
 function cleanData(obj: any): any {
     if (Array.isArray(obj)) return obj.map(v => v);
     if (obj !== null && typeof obj === 'object') {
@@ -147,8 +139,7 @@ function generateSearchKeywords(name: string, brand: string, category: string, m
     return Array.from(keywordsSet);
 }
 
-// Parts
-export async function addPart(firestore: Firestore, part: AddPartFormSchema, operationId = crypto.randomUUID()) {
+export async function addPart(_firestore: Firestore, part: AddPartFormSchema, operationId = crypto.randomUUID()) {
     const specificationsMap = part.specifications.reduce((acc: Record<string, string>, spec: { key: string; value: string }) => {
         acc[spec.key] = spec.value;
         return acc;
@@ -210,7 +201,6 @@ export async function addPart(firestore: Firestore, part: AddPartFormSchema, ope
     return saveCatalogProduct('part', cleanData(partData), part, operationId);
 }
 
-
 export async function updatePart(
     firestore: Firestore,
     category: Part['category'],
@@ -221,7 +211,6 @@ export async function updatePart(
     const isCategoryChanging = targetCategory !== category;
     const oldDocRef = doc(firestore, inventoryItemPath(category, partId));
 
-    // If specifications are being updated but not wattage, try to re-resolve wattage
     if (data.specifications && data.wattage === undefined) {
         data.wattage = resolveWattage(targetCategory, undefined, data.specifications);
     }
@@ -254,8 +243,6 @@ export async function updatePart(
 
     const cleanedData = cleanData(data);
 
-    // Specifications are the editable source of truth. Keep legacy shortcut
-    // fields synchronized so older consumers cannot retain stale compatibility data.
     if (data.specifications) {
         const socket = data.specifications['Socket'] ?? data.specifications['socket'];
         const ramType = data.specifications['Memory Type'] ?? data.specifications['RAM Type'];
@@ -263,7 +250,6 @@ export async function updatePart(
         if (ramType !== undefined) cleanedData.ramType = String(ramType).trim();
     }
 
-    // Regenerate search keywords if name, brand, or specifications are modified
     const docSnap = await getDoc(oldDocRef);
     const currentData = docSnap.exists() ? docSnap.data() : {};
 
@@ -315,8 +301,7 @@ export async function bulkDeleteParts(firestore: Firestore, items: { id: string,
     await batch.commit();
 }
 
-// Prebuilt Systems
-export async function addPrebuiltSystem(firestore: Firestore, system: AddPrebuiltFormSchema, operationId = crypto.randomUUID()) {
+export async function addPrebuiltSystem(_firestore: Firestore, system: AddPrebuiltFormSchema, operationId = crypto.randomUUID()) {
     const { name, tier, description, price, imageUrl, images, cpu, gpu, motherboard, ram, storage, psu, case: caseComponent, cooler } = system;
 
     const rawImages = images?.length ? images : (imageUrl ? [imageUrl] : []);
@@ -343,10 +328,29 @@ export async function addPrebuiltSystem(firestore: Firestore, system: AddPrebuil
             case: caseComponent,
             cooler
         },
-        createdAt: new Date()
+        createdAt: new Date(),
+        isArchived: false,
     };
 
-    return saveCatalogProduct('prebuilt', cleanData(systemData), system, operationId);
+    const componentPartIds = extractPrebuiltComponentPartIds(systemData as PrebuiltSystem);
+    const componentSummaries = await buildPrebuiltComponentSummaries(systemData as PrebuiltSystem, async (cat, partId) => {
+        try {
+            const snap = await getDoc(doc(_firestore, inventoryItemPath(cat, partId)));
+            return snap.exists() ? ({ ...snap.data(), id: snap.id } as Part) : null;
+        } catch {
+            return null;
+        }
+    });
+    const derivedPrice = calculatePrebuiltDerivedPrice(componentSummaries, price);
+
+    const fullSystemData = {
+        ...systemData,
+        componentPartIds,
+        componentSummaries,
+        price: derivedPrice,
+    };
+
+    return saveCatalogProduct('prebuilt', cleanData(fullSystemData), system, operationId);
 }
 
 export async function deletePrebuiltSystem(firestore: Firestore, systemId: string) {
@@ -380,7 +384,27 @@ export async function updatePrebuiltSystem(firestore: Firestore, systemId: strin
             cooler
         }
     };
-    await updateDoc(doc(firestore, 'prebuiltSystems', systemId), cleanData(systemData));
+
+    const componentPartIds = extractPrebuiltComponentPartIds(systemData as PrebuiltSystem);
+    const componentSummaries = await buildPrebuiltComponentSummaries(systemData as PrebuiltSystem, async (cat, partId) => {
+        try {
+            const snap = await getDoc(doc(firestore, inventoryItemPath(cat, partId)));
+            return snap.exists() ? ({ ...snap.data(), id: snap.id } as Part) : null;
+        } catch {
+            return null;
+        }
+    });
+    const derivedPrice = calculatePrebuiltDerivedPrice(componentSummaries, price);
+
+    const fullSystemData: Partial<PrebuiltSystem> = {
+        ...systemData,
+        componentPartIds,
+        componentSummaries,
+        price: derivedPrice,
+    };
+
+    prebuiltProductSchema.parse(fullSystemData);
+    await updateDoc(doc(firestore, 'prebuiltSystems', systemId), cleanData(fullSystemData));
 }
 
 export async function archivePrebuiltSystem(firestore: Firestore, systemId: string, isArchived: boolean = true) {
@@ -405,11 +429,10 @@ export async function bulkDeletePrebuilts(firestore: Firestore, systemIds: strin
     await batch.commit();
 }
 
-// Users
 export async function createUserProfile(firestore: Firestore, userId: string, data: Omit<UserProfile, 'id'>) {
     await setDoc(doc(firestore, 'users', userId), data);
 }
-// System Notifications
+
 export async function createSystemNotification(
     firestore: Firestore, 
     notification: Omit<SystemNotification, 'id' | 'createdAt' | 'readBy'>,
@@ -420,129 +443,7 @@ export async function createSystemNotification(
         ...notification,
         id: notificationRef.id,
         readBy,
-        createdAt: new Date()
+        createdAt: new Date(),
+        expiresAt: computeExpiresAt('notifications'),
     });
 }
-
-// Sales Metrics Reset
-export async function resetSalesMetrics(
-    firestore: Firestore, 
-    orders: { id: string }[], 
-    parts: { id: string, category: Part['category'] }[]
-) {
-    const batch = writeBatch(firestore);
-    
-    // 1. Delete all orders
-    orders.forEach(order => {
-        const orderRef = doc(firestore, 'orders', order.id);
-        batch.delete(orderRef);
-    });
-    
-    // 2. Reset popularity for all parts
-    parts.forEach(part => {
-        const partRef = doc(firestore, inventoryItemPath(part.category, part.id));
-        batch.update(partRef, { popularity: 0 });
-    });
-    
-    await batch.commit();
-}
-
-// Ingest Dummy Sales Data
-export async function ingestDummySalesData(
-    firestore: Firestore,
-    parts: Part[],
-    prebuilts: PrebuiltSystem[]
-) {
-    if (parts.length === 0) return;
-
-    const batch = writeBatch(firestore);
-    const orderCount = 100;
-    const now = new Date();
-    
-    // Popularity tracker for parts
-    const popularityMap = new Map<string, { category: Part['category'], count: number }>();
-
-    for (let i = 0; i < orderCount; i++) {
-        // Random date in last 12 months
-        const date = new Date(now.getTime() - Math.random() * (365 * 24 * 60 * 60 * 1000));
-        const orderRef = doc(collection(firestore, 'orders'));
-        
-        const isPrebuilt = Math.random() > 0.4 && prebuilts.length > 0;
-        let items: any[] = [];
-        let totalPrice = 0;
-        let orderType = 'custom';
-        let prebuiltId = '';
-        let prebuiltName = '';
-        let prebuiltTier = '';
-
-        if (isPrebuilt) {
-            const system = prebuilts[Math.floor(Math.random() * prebuilts.length)];
-            orderType = 'prebuilt';
-            prebuiltId = system.id;
-            prebuiltName = system.name;
-            prebuiltTier = system.tier;
-            
-            // Convert prebuilt components to items
-            const componentIds = Object.values(system.components).flat().filter(id => !!id);
-            componentIds.forEach(id => {
-                const part = parts.find(p => p.id === id);
-                if (part) {
-                    items.push({
-                        id: part.id,
-                        name: part.name,
-                        category: part.category,
-                        price: part.price
-                    });
-                    totalPrice += part.price;
-                    
-                    const partPath = inventoryItemPath(part.category, part.id);
-                    const current = popularityMap.get(partPath) || { category: part.category, count: 0 };
-                    popularityMap.set(partPath, { ...current, count: current.count + 1 });
-                }
-            });
-            // Round up to system price if needed or just use sum
-            totalPrice = system.price; 
-        } else {
-            // Random parts (3-8 parts)
-            const count = Math.floor(Math.random() * 5) + 3;
-            for (let j = 0; j < count; j++) {
-                const part = parts[Math.floor(Math.random() * parts.length)];
-                items.push({
-                    id: part.id,
-                    name: part.name,
-                    category: part.category,
-                    price: part.price
-                });
-                totalPrice += part.price;
-                
-                const partPath = inventoryItemPath(part.category, part.id);
-                const current = popularityMap.get(partPath) || { category: part.category, count: 0 };
-                popularityMap.set(partPath, { ...current, count: current.count + 1 });
-            }
-        }
-
-        const orderData = {
-            userId: 'dummy-user',
-            userEmail: `customer-${Math.floor(Math.random() * 1000)}@example.com`,
-            items,
-            totalPrice,
-            status: Math.random() > 0.1 ? 'finished building' : (Math.random() > 0.5 ? 'pending' : 'cancelled'),
-            createdAt: date,
-            type: orderType,
-            prebuiltId,
-            prebuiltName,
-            prebuiltTier
-        };
-
-        batch.set(orderRef, orderData);
-    }
-
-    // Update part popularity
-    popularityMap.forEach((data, partPath) => {
-        const partRef = doc(firestore, partPath);
-        batch.update(partRef, { popularity: data.count });
-    });
-
-    await batch.commit();
-}
-

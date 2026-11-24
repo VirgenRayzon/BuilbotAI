@@ -48,7 +48,6 @@ async function validateRemoteUrl(value: string): Promise<URL> {
     if (hostname === "localhost" || hostname.endsWith(".localhost") || hostname.endsWith(".local")) {
         throw new Error("Use a public image URL.");
     }
-    // Reject any host that resolves to a non-public address, including redirects.
     const addresses = await lookup(hostname, { all: true });
     if (addresses.length === 0 || addresses.some(({ address, family }) =>
         family === 4 ? isPrivateIpv4(address) : family === 6 ? isPrivateIpv6(address) : true
@@ -67,7 +66,6 @@ function hasImageSignature(bytes: Buffer, contentType: string): boolean {
     return false;
 }
 
-/** Fetches a public image for the signed-in manager; Storage upload happens client-side. */
 async function downloadImage(url: string, idToken: string): Promise<{ base64: string; contentType: string; extension: string }> {
     const decoded = await getAdminAuth().verifyIdToken(idToken);
     if (decoded.isManager !== true && decoded.isSuperAdmin !== true) {

@@ -1,8 +1,8 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-import { Button, Badge, Group, Text, Popover, Loader, ThemeIcon } from "@mantine/core";
-import { Sparkles, Zap, X, BrainCircuit, Activity } from "lucide-react";
+import { Button, Badge, Group, Popover, Loader } from "@mantine/core";
+import { Sparkles, Zap, X, Activity } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface AiActionButtonProps {
@@ -54,7 +54,6 @@ export function AiActionButton({
 
   return (
     <Group gap="xs" align="center" className="flex-wrap">
-      {/* Telemetry Turnaround Badge (Available after generation) */}
       {aiDuration !== null && !isPending && (
         <Popover
           width={280}
@@ -107,7 +106,6 @@ export function AiActionButton({
         </Popover>
       )}
 
-      {/* Dynamic Action Trigger / Live Pending State */}
       {isPending ? (
         <div className="flex items-center gap-2 p-1 pl-3 pr-1.5 rounded-xl border border-cyan-500/30 bg-cyan-500/10 backdrop-blur-md animate-in fade-in duration-300">
           <div className="flex items-center gap-2 text-cyan-700 dark:text-cyan-300 text-xs font-medium">

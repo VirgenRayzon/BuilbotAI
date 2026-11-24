@@ -23,7 +23,6 @@ interface RecommendationTabProps {
 }
 
 export function RecommendationTab({
-    isDark,
     isPending,
     handleGetRecommendations,
     handleCancelRecommendations,
@@ -41,7 +40,6 @@ export function RecommendationTab({
             animate={{ opacity: 1, y: 0 }}
             className="grid lg:grid-cols-12 gap-5 xl:gap-6 h-full"
         >
-            {/* Left Column - Width matched to "Your Build" (lg:col-span-3) */}
             <aside className="lg:col-span-3 lg:sticky lg:top-24 self-start">
                 <Paper
                     radius="lg"
@@ -71,7 +69,6 @@ export function RecommendationTab({
                 </Paper>
             </aside>
 
-            {/* Right Column - Width matched to Diagnostics (lg:col-span-9) */}
             <div className="lg:col-span-9">
                 <BuildSummary
                     build={build}

@@ -1,10 +1,6 @@
-/**
- * InventoryTable — Admin data table for managing inventory parts.
- * Supports inline stock editing, bulk selection, archive/restore, and delete actions.
- * Part names are clickable to open the AddPartDialog for editing.
- */
 
 import Link from 'next/link';
+import { Skeleton } from './ui/skeleton';
 import { productAdminUrl } from '@/lib/product-identity';
 import {
   Table,
@@ -22,22 +18,14 @@ import type { Part } from "@/lib/types";
 import { AddPartDialog } from "./add-part-dialog";
 import { AddStockDialog } from "./add-stock-dialog";
 import { type AddPartFormSchema } from "@/hooks/use-part-form";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { ConfirmationAlertDialog } from "@/components/ui/confirmation-alert-dialog";
 import { StockEditor } from "./stock-editor";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useSiteSettings } from "@/context/site-settings-context";
 
 interface InventoryTableProps {
+  loading?: boolean;
+  loadingCount?: number;
   parts: Part[];
   onDelete: (partId: string, category: Part['category']) => void;
   onArchive: (partId: string, category: Part['category'], isArchived?: boolean) => void;
@@ -52,6 +40,8 @@ interface InventoryTableProps {
 }
 
 export function InventoryTable({
+  loading = false,
+  loadingCount = 8,
   parts,
   onDelete,
   onArchive,
@@ -73,6 +63,7 @@ export function InventoryTable({
         <TableRow>
           <TableHead className="w-[40px]">
             <Checkbox
+              disabled={loading}
               checked={allSelected}
               onCheckedChange={() => onToggleSelectAll()}
             />
@@ -88,6 +79,13 @@ export function InventoryTable({
         </TableRow>
       </TableHeader>
       <TableBody>
+        {loading && parts.length === 0 && Array.from({length:loadingCount}, (_, index) => (
+          <TableRow key={`loading-${index}`} aria-hidden="true">
+            <TableCell><Skeleton className="h-4 w-4" /></TableCell>
+            <TableCell><div className="flex items-center gap-3"><Skeleton className="h-10 w-10 shrink-0" /><Skeleton>Component name</Skeleton></div></TableCell>
+            {Array.from({length:7}, (_, cell) => <TableCell key={cell}><Skeleton>Loading</Skeleton></TableCell>)}
+          </TableRow>
+        ))}
         {parts.map((part) => (
           <TableRow
             key={part.id}
@@ -174,9 +172,8 @@ export function InventoryTable({
             </TableCell>
             <TableCell>
               <div className="flex items-center gap-2">
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <Button
+                <ConfirmationAlertDialog
+                  trigger={<Button
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10"
@@ -184,63 +181,32 @@ export function InventoryTable({
                       title={isArchiveView ? "Restore" : "Archive"}
                     >
                       {isArchiveView ? <RotateCcw className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
-                    </Button>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>{isArchiveView ? "Restore Part?" : "Archive Part?"}</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        {isArchiveView
-                          ? `This will restore ${part.name} to the active inventory.`
-                          : `This will move ${part.name} to the archive. It will no longer be visible to customers.`
-                        }
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel onClick={(e) => e.stopPropagation()}>Cancel</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onArchive(part.id, part.category, !isArchiveView);
-                        }}
-                        className={isArchiveView ? "bg-primary hover:bg-primary/90" : "bg-orange-500 hover:bg-orange-600"}
-                      >
-                        {isArchiveView ? "Restore" : "Archive"}
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                    </Button>}
+                  icon={isArchiveView ? <RotateCcw className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
+                  title={isArchiveView ? "Restore Part" : "Archive Part"}
+                  description={isArchiveView ? `This will restore ${part.name} to the active inventory.` : `This will move ${part.name} to the archive. It will no longer be visible to customers.`}
+                  actionLabel={isArchiveView ? "Restore" : "Archive"}
+                  tone={isArchiveView ? "cyan" : "orange"}
+                  onConfirm={() => onArchive(part.id, part.category, !isArchiveView)}
+                />
 
                 {isSuperAdmin && (
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
+                  <ConfirmationAlertDialog
+                    trigger={<Button
                         variant="ghost"
                         size="icon"
                         onClick={(e) => e.stopPropagation()}
                         className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                       >
                         <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This action cannot be undone. This will permanently delete the part from your inventory.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => onDelete(part.id, part.category)}
-                          className="bg-destructive hover:bg-destructive/90"
-                        >
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                      </Button>}
+                    icon={<Trash2 className="h-4 w-4" />}
+                    title="Delete Part"
+                    description={<>This action cannot be undone. This will permanently delete <strong>{part.name}</strong> from your inventory.</>}
+                    actionLabel="Delete"
+                    tone="red"
+                    onConfirm={() => onDelete(part.id, part.category)}
+                  />
                 )}
               </div>
             </TableCell>

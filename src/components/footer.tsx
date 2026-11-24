@@ -11,7 +11,6 @@ export function Footer() {
     <footer className="relative overflow-hidden transition-colors duration-1000 mt-32 font-body border-t border-slate-200/80 dark:border-white/10">
       <div className="w-full max-w-[1600px] mx-auto pt-20 pb-12 px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10">
         <div className="flex flex-col md:flex-row justify-between items-start gap-12 mb-20">
-          {/* Brand Column */}
           <div className="space-y-5 max-w-md">
             <Logo />
             <p className="text-slate-600 dark:text-slate-400 text-sm max-w-md leading-relaxed font-medium">
@@ -36,7 +35,6 @@ export function Footer() {
               </div>
             </div>
           </div>
-          {/* Support Column - Aligned to right side, text left-justified */}
           <div className="space-y-4 text-left">
             <h3 className="text-xs font-black uppercase tracking-[0.25em] text-cyan-600 dark:text-cyan-400 font-headline">Support</h3>
             <nav className="flex flex-col gap-2.5 items-start text-left">
@@ -48,7 +46,6 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Big Text Section */}
         <div className="relative pt-8 pb-16 overflow-hidden select-none pointer-events-none">
           <motion.h1
             initial={{ y: 50, opacity: 0 }}
@@ -70,7 +67,6 @@ export function Footer() {
           </div>
         </div>
 
-        {/* Bottom Legal Section */}
         <div className="pt-8 border-t border-slate-200/60 dark:border-white/10 flex flex-col md:flex-row justify-between items-center gap-4 text-xs font-semibold text-slate-500 dark:text-slate-400">
           <p>&copy; {currentYear} Netcodex. All rights reserved.</p>
           <div className="flex gap-6">

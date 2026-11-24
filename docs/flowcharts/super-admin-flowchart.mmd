@@ -19,9 +19,9 @@ flowchart TD
   Menu -- AI --> AiSettings[Choose model/routing or prompt editor]
   AiSettings --> AiAction{Test, save, reset, or delete local project?}
   AiAction --> AiResult[Validation, action response and toast] --> AiSettings
-  Menu -- Site Content --> Content[Edit About content and save] --> Menu
   Menu -- Profile safeguards --> Safeguards[Maintenance, storage or AI switch]
   Safeguards --> BrowserConfirm{Confirm browser prompt?}
   BrowserConfirm -- Cancel --> Safeguards
   BrowserConfirm -- Confirm --> SettingsWrite[Update siteSettings] --> Safeguards
   Menu -- Sign out --> Exit([Signed out])
+  Exit --> Finish([END])

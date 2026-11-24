@@ -55,7 +55,7 @@ export function BuildRecommendationNotes({ webResearchInfo, hasExternalParts }: 
         </div>
       )}
       {hasExternalParts && (
-        <Text size="xs" className="text-amber-800 dark:text-amber-300 mt-2">
+        <Text size="xs" className="mt-2 !text-yellow-600 dark:!text-yellow-300">
           Some parts are outside store inventory. Confirm their specifications, compatibility, and availability before buying.
         </Text>
       )}

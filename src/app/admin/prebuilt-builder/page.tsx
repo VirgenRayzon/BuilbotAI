@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useMemo, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import { Card, CardContent, CardFooter } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { YourBuild } from "@/components/your-build";
 import {
     Cpu,
@@ -13,42 +13,51 @@ import {
     RectangleVertical,
     Wind,
     Plus,
+    Loader2,
     X,
     Monitor,
     Keyboard,
     Mouse,
     Headphones,
-    LayoutDashboard
 } from "lucide-react";
-import type { ComponentData, Part, Resolution, WorkloadType } from "@/lib/types";
+import type { ComponentData, Part, PrebuiltSystem, Resolution, WorkloadType } from "@/lib/types";
 import { InventoryToolbar } from "@/components/inventory-toolbar";
+import { CategorySelectionEmpty } from "@/components/category-selection-empty";
+import { hasNoSelectedCategories } from "@/lib/category-selection";
 import { PartCard } from "@/components/part-card";
 import { useInventoryParts } from "@/firebase/firestore/use-inventory-parts";
 import { useFirestore } from "@/firebase";
 import { Table, TableBody, TableCell, TableHeader, TableHead, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import Image from "next/image";
 import { OptimizedImage } from "@/components/ui/optimized-image";
 import { formatCurrency, cn, getOptimizedStorageUrl } from "@/lib/utils";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { PaginationControls } from "@/components/pagination-controls";
 import { useUserProfile } from "@/context/user-profile";
-import { useLoading } from "@/context/loading-context";
 import { useTheme } from "@/context/theme-provider";
 import { BuilderFloatingChat } from "@/components/builder-floating-chat";
-import { motion } from "framer-motion";
 
-import { addPrebuiltSystem } from "@/firebase/database";
+import { addPrebuiltSystem, updatePrebuiltSystem } from "@/firebase/database";
 import type { PrebuiltBuilderAddFormSchema } from "@/components/prebuilt-builder-add-dialog";
+import type { AddPrebuiltFormSchema } from '@/components/add-prebuilt-dialog';
+import { prebuiltProductSchema } from '@/lib/product-schemas';
 import { checkCompatibility } from "@/lib/compatibility";
-import { logAdminAction } from "@/app/actions";
-
+import { isIncludedIntegratedGpu, syncIntegratedGraphics } from '@/lib/integrated-graphics';
+import { includedCpuCoolerName } from '@/lib/included-cpu-cooler';
+import { clearCatalogCache, logAdminAction } from "@/app/actions";
+import { useLiveBuildRecommendations } from '@/hooks/use-live-build-recommendations';
+import { prioritizeRecommendedParts } from '@/lib/live-build-recommendations';
+import { useSiteSettings } from '@/context/site-settings-context';
 
 import { RouteGuard } from "@/components/auth/route-guard";
-import { usePrebuiltBuilderImport } from "@/app/admin/hooks/use-prebuilt-builder-import";
-
-type PartWithoutCategory = Omit<Part, 'category'>;
+import { ProtectedPageLoading } from "@/components/auth/protected-page-loading";
+import { PREBUILT_EDIT_SESSION_KEY, usePrebuiltBuilderImport } from "@/app/admin/hooks/use-prebuilt-builder-import";
+import { AdminSidebar, SidebarInset, SidebarProvider } from "@/app/admin/components/admin-sidebar";
+import { AdminTopbar } from "@/app/admin/components/admin-topbar";
+import { SearchNoResults } from "@/components/search-no-results";
+import { InventoryLoading } from "@/components/loading/inventory-loading";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const componentCategories = [
     { name: "Case", icon: RectangleVertical },
@@ -98,32 +107,24 @@ export default function PrebuiltBuilderPage() {
         Case: null, Motherboard: null, CPU: null, GPU: null, RAM: [], Storage: [], PSU: null, Cooler: null,
         Monitor: null, Keyboard: null, Mouse: null, Headset: null,
     });
+    const [editingPrebuilt, setEditingPrebuilt] = useState<PrebuiltSystem | null>(null);
+    const [isUpdatingPrebuilt, setIsUpdatingPrebuilt] = useState(false);
     const [resolution, setResolution] = useState<Resolution>('1440p');
-    const [workload, setWorkload] = useState<WorkloadType>('Balanced');
+    const [workload, setWorkload] = useState<WorkloadType>('AAA');
     const [analysis, setAnalysis] = useState<any>(null);
     const [isLoaded, setIsLoaded] = useState(false);
 
-    usePrebuiltBuilderImport(allParts, isLoaded, setBuild);
+    usePrebuiltBuilderImport(allParts, isLoaded, setBuild, setEditingPrebuilt);
 
-    const handleApplySuggestion = (category: string, partId: string) => {
-        const event = new CustomEvent('add-suggestion', {
-            detail: { id: partId, category }
-        });
-        window.dispatchEvent(event);
-    };
-
-
-    // Persistence
     useEffect(() => {
         const saved = localStorage.getItem('admin_pc_builder_state');
         if (saved) {
             try {
                 const parsedState = JSON.parse(saved);
-                // Sanitize orphaned stock cooler if no CPU is present in saved state
                 if (!parsedState.CPU && isIncludedStockCooler(parsedState.Cooler)) {
                     parsedState.Cooler = null;
                 }
-                setBuild(prev => ({ ...prev, ...parsedState }));
+                setBuild(prev => syncIntegratedGraphics({ ...prev, ...parsedState }));
             } catch (e) {
                 console.error("Failed to parse saved builder state", e);
             }
@@ -131,7 +132,6 @@ export default function PrebuiltBuilderPage() {
         setIsLoaded(true);
     }, []);
 
-    // Sync builder state when inventory parts update (e.g., category changed or part renamed/updated)
     useEffect(() => {
         if (!isLoaded || allParts.length === 0) return;
 
@@ -139,29 +139,33 @@ export default function PrebuiltBuilderPage() {
             let changed = false;
             const updatedBuild = { ...prevBuild };
 
-            // Clean up orphaned stock cooler if CPU is missing
             if (!updatedBuild['CPU'] && isIncludedStockCooler(updatedBuild['Cooler'] as ComponentData | null)) {
                 updatedBuild['Cooler'] = null;
                 changed = true;
             }
 
-            // Check single-slot categories
+            const selectedCpu = updatedBuild['CPU'] as ComponentData | null;
+            if (selectedCpu && isIncludedStockCooler(updatedBuild['Cooler'] as ComponentData | null)) {
+                const catalogCpu = allParts.find(part => part.category === 'CPU' && part.id === selectedCpu.id);
+                if (catalogCpu && !includedCpuCoolerName(catalogCpu)) {
+                    updatedBuild['Cooler'] = null;
+                    changed = true;
+                }
+            }
+
             const singleSlotCategories = ['Case', 'Motherboard', 'CPU', 'GPU', 'PSU', 'Cooler', 'Monitor', 'Keyboard', 'Mouse', 'Headset'];
-            
+
             for (const cat of singleSlotCategories) {
                 const item = updatedBuild[cat] as ComponentData | null;
                 if (!item || !item.id) continue;
                 if (cat === 'Cooler' && isIncludedStockCooler(item)) continue;
-                
-                // Find matching live part from catalog by ID or model
+
                 const livePart = allParts.find(p => p.id === item.id || p.name === item.model);
                 if (livePart) {
-                    // If the category in catalog has changed (e.g. from Cooler to Case)
                     if (livePart.category !== cat) {
                         changed = true;
-                        updatedBuild[cat] = null; // Remove from old slot
-                        
-                        // If the destination slot is empty or compatible, place it or update it
+                        updatedBuild[cat] = null;
+
                         if (singleSlotCategories.includes(livePart.category)) {
                             updatedBuild[livePart.category] = {
                                 ...item,
@@ -177,7 +181,7 @@ export default function PrebuiltBuilderPage() {
                 }
             }
 
-            return changed ? updatedBuild : prevBuild;
+            return syncIntegratedGraphics(changed ? updatedBuild : prevBuild);
         });
     }, [allParts, isLoaded]);
 
@@ -188,6 +192,8 @@ export default function PrebuiltBuilderPage() {
     }, [build, isLoaded]);
 
     const handleClearBuild = () => {
+        sessionStorage.removeItem(PREBUILT_EDIT_SESSION_KEY);
+        setEditingPrebuilt(null);
         setBuild({
             Case: null, Motherboard: null, CPU: null, GPU: null, RAM: [], Storage: [], PSU: null, Cooler: null,
             Monitor: null, Keyboard: null, Mouse: null, Headset: null,
@@ -205,7 +211,6 @@ export default function PrebuiltBuilderPage() {
         } else {
             next[category] = null;
 
-            // Destructive removal logic
             if (category === 'Case') {
                 const dependentParts = ['Motherboard', 'CPU', 'GPU', 'RAM', 'Storage', 'PSU', 'Cooler'];
                 dependentParts.forEach(key => {
@@ -228,7 +233,11 @@ export default function PrebuiltBuilderPage() {
                 toastToFire = { title: 'Cooler Removed', description: 'Stock cooler removed with its CPU.' };
             }
         }
-        setBuild(next);
+        if (category === 'GPU' && isIncludedIntegratedGpu(build.GPU as ComponentData | null)) {
+            next.CPU = null;
+            if (isIncludedStockCooler(next.Cooler as ComponentData | null)) next.Cooler = null;
+        }
+        setBuild(syncIntegratedGraphics(next));
         if (toastToFire) toast(toastToFire);
     };
 
@@ -247,7 +256,7 @@ export default function PrebuiltBuilderPage() {
 
     const getCountInBuild = (partName: string) => {
         let count = 0;
-        Object.entries(build).forEach(([category, data]) => {
+        Object.values(build).forEach((data) => {
             if (Array.isArray(data)) {
                 count += data.filter(d => d.model === partName).length;
             } else if (data && data.model === partName) {
@@ -257,7 +266,7 @@ export default function PrebuiltBuilderPage() {
         return count;
     };
 
-    const handleCategoryChange = (categoryName: string, selected: boolean) => {
+    const handleCategoryChange = (categoryName: string, _selected: boolean) => {
         setCurrentPage(1);
         setSelectedBrands([]);
         setCategories(prev => {
@@ -275,10 +284,7 @@ export default function PrebuiltBuilderPage() {
     const handlePartToggle = (part: Part) => {
         const category = part.category;
 
-        // Determine if we are removing an existing single-slot part
         const isCurrentlySelected = category !== 'Storage' && category !== 'RAM' && (build[category] as ComponentData)?.model === part.name;
-
-        // Sequence Validation (Removed)
 
         const { compatible, message } = checkCompatibility(part, build);
 
@@ -316,10 +322,10 @@ export default function PrebuiltBuilderPage() {
             };
 
             const currentItems = Array.isArray(build[category]) ? (build[category] as ComponentData[]) : (build[category] ? [build[category] as ComponentData] : []);
-            setBuild({
+            setBuild(syncIntegratedGraphics({
                 ...build,
                 [category]: [...currentItems, componentData]
-            });
+            }));
             toast({ title: 'Part Added', description: `${part.name} has been added to your build.` });
             return;
         }
@@ -345,14 +351,13 @@ export default function PrebuiltBuilderPage() {
                 toastsToShow.push({ title: 'Components Removed', description: 'Motherboard removed.' });
             }
 
-            // Handle CPU stock cooler logic
             const currentCooler = next['Cooler'] as ComponentData | null;
             if (category === 'CPU' && isIncludedStockCooler(currentCooler)) {
                 next['Cooler'] = null;
                 toastsToShow.push({ title: 'Cooler Removed', description: 'Stock cooler removed with its CPU.' });
             }
 
-            setBuild(next);
+            setBuild(syncIntegratedGraphics(next));
             toastsToShow.push({ title: 'Part Removed', description: `${part.name} has been removed from your build.` });
             toastsToShow.forEach(t => toast(t));
         } else {
@@ -410,15 +415,9 @@ export default function PrebuiltBuilderPage() {
             }
             toastsToShow.push({ title: 'Part Added', description: `${part.name} has been added to your build.` });
 
-            // Handle CPU stock cooler logic
             if (category === 'CPU') {
-                const isBoxed = (part as any).packageType?.toUpperCase() === 'BOX' ||
-                    (part as any).specifications?.['Package Type']?.toString().toUpperCase() === 'BOX';
-                if (isBoxed) {
-                    const isIntel = part.name.toLowerCase().includes('intel');
-                    const isAmd = part.name.toLowerCase().includes('amd');
-                    const coolerModel = isIntel ? "Intel Laminar RM1 CPU Cooler" : isAmd ? "AMD Wraith MAX CPU Cooler with RGB LED" : "Stock Cooler";
-
+                const coolerModel = includedCpuCoolerName(part);
+                if (coolerModel) {
                     next['Cooler'] = {
                         id: 'included-stock-cooler',
                         model: coolerModel,
@@ -431,17 +430,15 @@ export default function PrebuiltBuilderPage() {
                         specifications: { "Type": "Air (Stock)" }
                     };
                 } else {
-                    // If tray and currently have stock cooler, remove it
                     if (isIncludedStockCooler(next['Cooler'] as ComponentData | null)) {
                         next['Cooler'] = null;
                     }
                 }
             }
-            setBuild(next);
+            setBuild(syncIntegratedGraphics(next));
             toastsToShow.forEach(t => toast(t));
         }
     };
-
 
     const sortedAndFilteredParts = useMemo(() => {
         const selectedCategories = categories.filter(c => c.selected).map(c => c.name);
@@ -512,11 +509,24 @@ export default function PrebuiltBuilderPage() {
         return Array.from(brands).sort();
     }, [allParts, categories, searchQuery]);
 
-    const totalPages = Math.ceil(sortedAndFilteredParts.length / itemsPerPage);
-    const paginatedParts = useMemo(() => {
-        const startIndex = (currentPage - 1) * itemsPerPage;
-        return sortedAndFilteredParts.slice(startIndex, startIndex + itemsPerPage);
-    }, [sortedAndFilteredParts, currentPage, itemsPerPage]);
+    const activeRecommendationCategories = categories.filter(category => category.selected);
+    const recommendationCategory = activeRecommendationCategories.length === 1 ? activeRecommendationCategories[0].name : null;
+    const { isLiveBuilderRecommendationsEnabled } = useSiteSettings();
+    const [autoRecommendationsEnabled, setAutoRecommendationsEnabled] = useState(true);
+    const recommendations = useLiveBuildRecommendations({
+        allParts, build, resolution, workload, preferredCategory: recommendationCategory,
+        user: authUser || null, onAddPart: handlePartToggle,
+        enabled: isLiveBuilderRecommendationsEnabled && autoRecommendationsEnabled,
+    });
+    const prioritizedParts = useMemo(() =>
+        prioritizeRecommendedParts(sortedAndFilteredParts, recommendations.suggestions),
+    [sortedAndFilteredParts, recommendations.suggestions]);
+    const totalPages = Math.ceil(prioritizedParts.length / itemsPerPage);
+    const paginatedParts = useMemo(() => prioritizedParts.slice(
+        (currentPage - 1) * itemsPerPage, currentPage * itemsPerPage,
+    ), [prioritizedParts, currentPage, itemsPerPage]);
+    const recommendationKey = recommendations.suggestions.map(item => `${item.category}:${item.id}`).join('|');
+    useEffect(() => { setCurrentPage(1); }, [recommendationKey]);
 
     const isSelected = (part: Part) => {
         if (part.category === 'Storage' || part.category === 'RAM') {
@@ -541,99 +551,281 @@ export default function PrebuiltBuilderPage() {
         return saved;
     };
 
+    const handleUpdatePrebuilt = async () => {
+        if (!firestore || !editingPrebuilt || isUpdatingPrebuilt) return;
+        const selection = (category: string) => (build[category] as ComponentData | null)?.id || '';
+        const selections = (category: string) => (build[category] as ComponentData[]).map(part => part.id);
+        const data: AddPrebuiltFormSchema = {
+            name: editingPrebuilt.name,
+            tier: editingPrebuilt.tier,
+            description: editingPrebuilt.description || '',
+            price: ['CPU', 'GPU', 'Motherboard', 'RAM', 'Storage', 'PSU', 'Case', 'Cooler']
+              .map(category => build[category]).reduce<number>((sum, item) => sum + (Array.isArray(item)
+                ? item.reduce((partSum, part) => partSum + (part.price || 0), 0)
+                : item?.price || 0), 0),
+            imageUrl: editingPrebuilt.imageUrl,
+            images: editingPrebuilt.images,
+            cpu: selection('CPU'), gpu: selection('GPU'), motherboard: selection('Motherboard'),
+            ram: selections('RAM'), storage: selections('Storage'), psu: selection('PSU'),
+            case: selection('Case'), cooler: selection('Cooler'),
+        };
+        try {
+            prebuiltProductSchema.parse({
+                name: data.name, tier: data.tier, description: data.description, price: data.price,
+                imageUrl: data.imageUrl, images: data.images,
+                components: { cpu: data.cpu, gpu: data.gpu, motherboard: data.motherboard,
+                    ram: data.ram, storage: data.storage, psu: data.psu, case: data.case, cooler: data.cooler },
+            });
+            setIsUpdatingPrebuilt(true);
+            await updatePrebuiltSystem(firestore, editingPrebuilt.id, data);
+            await Promise.allSettled([
+                logAdminAction('Prebuilt Builder - Update', `${data.name} updated from builder`, data),
+                clearCatalogCache(),
+            ]);
+            toast({ title: 'Prebuilt updated', description: `${data.name} now uses the selected parts.` });
+            sessionStorage.removeItem(PREBUILT_EDIT_SESSION_KEY);
+            setEditingPrebuilt(null);
+            router.push(`/pre-builts/${editingPrebuilt.id}?from=admin`);
+        } catch (error) {
+            toast({ title: 'Could not update prebuilt', description: error instanceof Error ? error.message : 'Please try again.', variant: 'destructive' });
+        } finally {
+            setIsUpdatingPrebuilt(false);
+        }
+    };
+
     const isBuilderLoading = partsLoading || authLoading;
 
-
     return (
-        <RouteGuard requiredPermission="canAccessAdmin" fallbackPath="/system-access">
-            <div className={cn(
-                "min-h-screen transition-colors duration-500 overflow-x-hidden",
-                isDark ? "bg-[#0c0f14] text-slate-50" : "bg-white text-slate-900"
-            )}>
-                {/* Circuit Pattern Background */}
-                <div className={cn(
-                    "fixed inset-0 opacity-[0.03] pointer-events-none z-0",
-                    isDark ? "invert" : ""
-                )} style={{ backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px)', backgroundSize: '24px 24px' }} />
+        <RouteGuard requiredPermission="canAccessAdmin" fallbackPath="/system-access" loadingComponent={<ProtectedPageLoading variant="prebuilt-builder" />}>
+            <SidebarProvider defaultOpen={true}>
+                <AdminSidebar
+                    profile={profile}
+                    authUser={authUser}
+                    partsCount={allParts.length}
+                />
 
-                <main className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10 py-4 sm:py-6 md:py-8 pb-24 lg:pb-12 relative z-10">
-                    <div className="relative mb-6">
-                        <motion.div
-                            initial={{ opacity: 0, y: -4 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ duration: 0.2 }}
-                            className="relative z-10 flex flex-col gap-0.5"
-                        >
-                            <span className="text-[10px] uppercase tracking-[0.2em] font-bold text-cyan-600 dark:text-cyan-400 font-headline">
-                                Admin Creator
-                            </span>
-                            <h1 className="text-xl sm:text-2xl md:text-3xl font-headline font-bold uppercase tracking-tight text-slate-900 dark:text-slate-100">
-                                Prebuilt <span className="text-cyan-600 dark:text-cyan-400 italic">Builder</span>
-                            </h1>
-                            <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400">
-                                Configure new pre-built systems for the catalog using current inventory.
-                            </p>
-                        </motion.div>
-                    </div>
+                <SidebarInset
+                    className={cn(
+                        "min-h-svh transition-colors duration-300 overflow-x-hidden",
+                        isDark ? "bg-[#0c0f14] text-slate-50" : "bg-slate-50 text-slate-900"
+                    )}
+                >
+                    <div
+                        className={cn(
+                            "fixed inset-0 opacity-[0.03] pointer-events-none z-0",
+                            isDark ? "invert" : ""
+                        )}
+                        style={{
+                            backgroundImage: 'radial-gradient(#000 0.5px, transparent 0.5px)',
+                            backgroundSize: '24px 24px',
+                        }}
+                    />
 
-                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 xl:gap-8 items-start">
+                    <AdminTopbar
+                        currentTab="prebuilt-builder"
+                        sectionLabel="Prebuilt Builder"
+                        profile={profile}
+                        authUser={authUser}
+                        showSearch
+                        searchQuery={searchQuery}
+                        onSearchQueryChange={(value) => { setSearchQuery(value); setCurrentPage(1); }}
+                        searchPlaceholder="Search parts by name, brand, or SKU..."
+                    />
 
-                        {/* Your Build — Desktop Left Column & Mobile FAB Drawer */}
-                        <div className="contents lg:block lg:col-span-3 self-start">
-                            <YourBuild
-                                build={build}
-                                onRemovePart={handleRemovePart}
-                                onClearBuild={handleClearBuild}
-                                resolution={resolution}
-                                onResolutionChange={setResolution}
-                                workload={workload}
-                                onWorkloadChange={setWorkload}
-                                isManagerMode={true}
-                                onAddPrebuilt={handleAddPrebuilt}
-                                onCategorySelect={(cat) => handleCategoryChange(cat, true)}
-                                categories={categories}
-                                analysis={analysis}
-                                onAnalysisUpdate={setAnalysis}
-                            />
-                        </div>
-
-                        {/* Inventory — Right Column */}
-                        <div className="flex flex-col gap-6 lg:col-span-9 min-w-0">
+                    <div className="w-full max-w-[1600px] mx-auto px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10 py-4 sm:py-6 md:py-8 pb-24 lg:pb-12 relative z-10 flex-1">
+                        <div className="flex flex-col gap-6 xl:gap-8">
                             <InventoryToolbar
-                                categories={categories}
-                                onCategoryChange={handleCategoryChange}
-                                itemCount={sortedAndFilteredParts.length}
-                                sortBy={sortBy}
-                                onSortByChange={(val) => { setSortBy(val); setCurrentPage(1); }}
-                                sortDirection={sortDirection}
-                                onSortDirectionChange={(val) => { setSortDirection(val); setCurrentPage(1); }}
-                                supportedSorts={['Date Added', 'Name', 'Price']}
-                                view={view}
-                                onViewChange={setView}
-                                showViewToggle={true}
-                                searchQuery={searchQuery}
-                                onSearchQueryChange={(val) => { setSearchQuery(val); setCurrentPage(1); }}
-                                availableBrands={availableBrands}
-                                selectedBrands={selectedBrands}
-                                onBrandChange={setSelectedBrands}
-                                hideIncompatible={hideIncompatible}
-                                onHideIncompatibleChange={setHideIncompatible}
+                                    categories={categories}
+                                    onCategoryChange={handleCategoryChange}
+                                    onClearCategories={() => {
+                                        setCategories(prev => prev.map(cat => ({ ...cat, selected: false })));
+                                        setCurrentPage(1);
+                                    }}
+                                    categoryLabel="Categories"
+                                    itemLabel="parts"
+                                    searchPlaceholder="Search parts by name, brand, or SKU..."
+                                    defaultSort="Date Added:desc"
+                                    itemCount={prioritizedParts.length}
+                                    sortBy={sortBy}
+                                    onSortByChange={(val) => { setSortBy(val); setCurrentPage(1); }}
+                                    sortDirection={sortDirection}
+                                    onSortDirectionChange={(val) => { setSortDirection(val); setCurrentPage(1); }}
+                                    supportedSorts={['Date Added', 'Name', 'Price']}
+                                    view={view}
+                                    onViewChange={setView}
+                                    showViewToggle={true}
+                                    searchQuery={searchQuery}
+                                    onSearchQueryChange={(val) => { setSearchQuery(val); setCurrentPage(1); }}
+                                    availableBrands={availableBrands}
+                                    selectedBrands={selectedBrands}
+                                    onBrandChange={setSelectedBrands}
+                                    hideIncompatible={hideIncompatible}
+                                    onHideIncompatibleChange={setHideIncompatible}
+                                variant="admin-header"
                             />
 
-                            {isBuilderLoading ? null : sortedAndFilteredParts.length > 0 ? (
-                                view === 'grid' ? (
-                                    <>
-                                        <div className="grid gap-3 md:gap-4 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-4">
-                                            {paginatedParts.map(part => (
-                                                <PartCard
-                                                    key={part.id}
-                                                    part={part}
-                                                    effectiveStock={(part as any).effectiveStock}
-                                                    onToggleBuild={handlePartToggle}
-                                                    isSelected={isSelected(part)}
-                                                    compatibility={(part as any).compatibility}
-                                                />
-                                            ))}
+                            <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12 xl:gap-8">
+                                <div className="contents lg:block lg:col-span-3 lg:self-start">
+                                    <YourBuild
+                                        build={build}
+                                        recommendationState={isLiveBuilderRecommendationsEnabled ? recommendations : undefined}
+                                        autoRecommendationsEnabled={autoRecommendationsEnabled}
+                                        onAutoRecommendationsChange={setAutoRecommendationsEnabled}
+                                        onRemovePart={handleRemovePart}
+                                        onClearBuild={handleClearBuild}
+                                        resolution={resolution}
+                                        onResolutionChange={setResolution}
+                                        workload={workload}
+                                        onWorkloadChange={setWorkload}
+                                        isManagerMode={true}
+                                        onAddPrebuilt={handleAddPrebuilt}
+                                        editingPrebuilt={editingPrebuilt}
+                                        onUpdatePrebuilt={handleUpdatePrebuilt}
+                                        isUpdatingPrebuilt={isUpdatingPrebuilt}
+                                        onCategorySelect={(cat) => handleCategoryChange(cat, true)}
+                                        categories={categories}
+                                        analysis={analysis}
+                                        onAnalysisUpdate={setAnalysis}
+                                    />
+                                </div>
+
+                                <div className="flex min-w-0 flex-col gap-6 lg:col-span-9">
+                                {hasNoSelectedCategories(categories) ? (
+                                    <CategorySelectionEmpty itemLabel="parts" onSelectAll={() => handleCategoryChange("All", true)} />
+                                ) : isBuilderLoading ? (
+                                    view === 'grid' ? (
+                                        <InventoryLoading
+                                            view="grid"
+                                            count={itemsPerPage}
+                                            gridClassName="grid grid-cols-2 gap-3 md:grid-cols-3 md:gap-4 lg:grid-cols-4 xl:grid-cols-4"
+                                        />
+                                    ) : (
+                                        <Card className="mt-6 overflow-hidden">
+                                            <div className="overflow-x-auto no-scrollbar">
+                                                <Table>
+                                                    <TableHeader>
+                                                        <TableRow>
+                                                            <TableHead>Item</TableHead>
+                                                            <TableHead>Stock</TableHead>
+                                                            <TableHead className="text-right">Price</TableHead>
+                                                            <TableHead className="w-[50px]"></TableHead>
+                                                        </TableRow>
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                        {Array.from({ length: itemsPerPage }, (_, index) => (
+                                                            <TableRow key={index} aria-hidden="true">
+                                                                <TableCell>
+                                                                    <div className="flex items-center gap-3">
+                                                                        <Skeleton className="h-10 w-10 shrink-0 rounded-sm" />
+                                                                        <div className="space-y-1.5">
+                                                                            <Skeleton className="h-4 w-36" />
+                                                                            <Skeleton className="h-3 w-20" />
+                                                                        </div>
+                                                                    </div>
+                                                                </TableCell>
+                                                                <TableCell><Skeleton className="h-5 w-20 rounded-full" /></TableCell>
+                                                                <TableCell className="text-right"><Skeleton className="ml-auto h-4 w-20" /></TableCell>
+                                                                <TableCell><Skeleton className="h-9 w-9 rounded-md" /></TableCell>
+                                                            </TableRow>
+                                                        ))}
+                                                    </TableBody>
+                                                </Table>
+                                            </div>
+                                        </Card>
+                                    )
+                                ) : prioritizedParts.length > 0 ? (
+                                    view === 'grid' ? (
+                                        <>
+                                            <div className={cn("grid grid-cols-2 gap-x-3 md:grid-cols-3 md:gap-x-4 lg:grid-cols-4 xl:grid-cols-4",
+                                                recommendations.suggestions.length ? "gap-y-8 pt-10" : "gap-y-3 md:gap-y-4")}>
+                                                {paginatedParts.map(part => (
+                                                    <PartCard
+                                                        key={part.id}
+                                                        part={part}
+                                                        effectiveStock={(part as any).effectiveStock}
+                                                        onToggleBuild={handlePartToggle}
+                                                        isSelected={isSelected(part)}
+                                                        compatibility={(part as any).compatibility}
+                                                        recommendation={recommendations.suggestions.find(item => item.id === part.id && item.category === part.category)
+                                                            ? (() => {
+                                                                const item = recommendations.suggestions.find(suggestion => suggestion.id === part.id && suggestion.category === part.category)!;
+                                                                return { action: item.action, role: item.role, reason: item.reason,
+                                                                    applying: recommendations.applyingId === item.id, onApply: () => void recommendations.apply(item) };
+                                                            })() : undefined}
+                                                    />
+                                                ))}
+                                            </div>
+                                            <PaginationControls
+                                                currentPage={currentPage}
+                                                totalPages={totalPages}
+                                                itemsPerPage={itemsPerPage}
+                                                onPageChange={setCurrentPage}
+                                                onItemsPerPageChange={setItemsPerPage}
+                                            />
+                                        </>
+                                    ) : (
+                                        <Card className="mt-6 overflow-hidden">
+                                            <div className="overflow-x-auto no-scrollbar">
+                                                <Table>
+                                                    <TableHeader>
+                                                        <TableRow>
+                                                            <TableHead>Item</TableHead>
+                                                            <TableHead>Stock</TableHead>
+                                                            <TableHead className="text-right">Price</TableHead>
+                                                            <TableHead className="w-[50px]"></TableHead>
+                                                        </TableRow>
+                                                    </TableHeader>
+                                                    <TableBody>
+                                                    {paginatedParts.map(part => {
+                                                        const selected = isSelected(part);
+                                                        const currentStock = part.stock - getCountInBuild(part.name);
+                                                        const recommendation = recommendations.suggestions.find(item => item.id === part.id && item.category === part.category);
+                                                        return (
+                                                            <TableRow key={part.id} className={cn(
+                                                                (part as any).effectiveStock === 0 && !selected && "opacity-50 grayscale",
+                                                                recommendation?.role === 'bestMatch' && "bg-blue-50/70 dark:bg-blue-950/20 border-l-2 border-l-blue-500",
+                                                                recommendation?.role === 'bestValue' && "bg-amber-50/70 dark:bg-amber-950/20 border-l-2 border-l-yellow-500",
+                                                                (part as any).compatibility && !(part as any).compatibility.compatible && "bg-destructive/[0.03] hover:bg-destructive/[0.06] border-l-2 border-l-destructive shadow-[inset_4px_0_0_-2px_rgba(239,68,68,0.5)]"
+                                                            )}>
+                                                                <TableCell className="font-medium">
+                                                                    <div className="flex items-center gap-3">
+                                                                        <OptimizedImage src={getOptimizedStorageUrl(part.imageUrl) || "/placeholder-part.png"} alt={part.name} width={40} height={40} className="rounded-sm object-cover" />
+                                                                        <div>
+                                                                            <p className="font-semibold">{part.name}</p>
+                                                                            {recommendation && <p className={cn("text-xs font-semibold", recommendation.role === 'bestMatch'
+                                                                                ? "text-blue-800 dark:text-blue-200" : "text-amber-800 dark:text-yellow-200")}>
+                                                                                {recommendation.role === 'bestMatch' ? 'Best match' : 'Best value'}
+                                                                            </p>}
+                                                                            <p className="text-xs text-muted-foreground">{part.brand}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                </TableCell>
+                                                                <TableCell>
+                                                                    <Badge variant={currentStock > 5 ? "secondary" : currentStock > 0 ? "destructive" : "outline"}>
+                                                                        {currentStock > 0 ? `${currentStock} in stock` : "Out of stock"}
+                                                                    </Badge>
+                                                                </TableCell>
+                                                                <TableCell className="text-right">{formatCurrency(part.price)}</TableCell>
+                                                                <TableCell>
+                                                                    {(!((part as any).compatibility && !(part as any).compatibility.compatible) || selected) && (
+                                                                        <Button
+                                                                            size="icon"
+                                                                            onClick={() => recommendation && !selected ? void recommendations.apply(recommendation) : handlePartToggle(part)}
+                                                                            disabled={(currentStock === 0 && !selected) || recommendations.applyingId === part.id}
+                                                                            aria-label={recommendations.applyingId === part.id ? 'Checking part' : selected ? 'Remove from build' : 'Add to build'}
+                                                                            variant={selected ? 'destructive' : 'default'}
+                                                                        >
+                                                                            {recommendations.applyingId === part.id
+                                                                                ? <Loader2 className="h-4 w-4 animate-spin" />
+                                                                                : selected ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                                                                        </Button>
+                                                                    )}
+                                                                </TableCell>
+                                                            </TableRow>
+                                                        );
+                                                    })}
+                                                </TableBody>
+                                            </Table>
                                         </div>
                                         <PaginationControls
                                             currentPage={currentPage}
@@ -642,94 +834,36 @@ export default function PrebuiltBuilderPage() {
                                             onPageChange={setCurrentPage}
                                             onItemsPerPageChange={setItemsPerPage}
                                         />
-                                    </>
+                                    </Card>
+                                    )
+                                ) : searchQuery.trim() ? (
+                                    <SearchNoResults query={searchQuery} itemLabel="components" onClear={() => { setSearchQuery(''); setCurrentPage(1); }} className="mt-6" />
                                 ) : (
-                                    <Card className="mt-6 overflow-hidden">
-                                        <div className="overflow-x-auto no-scrollbar">
-                                            <Table>
-                                                <TableHeader>
-                                                    <TableRow>
-                                                        <TableHead>Item</TableHead>
-                                                        <TableHead>Stock</TableHead>
-                                                        <TableHead className="text-right">Price</TableHead>
-                                                        <TableHead className="w-[50px]"></TableHead>
-                                                    </TableRow>
-                                                </TableHeader>
-                                                <TableBody>
-                                                {paginatedParts.map(part => {
-                                                    const selected = isSelected(part);
-                                                    const currentStock = part.stock - getCountInBuild(part.name);
-                                                    return (
-                                                        <TableRow key={part.id} className={cn(
-                                                            (part as any).effectiveStock === 0 && !selected && "opacity-50 grayscale",
-                                                            (part as any).compatibility && !(part as any).compatibility.compatible && "bg-destructive/[0.03] hover:bg-destructive/[0.06] border-l-2 border-l-destructive shadow-[inset_4px_0_0_-2px_rgba(239,68,68,0.5)]"
-                                                        )}>
-                                                            <TableCell className="font-medium">
-                                                                <div className="flex items-center gap-3">
-                                                                    <OptimizedImage src={getOptimizedStorageUrl(part.imageUrl) || "/placeholder-part.png"} alt={part.name} width={40} height={40} className="rounded-sm object-cover" />
-                                                                    <div>
-                                                                        <p className="font-semibold">{part.name}</p>
-                                                                        <p className="text-xs text-muted-foreground">{part.brand}</p>
-                                                                    </div>
-                                                                </div>
-                                                            </TableCell>
-                                                            <TableCell>
-                                                                <Badge variant={currentStock > 5 ? "secondary" : currentStock > 0 ? "destructive" : "outline"}>
-                                                                    {currentStock > 0 ? `${currentStock} in stock` : "Out of stock"}
-                                                                </Badge>
-                                                            </TableCell>
-                                                            <TableCell className="text-right">{formatCurrency(part.price)}</TableCell>
-                                                            <TableCell>
-                                                                {(!((part as any).compatibility && !(part as any).compatibility.compatible) || selected) && (
-                                                                    <Button
-                                                                        size="icon"
-                                                                        onClick={() => handlePartToggle(part)}
-                                                                        disabled={currentStock === 0 && !selected}
-                                                                        variant={selected ? 'destructive' : 'default'}
-                                                                    >
-                                                                        {selected ? <X className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-                                                                    </Button>
-                                                                )}
-                                                            </TableCell>
-                                                        </TableRow>
-                                                    );
-                                                })}
-                                            </TableBody>
-                                        </Table>
-                                    </div>
-                                    <PaginationControls
-                                        currentPage={currentPage}
-                                        totalPages={totalPages}
-                                        itemsPerPage={itemsPerPage}
-                                        onPageChange={setCurrentPage}
-                                        onItemsPerPageChange={setItemsPerPage}
-                                    />
-                                </Card>
-                                )
-                            ) : (
-                                <Card className="mt-6 min-h-[400px] flex items-center justify-center">
-                                    <CardContent className="text-center text-muted-foreground p-6">
-                                        <p>No components found for the selected categories.</p>
-                                    </CardContent>
-                                </Card>
-                            )}
+                                    <Card className="mt-6 min-h-[400px] flex items-center justify-center">
+                                        <CardContent className="text-center text-muted-foreground p-6">
+                                            <p>No components found for the selected categories.</p>
+                                        </CardContent>
+                                    </Card>
+                                )}
+                                </div>
+                            </div>
                         </div>
-                    </div>
 
-                    <BuilderFloatingChat
-                        build={build}
-                        onAddPart={(partName, partId) => {
-                            const part = allParts.find(item => item.id === partId);
-                            if (part) handlePartToggle(part);
-                            else toast({
-                                variant: 'destructive',
-                                title: 'Part Not Found',
-                                description: `${partName} is no longer in the current inventory.`,
-                            });
-                        }}
-                    />
-                </main>
-            </div>
+                        <BuilderFloatingChat
+                            build={build}
+                            onAddPart={(partName, partId) => {
+                                const part = allParts.find(item => item.id === partId);
+                                if (part) handlePartToggle(part);
+                                else toast({
+                                    variant: 'destructive',
+                                    title: 'Part Not Found',
+                                    description: `${partName} is no longer in the current inventory.`,
+                                });
+                            }}
+                        />
+                    </div>
+                </SidebarInset>
+            </SidebarProvider>
         </RouteGuard>
     );
 }

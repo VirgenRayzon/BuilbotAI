@@ -1,16 +1,14 @@
 'use server';
-/**
- * @fileOverview This file defines a Genkit flow for the AI Build Advisor chatbot,
- * providing initial recommendations for core PC components based on user goals.
- *
- * - aiBuildAdvisorRecommendations - A function that handles the AI-powered component recommendation process.
- * - AiBuildAdvisorRecommendationsInput - The input type for the aiBuildAdvisorRecommendations function.
- * - AiBuildAdvisorRecommendationsOutput - The return type for the aiBuildAdvisorRecommendations function.
- */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
-import { getGenkitModelName, safeGenkitGenerate } from '@/lib/ai-model-resolver';
+import { getGenkitModelName } from '@/lib/ai-model-resolver';
+import { retrieveLocalKnowledge } from '@/lib/knowledge-retriever';
+import { getAdminFirestore } from '@/firebase/server-init';
+import { getInventoryFromFirestore } from '@/lib/inventory-fetcher';
+import { buildAdvisorRecommendationCacheKey } from '@/lib/server/ai-cache-keys';
+import { getCatalogMeta } from '@/lib/server/catalog-meta-store';
+import { computeExpiresAt, isExpiredAt } from '@/lib/ttl-policies';
 
 import {
   AiBuildAdvisorRecommendationsInputSchema,
@@ -19,15 +17,12 @@ import {
   type AiBuildAdvisorRecommendationsOutput,
 } from '@/ai/schemas/build-advisor-schemas';
 
-
-// Wrapper function to call the Genkit flow
 export async function aiBuildAdvisorRecommendations(
   input: AiBuildAdvisorRecommendationsInput
 ): Promise<AiBuildAdvisorRecommendationsOutput> {
   return aiBuildAdvisorRecommendationsFlow(input);
 }
 
-// Prompt Definition
 const aiBuildAdvisorRecommendationsPrompt = ai.definePrompt({
   name: 'aiBuildAdvisorRecommendationsPrompt',
   input: {
@@ -38,7 +33,7 @@ const aiBuildAdvisorRecommendationsPrompt = ai.definePrompt({
     }),
   },
   output: { schema: AiBuildAdvisorRecommendationsOutputSchema },
-  model: 'googleai/gemini-2.5-flash',
+  model: 'googleai/gemini-3.8-flash',
   config: { temperature: 0.1 },
   prompt: `{{#if customSystemPrompt}}
 {{{customSystemPrompt}}}
@@ -46,6 +41,8 @@ const aiBuildAdvisorRecommendationsPrompt = ai.definePrompt({
 You are an expert PC building advisor specializing in the Philippine market. Your goal is to recommend a set of compatible core components (CPU, GPU, Motherboard, RAM, Storage, PSU, Case, Cooler) for a user based on their specific needs.
 
 Provide a brief summary of the overall build strategy in the context of the Philippine market, and provide recommendations for each component with its model name, estimated PHP price, and estimated total wattage for the build.
+
+For suitable office, media, development, or light gaming goals, a CPU with verified integrated graphics can fill the GPU slot. Use GPU partId "included-integrated-gpu" and GPU estimatedPrice 0 only when the chosen CPU provides graphics. Explain that it shares system RAM. A dedicated GPU is needed for demanding gaming or GPU compute.
 
 DESCRIPTION RULES (MAXIMUM SPEED):
 - CPU, GPU, and Motherboard: Provide a concise justification explaining their performance synergy and value in PHP.
@@ -102,26 +99,7 @@ Additional Notes: {{{additionalNotes}}}
 Please format your response as a JSON object strictly following the output schema provided. The estimatedPrice for each component must be a realistic PHP price number (not a string).`,
 });
 
-
-// Genkit Flow Definition
-import { retrieveLocalKnowledge } from '@/lib/knowledge-retriever';
-import { getAdminFirestore } from '@/firebase/server-init';
-import { getInventoryFromFirestore } from '@/lib/inventory-fetcher';
-
 const CACHE_COLLECTION = 'ai_recommendation_cache_v3';
-
-const generateCacheKey = (input: AiBuildAdvisorRecommendationsInput, promptSig: string = '') => {
-  const parts = [
-    input.intendedUse.toLowerCase().trim(),
-    input.budget.toLowerCase().trim().replace(/[^\d]/g, ''), // Extract numbers for more consistent caching (e.g. 20000)
-    input.performanceLevel.toLowerCase().trim(),
-    (input.additionalNotes || '').toLowerCase().trim(),
-    input.allowFlexibleBudget ? 'flexible' : 'strict',
-    input.allowAiSearch ? 'aisearch' : 'local',
-    promptSig ? promptSig.substring(0, 32) : 'default'
-  ];
-  return parts.join('|').replace(/[\/.]/g, '_').substring(0, 1000);
-};
 
 const aiBuildAdvisorRecommendationsFlow = ai.defineFlow(
   {
@@ -130,34 +108,47 @@ const aiBuildAdvisorRecommendationsFlow = ai.defineFlow(
     outputSchema: AiBuildAdvisorRecommendationsOutputSchema,
   },
   async (input) => {
-    // Resolve dynamic system prompt from Firestore (or baseline default)
     const { getActiveSystemPrompt } = await import('@/lib/system-prompts');
     const customSystemPrompt = await getActiveSystemPrompt('buildAdvisor');
 
-    const cacheKey = generateCacheKey(input, customSystemPrompt);
     const db = getAdminFirestore();
 
-    // 0. Check Maintenance Mode (Kill Switch)
+    let settingsData: Record<string, any> | undefined;
     try {
       const settingsSnap = await db.collection('siteSettings').doc('main').get();
-      if (settingsSnap.exists && settingsSnap.data()?.isMaintenanceMode) {
-        throw new Error("MAINTENANCE_MODE_ACTIVE: AI services are temporarily restricted for system updates.");
+      if (settingsSnap.exists) {
+        settingsData = settingsSnap.data();
+        if (settingsData?.isMaintenanceMode) {
+          throw new Error("MAINTENANCE_MODE_ACTIVE: AI services are temporarily restricted for system updates.");
+        }
       }
     } catch (e: any) {
       if (e.message.includes("MAINTENANCE_MODE_ACTIVE")) throw e;
       console.warn("Failed to check maintenance mode:", e);
     }
 
-    // 1. Try to fetch from cache
+    const { catalogVersion } = await getCatalogMeta(db);
+    const cacheKey = buildAdvisorRecommendationCacheKey({
+      input,
+      prompt: customSystemPrompt,
+      catalogVersion,
+      modelSettings: {
+        routing: settingsData?.featureModelRouting?.buildAdvisor || settingsData?.aiModelProvider,
+        defaultModel: settingsData?.defaultGeminiModel,
+        tunedModel: settingsData?.fineTunedModelId,
+        inventoryRevision: settingsData?.advisorInventoryRevision,
+      },
+    });
+
     try {
       const cacheRef = db.collection(CACHE_COLLECTION).doc(cacheKey);
       const cacheSnap = await cacheRef.get();
       
       if (cacheSnap.exists) {
         const cacheData = cacheSnap.data();
-        // Cache expiry check (e.g., 7 days)
-        const ageInDays = (Date.now() - cacheData?.timestamp) / (1000 * 60 * 60 * 24);
-        if (ageInDays < 7) {
+        const isExpired = isExpiredAt(cacheData?.expiresAt);
+        const ageInDays = (Date.now() - (cacheData?.timestamp || 0)) / (1000 * 60 * 60 * 24);
+        if (!isExpired && ageInDays < 7 && cacheData?.output) {
           console.log(`[AI Cache] Hit for key: ${cacheKey}`);
           return cacheData?.output as AiBuildAdvisorRecommendationsOutput;
         }
@@ -166,10 +157,8 @@ const aiBuildAdvisorRecommendationsFlow = ai.defineFlow(
       console.warn(`[AI Cache] Read error:`, e);
     }
 
-    // 2. Cache miss: Run AI
     console.log(`[AI Cache] Miss for key: ${cacheKey}. Generating fresh (AI Search: ${!!input.allowAiSearch})...`);
     
-    // Fetch relevant local knowledge based on the user's intent and performance level
     const query = `${input.intendedUse} ${input.performanceLevel} ${input.additionalNotes || ''}`;
     const dynamicModel = await getGenkitModelName('buildAdvisor');
     
@@ -182,7 +171,6 @@ const aiBuildAdvisorRecommendationsFlow = ai.defineFlow(
     const knowledgeContext = knowledgeResults.join('\n\n');
     const storeInventory = inventoryResults.flat().join('\n');
 
-    // Step 2: Structured output prompt WITHOUT googleSearchRetrieval
     const { output } = await aiBuildAdvisorRecommendationsPrompt(
       {
         ...input,
@@ -197,12 +185,12 @@ const aiBuildAdvisorRecommendationsFlow = ai.defineFlow(
       throw new Error('Failed to get recommendations from the AI.');
     }
 
-    // 3. Save to cache
     try {
       await db.collection(CACHE_COLLECTION).doc(cacheKey).set({
         input,
         output,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        expiresAt: computeExpiresAt('aiRecommendationCache'),
       });
       console.log(`[AI Cache] Saved new entry for key: ${cacheKey}`);
     } catch (e) {

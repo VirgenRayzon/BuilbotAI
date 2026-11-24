@@ -6,6 +6,11 @@ flowchart TD
   SSales --> SSalesMutate[Confirm sample-data ingestion or sales reset]
   SHome -- Management --> SManagement[Manage manager key, key requests and accounts]
   SHome -- AI settings --> SAi[Choose/test model routing; edit, save or reset system prompts]
-  SHome -- Site content --> SContent[Edit and save About-page content]
   SHome -- Safeguards --> SGuard[Confirm maintenance, storage or AI switches]
   SHome -- Sign out --> SExit([Confirm and sign out])
+  SDelete --> Finish([END])
+  SSalesMutate --> Finish
+  SManagement --> Finish
+  SAi --> Finish
+  SGuard --> Finish
+  SExit --> Finish

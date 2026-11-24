@@ -8,12 +8,11 @@ import {
 import { useEffect, useState } from 'react';
 
 export interface UseDocOptions {
-  // Define any options here if needed in the future
 }
 
 export function useDoc<T>(
   docRef: DocumentReference | null,
-  options?: UseDocOptions
+  _options?: UseDocOptions
 ) {
   const [data, setData] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
@@ -48,7 +47,7 @@ export function useDoc<T>(
     );
 
     return () => unsubscribe();
-  }, [docRef]); // Refetch on docRef path change
+  }, [docRef]);
 
   return { data, loading, error };
 }

@@ -16,10 +16,8 @@ function initializeAdmin() {
             try {
                 let cert;
                 if (serviceAccount.trim().startsWith('{')) {
-                    // Raw JSON
                     cert = JSON.parse(serviceAccount);
                 } else {
-                    // Assume Base64
                     const decoded = Buffer.from(serviceAccount, 'base64').toString('utf8');
                     cert = JSON.parse(decoded);
                 }
@@ -36,7 +34,6 @@ function initializeAdmin() {
             }
         } else {
             console.warn("[Firebase Admin] No FB_SERVICE_ACCOUNT found. Falling back to default credentials.");
-            // Fallback to default credentials (works in GCP environments like Vercel/Firebase Functions)
             admin.initializeApp({
                 projectId: projectId,
                 storageBucket: `${projectId}.firebasestorage.app`

@@ -1,47 +1,45 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { useTheme } from "@/context/theme-provider";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { useUserProfile } from "@/context/user-profile";
-import { useLoading } from "@/context/loading-context";
 import { cn } from "@/lib/utils";
 
-// Custom Hooks
 import { useInventoryQuery } from "./hooks/use-inventory-query";
 import { useBuilderLogic } from "./hooks/use-builder-logic";
 import { useFilteredInventory } from "./hooks/use-filtered-inventory";
 
-// Components
 import { BuilderHeader } from "./components/builder-header";
 import { InventoryView } from "./components/inventory-view";
 import { YourBuild } from "@/components/your-build";
 import { RouteGuard } from "@/components/auth/route-guard";
+import { ProtectedPageLoading } from "@/components/auth/protected-page-loading";
 import { DeferredBuilderChat } from "@/components/deferred-builder-chat";
+import { BuildLayoutFab } from "@/components/build/layout-2d/build-layout-tab";
 import type { Part, ComponentData, Resolution, WorkloadType } from "@/lib/types";
 import { BUILDER_PART_IMAGE_SIZES } from '@/lib/inventory-image-sizes';
+import { useLiveBuildRecommendations } from '@/hooks/use-live-build-recommendations';
+import { prioritizeRecommendedParts } from '@/lib/live-build-recommendations';
+import { useSiteSettings } from '@/context/site-settings-context';
+import Link from 'next/link';
+import { AnimatedMessageIcon } from '@/components/ui/animated-icons';
+import { PUBLIC_FEATURE_SIGN_IN_URL } from '@/lib/public-feature-auth';
 
-/**
- * Masterpiece Architect - PC Builder Page
- * Refactored to separate inventory fetching, build logic, and presentation.
- */
 export default function BuilderPage({ initialParts }: { initialParts?: Part[] }) {
     const { theme } = useTheme();
     const isDark = theme === "dark";
-    const { authUser, profile, loading: authLoading } = useUserProfile();
-    const router = useRouter();
+    const { authUser } = useUserProfile();
     const searchParams = useSearchParams();
+    const { isLiveBuilderRecommendationsEnabled } = useSiteSettings();
 
-    // Data Layer
     const { allParts, loading: inventoryLoading } = useInventoryQuery(initialParts);
 
-    // Logic Layer
     const {
         build, handlePartToggle, handleRemovePart,
-        handleClearBuild, getCountInBuild, isLoaded
+        handleClearBuild, getCountInBuild
     } = useBuilderLogic(allParts);
 
-    // Filter Layer
     const {
         searchQuery, setSearchQuery,
         sortBy, setSortBy,
@@ -51,8 +49,6 @@ export default function BuilderPage({ initialParts }: { initialParts?: Part[] })
         categories,
         handleCategoryChange,
         sortedAndFilteredParts,
-        paginatedParts,
-        totalPages,
         availableBrands,
         selectedBrands,
         setSelectedBrands,
@@ -62,9 +58,25 @@ export default function BuilderPage({ initialParts }: { initialParts?: Part[] })
 
     const [view, setView] = useState<'grid' | 'list'>('grid');
     const [resolution, setResolution] = useState<Resolution>('1080p');
-    const [workload, setWorkload] = useState<WorkloadType>('Balanced');
+    const [workload, setWorkload] = useState<WorkloadType>('AAA');
+    const [autoRecommendationsEnabled, setAutoRecommendationsEnabled] = useState(true);
     const [analysis, setAnalysis] = useState<any>(null);
-    const [mounted, setMounted] = useState(false);
+    const activeCategories = categories.filter(category => category.selected);
+    const preferredCategory = activeCategories.length === 1 ? activeCategories[0].name : null;
+    const recommendations = useLiveBuildRecommendations({
+        allParts, build, resolution, workload, preferredCategory,
+        user: authUser || null, onAddPart: handlePartToggle,
+        enabled: isLiveBuilderRecommendationsEnabled && autoRecommendationsEnabled && !!authUser,
+    });
+    const prioritizedParts = useMemo(() =>
+        prioritizeRecommendedParts(sortedAndFilteredParts, recommendations.suggestions),
+    [sortedAndFilteredParts, recommendations.suggestions]);
+    const totalPages = Math.ceil(prioritizedParts.length / itemsPerPage);
+    const paginatedParts = useMemo(() => prioritizedParts.slice(
+        (currentPage - 1) * itemsPerPage, currentPage * itemsPerPage,
+    ), [prioritizedParts, currentPage, itemsPerPage]);
+    const recommendationKey = recommendations.suggestions.map(item => `${item.category}:${item.id}`).join('|');
+    useEffect(() => { setCurrentPage(1); }, [recommendationKey, setCurrentPage]);
 
     const handleApplySuggestion = (category: string, partId: string) => {
         const event = new CustomEvent('add-suggestion', {
@@ -74,17 +86,11 @@ export default function BuilderPage({ initialParts }: { initialParts?: Part[] })
     };
 
     useEffect(() => {
-        setMounted(true);
-    }, []);
-
-    // Handle initial category from URL
-    useEffect(() => {
         const categoryParam = searchParams.get('category');
         if (categoryParam) {
             handleCategoryChange(categoryParam, true);
         }
     }, [searchParams]);
-
 
     const isSelected = (part: Part) => {
         if (part.category === 'Storage' || part.category === 'RAM') {
@@ -98,12 +104,11 @@ export default function BuilderPage({ initialParts }: { initialParts?: Part[] })
     };
 
     return (
-        <RouteGuard requiredPermission="isClientOnly">
+        <RouteGuard requiredPermission="canUseBuilder" loadingComponent={<ProtectedPageLoading variant="builder" />}>
             <div className={cn(
                 "min-h-screen transition-colors duration-500 overflow-x-hidden",
                 isDark ? "bg-[#0c0f14] text-slate-50" : "bg-slate-50 text-slate-900"
             )}>
-                {/* Circuit Pattern Background */}
                 <div className={cn(
                     "fixed inset-0 opacity-[0.05] pointer-events-none z-0",
                     isDark ? "invert" : ""
@@ -113,10 +118,13 @@ export default function BuilderPage({ initialParts }: { initialParts?: Part[] })
                     <BuilderHeader />
 
                     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 xl:gap-8 items-start">
-                        {/* Your Build — Desktop Left Column & Mobile FAB Drawer */}
                         <div className="contents lg:block lg:col-span-3 self-start">
                             <YourBuild
                                 build={build}
+                                openReservation={searchParams.get('reserve') === '1'}
+                                recommendationState={isLiveBuilderRecommendationsEnabled && authUser ? recommendations : undefined}
+                                autoRecommendationsEnabled={autoRecommendationsEnabled}
+                                onAutoRecommendationsChange={setAutoRecommendationsEnabled}
                                 onRemovePart={handleRemovePart}
                                 onClearBuild={handleClearBuild}
                                 resolution={resolution}
@@ -131,11 +139,11 @@ export default function BuilderPage({ initialParts }: { initialParts?: Part[] })
                             />
                         </div>
 
-                        {/* Inventory — Right Column */}
                         <InventoryView
                             imageSizes={BUILDER_PART_IMAGE_SIZES}
                             loading={inventoryLoading}
                             paginatedParts={paginatedParts}
+                            recommendations={isLiveBuilderRecommendationsEnabled ? recommendations : undefined}
                             totalPages={totalPages}
                             currentPage={currentPage}
                             itemsPerPage={itemsPerPage}
@@ -153,7 +161,7 @@ export default function BuilderPage({ initialParts }: { initialParts?: Part[] })
                             onSortDirectionChange={(val) => { setSortDirection(val); setCurrentPage(1); }}
                             onTogglePart={handlePartToggle}
                             isSelected={isSelected}
-                            itemCount={sortedAndFilteredParts.length}
+                            itemCount={prioritizedParts.length}
                             availableBrands={availableBrands}
                             selectedBrands={selectedBrands}
                             onBrandChange={setSelectedBrands}
@@ -163,7 +171,22 @@ export default function BuilderPage({ initialParts }: { initialParts?: Part[] })
                     </div>
                 </main>
 
-                <DeferredBuilderChat build={build} />
+                <BuildLayoutFab
+                    build={build}
+                    onCategorySelect={handleCategoryChange}
+                    activeFilter={preferredCategory}
+                />
+
+                {authUser ? <DeferredBuilderChat build={build} /> : (
+                    <Link
+                        href={PUBLIC_FEATURE_SIGN_IN_URL}
+                        aria-label="Sign in to use Buildbot chat"
+                        title="Sign in to use Buildbot chat"
+                        className="fixed bottom-20 right-4 z-50 flex h-[52px] w-[52px] items-center justify-center rounded-full bg-cyan-600 text-white shadow-lg transition-colors hover:bg-cyan-700 sm:bottom-24 sm:right-6 lg:bottom-6"
+                    >
+                        <AnimatedMessageIcon size={22} />
+                    </Link>
+                )}
             </div>
         </RouteGuard>
     );

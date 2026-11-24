@@ -12,7 +12,6 @@ export function usePartBuilderCompatibility(product: PublicProduct) {
   const [compatibility, setCompatibility] = useState<CompatibilityResult>({ compatible: true, message: '' });
   const [isLoaded, setIsLoaded] = useState(false);
 
-  // Load active build from localStorage
   useEffect(() => {
     try {
       const saved = localStorage.getItem('pc_builder_state');
@@ -32,7 +31,6 @@ export function usePartBuilderCompatibility(product: PublicProduct) {
     }
   }, []);
 
-  // Adapt PublicProduct to Part
   const part: Part = {
     id: product.productId,
     productId: product.productId,
@@ -50,7 +48,6 @@ export function usePartBuilderCompatibility(product: PublicProduct) {
     wattage: typeof product.specifications?.['Wattage'] === 'number' ? Number(product.specifications?.['Wattage']) : undefined,
   };
 
-  // Re-run compatibility check when build is loaded
   useEffect(() => {
     if (!currentBuild) return;
     const result = checkCompatibility(part, currentBuild);

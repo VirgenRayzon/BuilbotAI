@@ -4,95 +4,93 @@ import React, { useState, useMemo } from "react";
 import { format } from "date-fns";
 import {
   Search,
-  History,
   Calendar as CalendarIcon,
-  Loader2,
   X,
-  Package,
-  Heart,
-  User as UserIcon,
-  Shield,
+  Loader2,
   Info,
 } from "lucide-react";
 import {
-  ActionIcon,
-  Avatar,
   Badge,
   Button,
   Group,
   Paper,
   Select,
   Stack,
-  Table,
   Text,
   TextInput,
-  ThemeIcon,
-  Title,
-  Tooltip,
-  VisuallyHidden,
 } from "@mantine/core";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { DateRange } from "react-day-picker";
 import { PaginationControls } from "@/components/pagination-controls";
 import type { UserAuditLog } from "@/lib/types";
+import type { UserAuditLogFilters } from "../hooks/use-user-audit-logs";
+import { CUSTOMER_AUDIT_SCOPES } from "@/lib/audit-scopes";
+import { UserAuditLogsTable } from "./user-audit-logs-table";
 
-interface UserAuditLogsSectionProps {
+export interface UserAuditLogsSectionProps {
   logs: UserAuditLog[];
   loading: boolean;
+  totalCount?: number;
+  hasMore?: boolean;
+  loadMore?: () => Promise<void>;
+  isLoadingMore?: boolean;
+  filters?: UserAuditLogFilters;
+  onFiltersChange?: (filters: UserAuditLogFilters) => void;
 }
 
-const actionColors: Record<string, string> = {
-  created: "teal",
-  restored: "teal",
-  updated: "yellow",
-  status_changed: "yellow",
-  deleted: "red",
-  archived: "red",
-  auth_update: "cyan",
-  other: "gray",
-};
-
-const scopeColors: Record<string, string> = {
-  Order: "cyan",
-  Favorite: "pink",
-  Profile: "indigo",
-  System: "violet",
-};
-
-export function UserAuditLogsSection({ logs, loading }: UserAuditLogsSectionProps) {
+export function UserAuditLogsSection({
+  logs,
+  loading,
+  totalCount,
+  hasMore,
+  loadMore,
+  isLoadingMore,
+  filters: controlledFilters,
+  onFiltersChange,
+}: UserAuditLogsSectionProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [filterScope, setFilterScope] = useState<string>("all");
-  const [dateRange, setDateRange] = useState<DateRange | undefined>(undefined);
+
+  // Local filter fallback if caller does not control filters
+  const [localFilters, setLocalFilters] = useState<UserAuditLogFilters>({
+    scope: undefined,
+    fromDate: undefined,
+    toDate: undefined,
+    sortBy: "newest",
+  });
+
+  const activeFilters = controlledFilters ?? localFilters;
+  const updateActiveFilters = (next: UserAuditLogFilters) => {
+    if (onFiltersChange) {
+      onFiltersChange(next);
+    } else {
+      setLocalFilters(next);
+    }
+  };
+
+  const filterScope = activeFilters.scope || "all";
+  const dateRange = useMemo<DateRange | undefined>(() => {
+    if (!activeFilters.fromDate) return undefined;
+    return {
+      from: new Date(activeFilters.fromDate),
+      to: activeFilters.toDate ? new Date(activeFilters.toDate) : undefined,
+    };
+  }, [activeFilters.fromDate, activeFilters.toDate]);
 
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(8);
 
+  // Server handles scope, fromDate, toDate, and sortBy; client search applies in-memory
   const filteredLogs = useMemo(() => {
+    if (!searchQuery?.trim()) return logs;
+    const q = searchQuery.toLowerCase().trim();
     return logs.filter((log) => {
-      const matchesSearch =
-        !searchQuery ||
-        log.resourceName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        log.details?.toLowerCase().includes(searchQuery.toLowerCase());
-
-      const matchesScope = filterScope === "all" || log.scope === filterScope;
-
-      let matchesDate = true;
-      if (dateRange?.from) {
-        const logDate = log.createdAt?.toDate?.() || log.createdAt;
-        if (logDate) {
-          const date = new Date(logDate);
-          if (dateRange.to) {
-            matchesDate = date >= dateRange.from && date <= dateRange.to;
-          } else {
-            matchesDate = date >= dateRange.from;
-          }
-        }
-      }
-
-      return matchesSearch && matchesScope && matchesDate;
+      return (
+        log.resourceName?.toLowerCase().includes(q) ||
+        log.details?.toLowerCase().includes(q)
+      );
     });
-  }, [logs, searchQuery, filterScope, dateRange]);
+  }, [logs, searchQuery]);
 
   const totalPages = Math.ceil(filteredLogs.length / itemsPerPage) || 1;
   const currentLogs = useMemo(() => {
@@ -100,111 +98,38 @@ export function UserAuditLogsSection({ logs, loading }: UserAuditLogsSectionProp
     return filteredLogs.slice(startIndex, startIndex + itemsPerPage);
   }, [filteredLogs, currentPage, itemsPerPage]);
 
-  const getScopeIcon = (scope: string) => {
-    switch (scope) {
-      case "Order":
-        return <Package size={15} />;
-      case "Favorite":
-        return <Heart size={15} />;
-      case "Profile":
-        return <UserIcon size={15} />;
-      default:
-        return <Shield size={15} />;
-    }
+  const handleScopeChange = (scope: string) => {
+    setCurrentPage(1);
+    updateActiveFilters({
+      ...activeFilters,
+      scope: scope === "all" ? undefined : scope,
+    });
   };
 
-  if (loading) {
-    return (
-      <Paper
-        withBorder
-        radius="lg"
-        p="xl"
-        className="bg-white dark:bg-[#111722] border-slate-200 dark:border-white/10 flex flex-col items-center justify-center p-12 space-y-4"
-      >
-        <Loader2 className="w-8 h-8 animate-spin text-cyan-600 dark:text-cyan-400" />
-        <Text size="sm" className="text-slate-700 dark:text-slate-300 font-medium">
-          Loading your activity history...
-        </Text>
-      </Paper>
-    );
-  }
+  const handleDateRangeChange = (range?: DateRange) => {
+    setCurrentPage(1);
+    updateActiveFilters({
+      ...activeFilters,
+      fromDate: range?.from ? range.from.toISOString() : undefined,
+      toDate: range?.to ? range.to.toISOString() : undefined,
+    });
+  };
 
-  const rows = currentLogs.map((log) => {
-    const actionColor = actionColors[log.actionName] || "gray";
-    const scopeColor = scopeColors[log.scope] || "gray";
-    const logDate = log.createdAt?.toDate ? log.createdAt.toDate() : null;
+  const handleResetFilters = () => {
+    setSearchQuery("");
+    setCurrentPage(1);
+    updateActiveFilters({
+      ...activeFilters,
+      scope: undefined,
+      fromDate: undefined,
+      toDate: undefined,
+      sortBy: "newest",
+    });
+  };
 
-    return (
-      <Table.Tr key={log.id} className="hover:bg-slate-50 dark:hover:bg-white/[0.02] transition-colors">
-        {/* Resource with Avatar/Icon */}
-        <Table.Td>
-          <Group gap="sm" wrap="nowrap">
-            <Avatar
-              size={34}
-              radius={34}
-              color={scopeColor}
-              variant="light"
-              className="border border-slate-200 dark:border-white/10 shrink-0"
-            >
-              {getScopeIcon(log.scope)}
-            </Avatar>
-            <div className="flex flex-col min-w-0">
-              <Text fz="sm" fw={600} className="text-slate-900 dark:text-slate-100 truncate max-w-[200px] sm:max-w-xs">
-                {log.resourceName}
-              </Text>
-              <Text fz="xs" className="text-slate-500 dark:text-slate-400">
-                {log.scope === "Order" ? "Reservation Item" : log.scope}
-              </Text>
-            </div>
-          </Group>
-        </Table.Td>
-
-        {/* Action Badge */}
-        <Table.Td>
-          <Badge
-            color={actionColor}
-            variant="light"
-            size="sm"
-            className="font-bold uppercase tracking-wider text-[10px]"
-          >
-            {log.actionName.replace("_", " ")}
-          </Badge>
-        </Table.Td>
-
-        {/* Category Scope */}
-        <Table.Td>
-          <Badge color={scopeColor} variant="outline" size="sm" className="font-semibold text-[11px]">
-            {log.scope === "Order" ? "Reservation" : log.scope}
-          </Badge>
-        </Table.Td>
-
-        {/* Activity Details */}
-        <Table.Td>
-          <Text fz="sm" className="text-slate-700 dark:text-slate-300 line-clamp-1 max-w-[260px]">
-            {log.details || "Action recorded successfully"}
-          </Text>
-        </Table.Td>
-
-        {/* Date & Time */}
-        <Table.Td>
-          <Text fz="xs" className="text-slate-600 dark:text-slate-400 font-mono whitespace-nowrap">
-            {logDate ? format(logDate, "MMM dd, yyyy • p") : "Unknown date"}
-          </Text>
-        </Table.Td>
-
-        {/* Row Action/Info */}
-        <Table.Td>
-          <Group gap={0} justify="flex-end">
-            <Tooltip label={log.details || log.resourceName} withArrow position="left">
-              <ActionIcon variant="subtle" color="gray" size="sm" aria-label="Event details">
-                <Info size={16} />
-              </ActionIcon>
-            </Tooltip>
-          </Group>
-        </Table.Td>
-      </Table.Tr>
-    );
-  });
+  const hasSearch = Boolean(searchQuery?.trim());
+  const hasActiveFilters = Boolean(searchQuery || filterScope !== "all" || dateRange);
+  const displayCount = hasSearch ? filteredLogs.length : (totalCount ?? filteredLogs.length);
 
   return (
     <Stack gap="md">
@@ -214,7 +139,6 @@ export function UserAuditLogsSection({ logs, loading }: UserAuditLogsSectionProp
         p={12}
         className="bg-white dark:bg-[#12161f] border-slate-200 dark:border-white/10 shadow-sm"
       >
-        {/* Search & Filter Bar */}
         <div className="flex flex-col md:flex-row gap-3 items-center flex-wrap">
           <TextInput
             placeholder="Search activity by title or details..."
@@ -234,16 +158,8 @@ export function UserAuditLogsSection({ logs, loading }: UserAuditLogsSectionProp
 
           <Select
             value={filterScope}
-            onChange={(val) => {
-              setFilterScope(val || "all");
-              setCurrentPage(1);
-            }}
-            data={[
-              { value: "all", label: "All Categories" },
-              { value: "Order", label: "Reservations" },
-              { value: "Favorite", label: "Favorites" },
-              { value: "Profile", label: "Profile" },
-            ]}
+            onChange={(val) => handleScopeChange(val || "all")}
+            data={[{ value: "all", label: "All Categories" }, ...CUSTOMER_AUDIT_SCOPES]}
             radius="md"
             className="w-full md:w-44"
             classNames={{
@@ -280,26 +196,18 @@ export function UserAuditLogsSection({ logs, loading }: UserAuditLogsSectionProp
                 mode="range"
                 defaultMonth={dateRange?.from}
                 selected={dateRange}
-                onSelect={(range) => {
-                  setDateRange(range);
-                  setCurrentPage(1);
-                }}
+                onSelect={handleDateRangeChange}
                 numberOfMonths={2}
               />
             </PopoverContent>
           </Popover>
 
-          {(searchQuery || filterScope !== "all" || dateRange) && (
+          {hasActiveFilters && (
             <Button
               variant="subtle"
               color="red"
               size="xs"
-              onClick={() => {
-                setSearchQuery("");
-                setFilterScope("all");
-                setDateRange(undefined);
-                setCurrentPage(1);
-              }}
+              onClick={handleResetFilters}
               leftSection={<X size={14} />}
               className="font-bold text-xs"
             >
@@ -308,6 +216,30 @@ export function UserAuditLogsSection({ logs, loading }: UserAuditLogsSectionProp
           )}
         </div>
       </Paper>
+
+      {hasSearch && (
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 px-3.5 py-2.5 rounded-lg border border-indigo-200/80 bg-indigo-50/50 text-indigo-900 dark:border-indigo-500/20 dark:bg-indigo-500/[0.06] dark:text-indigo-200 text-xs">
+          <div className="flex items-center gap-2">
+            <Info size={14} className="shrink-0 text-indigo-600 dark:text-indigo-400" />
+            <span>
+              Search matches loaded records ({filteredLogs.length} found).
+              {hasMore ? " Older activity records can be retrieved from the server." : ""}
+            </span>
+          </div>
+          {hasMore && loadMore && (
+            <Button
+              variant="subtle"
+              color="indigo"
+              size="compact-xs"
+              loading={isLoadingMore}
+              onClick={loadMore}
+              className="shrink-0"
+            >
+              Load more logs
+            </Button>
+          )}
+        </div>
+      )}
 
       <Paper
         withBorder
@@ -319,52 +251,14 @@ export function UserAuditLogsSection({ logs, loading }: UserAuditLogsSectionProp
             Activity history
           </Text>
           <Badge variant="light" color="cyan" size="sm" radius="sm">
-            {filteredLogs.length} {filteredLogs.length === 1 ? "event" : "events"}
+            {displayCount} {displayCount === 1 ? "event" : "events"}
           </Badge>
         </Group>
 
-        <Table.ScrollContainer minWidth={800}>
-          <Table verticalSpacing="sm" highlightOnHover className="bg-transparent">
-            <Table.Thead className="bg-slate-50/80 dark:bg-white/[0.025] border-b border-slate-200 dark:border-white/10">
-              <Table.Tr>
-                <Table.Th className="text-slate-900 dark:text-slate-100 font-bold text-xs uppercase tracking-wider py-3.5">
-                  Resource / Activity
-                </Table.Th>
-                <Table.Th className="text-slate-900 dark:text-slate-100 font-bold text-xs uppercase tracking-wider py-3.5">
-                  Action
-                </Table.Th>
-                <Table.Th className="text-slate-900 dark:text-slate-100 font-bold text-xs uppercase tracking-wider py-3.5">
-                  Category
-                </Table.Th>
-                <Table.Th className="text-slate-900 dark:text-slate-100 font-bold text-xs uppercase tracking-wider py-3.5">
-                  Details
-                </Table.Th>
-                <Table.Th className="text-slate-900 dark:text-slate-100 font-bold text-xs uppercase tracking-wider py-3.5">
-                  Timestamp
-                </Table.Th>
-                <Table.Th className="py-3.5">
-                  <VisuallyHidden>Actions</VisuallyHidden>
-                </Table.Th>
-              </Table.Tr>
-            </Table.Thead>
-
-              <Table.Tbody>
-                {rows.length === 0 ? (
-                  <Table.Tr>
-                    <Table.Td colSpan={6} className="h-32 text-center text-slate-600 dark:text-slate-400 font-medium">
-                      No activity logs match your selected filter criteria.
-                    </Table.Td>
-                  </Table.Tr>
-                ) : (
-                  rows
-                )}
-              </Table.Tbody>
-            </Table>
-        </Table.ScrollContainer>
+        <UserAuditLogsTable logs={currentLogs} loading={loading} pageSize={itemsPerPage} />
       </Paper>
 
-      {/* Pagination */}
-      <div className="pt-1">
+      <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-1">
         <PaginationControls
           currentPage={currentPage}
           totalPages={totalPages}
@@ -375,6 +269,20 @@ export function UserAuditLogsSection({ logs, loading }: UserAuditLogsSectionProp
             setCurrentPage(1);
           }}
         />
+
+        {hasMore && loadMore && (
+          <Button
+            variant="light"
+            color="indigo"
+            size="sm"
+            loading={isLoadingMore}
+            leftSection={isLoadingMore ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            onClick={loadMore}
+            className="w-full sm:w-auto"
+          >
+            Load more history from server
+          </Button>
+        )}
       </div>
     </Stack>
   );

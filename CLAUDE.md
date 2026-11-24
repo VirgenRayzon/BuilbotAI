@@ -26,6 +26,38 @@ Agents must execute relevant programmatic checks and fix failures before complet
 - **End-to-End tests:** `npx playwright test` (e.g. `npx playwright test tests/auth-role-navigation.spec.ts`)
 - **Automated verification loop:** After modifying files or imports, immediately run `npm run typecheck` and `npm run lint`. Fix any type or linting errors before reporting completion.
 
+## Windows PowerShell Execution Rules
+
+The execution environment uses Windows PowerShell through the host's `run_command` tool.
+
+### Command Execution
+- Always generate PowerShell-compatible commands.
+- Do not assume Bash, WSL, or Unix shell utilities are available.
+- Avoid complex inline commands containing multiline JavaScript/TypeScript, nested quotes, or extensive escaping.
+- Write complex JavaScript/TypeScript scripts to temporary `.js`, `.mjs`, or `.ts` files and execute them directly.
+- Use non-interactive commands whenever possible.
+
+### Search Optimization
+- Prefer `rg` for searching project files.
+- Use `git grep` when searching tracked files is sufficient.
+- Avoid `Get-ChildItem -Recurse` for large repository searches.
+- Exclude `node_modules`, `.next`, `dist`, `build`, and generated files unless explicitly necessary.
+- Narrow searches to relevant directories.
+
+### Timeout and Recovery
+- Apply reasonable timeouts to commands when supported.
+- If a command stalls unexpectedly, terminate it instead of repeatedly waiting.
+- Investigate whether the issue is caused by PowerShell parsing, subprocess execution, or interactive input.
+- Do not repeatedly execute commands that have already timed out.
+- Use a different execution approach when a command fails twice for the same reason.
+
+### Efficiency
+- Minimize unnecessary terminal calls.
+- Avoid repeating file searches or reading files already examined.
+- Run targeted tests before broader validation when appropriate.
+- Never sacrifice correctness solely to achieve faster execution.
+- Aim for efficient execution, but do not enforce arbitrary time limits on complex tasks.
+
 ## 3-Layer Operating Architecture
 1. **Directive (`directives/`):** Standard Operating Procedures (SOPs) defining goals, inputs, tools, and outputs. Consult existing directives before taking action.
 2. **Orchestration (Agent Decision-Making):** Intelligent routing and tool execution. Never run probabilistic repetitive actions when deterministic code exists.

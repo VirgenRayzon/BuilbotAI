@@ -24,3 +24,5 @@ flowchart TD
   Name --> NameChoice{Generate or cancel?}
   NameChoice -- Cancel --> Return
   NameChoice -- Generate --> Generate[Start AI prebuilt generation] --> Return
+  Return --> Finish([END])
+  Success --> Finish

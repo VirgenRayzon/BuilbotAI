@@ -34,7 +34,6 @@ export function SparkleButton({
   const [active, setActive] = useState(false);
   const [particles, setParticles] = useState<{ id: number; x: number; y: number; delay: number; duration: number; size: number }[]>([]);
 
-  // Generate particles on client side
   useEffect(() => {
     const newParticles = Array.from({ length: 12 }).map((_, i) => ({
       id: i,
@@ -70,7 +69,6 @@ export function SparkleButton({
         {...props}
       >
         <span className="relative z-50 flex items-center justify-center w-full h-full">
-          {/* Shimmering Border Light */}
           <div 
             className={cn(
               "absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none",
@@ -88,7 +86,6 @@ export function SparkleButton({
             }}
           />
 
-          {/* Backdrop Glow */}
           <div className={cn(
             "absolute inset-0 transition-opacity duration-500 pointer-events-none",
             isLoading && loadingChildren
@@ -97,7 +94,6 @@ export function SparkleButton({
             active ? "opacity-100" : "opacity-0"
           )} />
 
-          {/* Inner Stars/Sparkles */}
           <div className="absolute inset-0 z-20 pointer-events-none">
             <AnimatePresence>
               {active && [0, 1, 2].map((i) => (
@@ -133,7 +129,6 @@ export function SparkleButton({
             </AnimatePresence>
           </div>
 
-          {/* Content */}
           <span 
             suppressHydrationWarning
             className={cn(
@@ -186,7 +181,6 @@ export function SparkleButton({
         </span>
       </Comp>
 
-      {/* Floating Outside Particles */}
       <div className="absolute inset-[-40px] pointer-events-none z-0">
         <AnimatePresence>
           {active && particles.map((p) => (

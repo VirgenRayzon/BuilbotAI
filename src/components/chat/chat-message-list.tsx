@@ -45,8 +45,6 @@ export function ChatMessageList({
     const scrollAreaRef = useRef<HTMLDivElement>(null);
     const [openTelemetryMsgId, setOpenTelemetryMsgId] = useState<string | null>(null);
 
-    // Scroll only the message viewport. scrollIntoView also scrolls the outer
-    // overflow-hidden chat panel and can hide its header and input.
     useEffect(() => {
         const viewport = scrollAreaRef.current?.querySelector<HTMLElement>('[data-radix-scroll-area-viewport]');
         viewport?.scrollTo({ top: viewport.scrollHeight, behavior: 'smooth' });
@@ -81,7 +79,6 @@ export function ChatMessageList({
                             transition={{ type: "spring", stiffness: 320, damping: 26 }}
                             className="grid grid-cols-1 gap-2.5 w-full max-w-full min-w-0 relative px-1"
                         >
-                            {/* Message Row */}
                             <div className="w-full">
                                 {displayParts.map((part, partIdx) => {
                                     if (part.kind === 'text') {
@@ -119,7 +116,6 @@ export function ChatMessageList({
                                     return null;
                                 })}
 
-                                {/* Telemetry Diagnostics Drawer (Opened via "!" button) */}
                                 {msg.role === 'assistant' && hasTelemetry && (
                                     <div className="pl-11">
                                         <ChatTelemetryDrawer
@@ -132,7 +128,6 @@ export function ChatMessageList({
                                 )}
                             </div>
 
-                            {/* Full-width interactive recommendation carousel */}
                             {recommendationTurn?.recommendationGroups.map(group => (
                                 <ChatRecommendationsCarousel
                                     key={group.category}
@@ -150,7 +145,6 @@ export function ChatMessageList({
                     );
                 })}
 
-                {/* Loading indicator with only the 3 bouncing dots */}
                 {isLoading && (
                     <ChatLoadingIndicator isDark={isDark} />
                 )}

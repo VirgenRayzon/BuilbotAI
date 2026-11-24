@@ -2,15 +2,17 @@
 
 import { useState, useEffect } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { doc, getDoc, collection, query, where, getDocs, updateDoc } from "firebase/firestore";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
 import { useFirestore } from "@/firebase";
 import { useUserProfile } from "@/context/user-profile";
 import { useToast } from "@/hooks/use-toast";
 import { reservePrebuiltSystem } from "@/app/prebuilt-reservation-actions";
 import { getAiPrebuiltPerformance } from "@/app/actions";
-import { getMissingParts, getPrebuiltPartStatuses, type ResolvedPrebuiltPart } from "@/lib/prebuilt-utils";
-import { inventoryItemPath, inventoryItemsPath } from "@/lib/inventory-paths";
+import { getIncludedStockCooler, getMissingParts, getPrebuiltPartStatuses, type ResolvedPrebuiltPart } from "@/lib/prebuilt-utils";
+import { inventoryItemPath } from "@/lib/inventory-paths";
 import type { PrebuiltSystem, Part, FavoriteBuild, FavoriteBuildPart } from "@/lib/types";
+import { INCLUDED_INTEGRATED_GPU_ID, createIntegratedGpuPart } from '@/lib/integrated-graphics';
+import { includedCpuCoolerName } from '@/lib/included-cpu-cooler';
 import { useProductSaveOperation } from '@/hooks/use-product-save-operation';
 
 export function usePrebuiltDetails(systemId: string) {
@@ -48,6 +50,9 @@ export function usePrebuiltDetails(systemId: string) {
     const isInStock = resolvedSystemId === system?.id && unavailableParts.length === 0;
 
     const [backNavigation, setBackNavigation] = useState<{ link: string; text: string }>(() => {
+        if (searchParams.get("preview") === "admin") {
+            return { link: "/pre-builts?preview=admin", text: "Back to Pre-builts" };
+        }
         const fromParam = searchParams.get("from");
         if (fromParam === "admin") {
             return { link: "/admin?tab=prebuilts", text: "Back to Prebuilts Management" };
@@ -62,6 +67,10 @@ export function usePrebuiltDetails(systemId: string) {
     });
 
     useEffect(() => {
+        if (searchParams.get("preview") === "admin") {
+            setBackNavigation({ link: "/pre-builts?preview=admin", text: "Back to Pre-builts" });
+            return;
+        }
         const fromParam = searchParams.get("from");
         if (fromParam === "admin") {
             setBackNavigation({ link: "/admin?tab=prebuilts", text: "Back to Prebuilts Management" });
@@ -106,7 +115,6 @@ export function usePrebuiltDetails(systemId: string) {
     const backLink = backNavigation.link;
     const backText = backNavigation.text;
 
-    // 1. Fetch System
     useEffect(() => {
         if (!firestore || !systemId) return;
 
@@ -144,7 +152,6 @@ export function usePrebuiltDetails(systemId: string) {
         fetchSystem();
     }, [firestore, systemId, isManagerOrAdmin, router, toast]);
 
-    // 2. Fetch Components
     useEffect(() => {
         if (!system || !firestore || resolvedSystemId === system.id) return;
 
@@ -153,6 +160,34 @@ export function usePrebuiltDetails(systemId: string) {
             const partsRecord: Record<string, Part | null> = {};
 
             try {
+                if (system.componentSummaries && system.componentSummaries.length > 0) {
+                    const resolved: ResolvedPrebuiltPart[] = system.componentSummaries.map(s => ({
+                        key: s.key,
+                        category: s.category.toLowerCase(),
+                        partId: s.partId,
+                        part: s.isArchived ? null : ({
+                            id: s.partId,
+                            productId: s.productId || undefined,
+                            name: s.name,
+                            category: s.category,
+                            brand: 'BuildbotAI',
+                            price: s.price,
+                            stock: s.inStock ? 999 : 0,
+                            imageUrl: s.imageUrl,
+                            specifications: {},
+                            isArchived: false,
+                        } as Part),
+                    }));
+
+                    for (const { category, part } of resolved) {
+                        if (!(category in partsRecord)) partsRecord[category] = part;
+                    }
+                    setComponents(partsRecord);
+                    setResolvedParts(resolved);
+                    setResolvedSystemId(system.id);
+                    return;
+                }
+
                 const collectionMap: Record<string, string> = {
                     cpu: "CPU",
                     gpu: "GPU",
@@ -178,37 +213,26 @@ export function usePrebuiltDetails(systemId: string) {
                     const entry = (part: Part | null): ResolvedPrebuiltPart => ({ key, category, partId, part });
 
                     try {
-                        // 1. Try canonical path: inventory/{category}/items/{partId}
+                        if (category === 'cooler') {
+                            const includedCooler = getIncludedStockCooler(partId);
+                            if (includedCooler && system.components.cpu) {
+                                const cpuSnap = await getDoc(doc(firestore, inventoryItemPath('CPU', system.components.cpu)));
+                                const cpu = cpuSnap.exists() ? { id: cpuSnap.id, ...cpuSnap.data(), category: 'CPU' } as Part : null;
+                                const coolerName = cpu && !cpu.isArchived ? includedCpuCoolerName(cpu) : null;
+                                return entry(coolerName ? { ...includedCooler, name: coolerName } : null);
+                            }
+                        }
+                        if (category === 'gpu' && partId === INCLUDED_INTEGRATED_GPU_ID) {
+                            const cpuId = system.components.cpu;
+                            if (!cpuId) return entry(null);
+                            const cpuSnap = await getDoc(doc(firestore, inventoryItemPath('CPU', cpuId)));
+                            const cpu = cpuSnap.exists() ? { id: cpuSnap.id, ...cpuSnap.data() } as Part : null;
+                            return entry(cpu && !cpu.isArchived ? createIntegratedGpuPart(cpu) : null);
+                        }
                         const canonicalRef = doc(firestore, inventoryItemPath(collectionName, partId as string));
                         const canonicalSnap = await getDoc(canonicalRef);
                         if (canonicalSnap.exists()) {
                             return entry({ id: canonicalSnap.id, ...canonicalSnap.data() } as Part);
-                        }
-
-                        // 2. Try canonical query by name in inventory/{category}/items
-                        const canonicalQuery = query(
-                            collection(firestore, inventoryItemsPath(collectionName)),
-                            where("name", "==", partId)
-                        );
-                        const canonicalQuerySnap = await getDocs(canonicalQuery);
-                        if (!canonicalQuerySnap.empty) {
-                            const docSnap = canonicalQuerySnap.docs[0];
-                            return entry({ id: docSnap.id, ...docSnap.data() } as Part);
-                        }
-
-                        // 3. Fallback to legacy root collection: {collectionName}/{partId}
-                        const partRef = doc(firestore, collectionName, partId as string);
-                        const snap = await getDoc(partRef);
-                        if (snap.exists()) {
-                            return entry({ id: snap.id, ...snap.data() } as Part);
-                        }
-
-                        // 4. Fallback query by name in legacy collection
-                        const q = query(collection(firestore, collectionName), where("name", "==", partId));
-                        const querySnap = await getDocs(q);
-                        if (!querySnap.empty) {
-                            const docSnap = querySnap.docs[0];
-                            return entry({ id: docSnap.id, ...docSnap.data() } as Part);
                         }
 
                         return entry(null);
@@ -239,7 +263,6 @@ export function usePrebuiltDetails(systemId: string) {
         fetchComponents();
     }, [firestore, system, resolvedSystemId, toast]);
 
-    // 3. Reserve Prebuilt Action
     const handleReserve = async () => {
         if (!isComplete || !system || !profile || !authUser || !isInStock || isReserving) return;
 
@@ -294,7 +317,6 @@ export function usePrebuiltDetails(systemId: string) {
         }
     };
 
-    // 4. Customize Prebuilt into PC Builder
     const handleCustomizePrebuilt = () => {
         if (!system) return;
 
@@ -342,7 +364,6 @@ export function usePrebuiltDetails(systemId: string) {
         }
     };
 
-    // 5. Run AI Analysis
     const handleAnalyze = async () => {
         if (!system || !firestore || !systemId) return;
         setLoadingAnalysis(true);

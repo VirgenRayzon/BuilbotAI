@@ -1,9 +1,6 @@
 import { getAdminFirestore } from "@/firebase/server-init";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 
-/**
- * Supported hardware categories in the vector store.
- */
 export const VECTOR_CATEGORIES = [
     'cpu',
     'gpu',
@@ -21,9 +18,6 @@ export const VECTOR_CATEGORIES = [
 
 export type VectorCategory = typeof VECTOR_CATEGORIES[number];
 
-/**
- * Generates a 768-dimensional normalized embedding using Google's Gemini Embedding model.
- */
 export async function generateHardwareEmbedding(text: string): Promise<number[]> {
     const apiKey = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY || process.env.GOOGLE_GENERATIVE_AI_API_KEY;
     if (!apiKey) {
@@ -41,9 +35,6 @@ export async function generateHardwareEmbedding(text: string): Promise<number[]>
     return result.embedding.values;
 }
 
-/**
- * Detects the most probable category from a query string, or returns null if generic.
- */
 function inferCategoryFromQuery(query: string): VectorCategory | null {
     const q = query.toLowerCase();
     if (/\b(ryzen|intel core|xeon|i3|i5|i7|i9|cpu|processor)\b/.test(q)) return 'cpu';
@@ -61,14 +52,10 @@ function inferCategoryFromQuery(query: string): VectorCategory | null {
     return null;
 }
 
-/**
- * Formats metadata object into clean, human-readable specification text for AI consumption.
- */
 function formatMetadataToSpec(docId: string, category: string, metadata: Record<string, any>): string {
     const name = metadata.name || docId;
     let text = `[Hardware Spec: ${category.toUpperCase()}] ${name}\n`;
 
-    // Group cpu_sockets if present
     const sockets: string[] = [];
     Object.keys(metadata).forEach(key => {
         if (key.startsWith('cpu_sockets/')) {
@@ -80,12 +67,10 @@ function formatMetadataToSpec(docId: string, category: string, metadata: Record<
         text += `- Compatible Sockets: ${sockets.join(', ')}\n`;
     }
 
-    // Append other key specifications cleanly
     for (const [key, val] of Object.entries(metadata)) {
         if (key.startsWith('cpu_sockets/') || key === 'name' || val === '' || val === null || val === undefined) {
             continue;
         }
-        // Humanize key names
         const cleanKey = key
             .replace(/_/g, ' ')
             .replace(/\b\w/g, c => c.toUpperCase());
@@ -102,10 +87,6 @@ export interface VectorRetrieveOptions {
     searchAllCategories?: boolean;
 }
 
-/**
- * Retrieves hardware specifications from the Firestore vector storage (`buildbot_hardware_vector`).
- * Uses findNearest with cosine distance over 768-dim embeddings.
- */
 export async function retrieveHardwareVectorSpecs(
     query: string,
     options: VectorRetrieveOptions = {}
@@ -118,7 +99,6 @@ export async function retrieveHardwareVectorSpecs(
     const specifiedCategory = options.category?.toLowerCase();
     const inferred = specifiedCategory || inferCategoryFromQuery(cleanQuery);
 
-    // Determine target categories to search
     const categoriesToSearch: VectorCategory[] = inferred && VECTOR_CATEGORIES.includes(inferred as VectorCategory)
         ? [inferred as VectorCategory]
         : options.searchAllCategories

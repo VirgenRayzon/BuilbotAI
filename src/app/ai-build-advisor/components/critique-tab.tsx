@@ -2,10 +2,8 @@
 
 import React from 'react';
 import { motion } from 'framer-motion';
-import { LayoutPanelLeft, CircuitBoard } from 'lucide-react';
 import { AIBuildCritique } from "@/components/ai-build-critique";
 import { YourBuild } from "@/components/your-build";
-import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 
 interface CritiqueTabProps {
@@ -26,7 +24,6 @@ interface CritiqueTabProps {
 }
 
 export function CritiqueTab({
-    isDark,
     builderState,
     critiqueAnalysis,
     critiqueDuration,
@@ -45,7 +42,6 @@ export function CritiqueTab({
 
     return (
         <div className="grid lg:grid-cols-12 gap-5 xl:gap-6 h-full">
-            {/* Sidebar Column - Left (Consistent with main Builder Page) */}
             <div className="lg:col-span-3">
                 <motion.div
                     initial={{ opacity: 0, x: -20 }}
@@ -72,7 +68,6 @@ export function CritiqueTab({
                 </motion.div>
             </div>
 
-            {/* Performance Diagnostics Column - Right */}
             <div className="lg:col-span-9 h-full">
                 <AIBuildCritique
                     build={builderState}

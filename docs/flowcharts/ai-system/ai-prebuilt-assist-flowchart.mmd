@@ -26,3 +26,7 @@ flowchart TD
   Assemble --> Write
   Write -- No --> SaveError[/Validation or toast; retain build/editor/] --> Surface
   Write -- Yes --> Done([Prebuilt saved])
+  Manual --> Finish([END])
+  Cancel --> Finish
+  End --> Finish
+  Done --> Finish

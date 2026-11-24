@@ -12,7 +12,7 @@ import classes from "./header.module.css";
 
 const navigation = [
   { label: "Home", href: "/" },
-  { label: "Features", href: "/#features" },
+  { label: "Builder", href: "/builder" },
   { label: "Pre-builts", href: "/#prebuilts" },
   { label: "Catalog", href: "/parts" },
   { label: "About", href: "/about" },
@@ -35,7 +35,10 @@ export function HeaderMegaMenu() {
     <header className={classes.header}>
       <div className={classes.inner}>
         <Link href="/" className="flex items-center no-underline focus:outline-none">
-          <Logo />
+          <span className="sm:hidden">
+            <Logo showText={false} size="md" className="[&>div]:rounded-xl [&>div]:border-slate-800 [&>div]:bg-slate-900 [&>div]:shadow-none dark:[&>div]:border-white/10 dark:[&>div]:bg-[#071322]" />
+          </span>
+          <span className="hidden sm:block"><Logo /></span>
         </Link>
 
         <div className="hidden lg:flex items-center gap-5">
@@ -96,7 +99,6 @@ export function HeaderMegaMenu() {
           )}
         </div>
 
-        {/* Mobile Burger Toggle */}
         <div className="flex items-center gap-2 lg:hidden">
           <HeaderCartButton />
           <ThemeToggle />
@@ -109,7 +111,6 @@ export function HeaderMegaMenu() {
         </div>
       </div>
 
-      {/* Mobile Drawer */}
       <Drawer
         opened={drawerOpened}
         onClose={closeDrawer}

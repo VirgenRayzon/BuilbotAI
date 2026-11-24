@@ -1,6 +1,5 @@
 'use client';
 
-import { safeProductReturn } from '@/lib/product-identity';
 import React, { useState, useEffect, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -25,21 +24,23 @@ import {
   PasswordInput,
   Button,
   Alert,
-  ThemeIcon,
   Stack,
   Group,
   Anchor,
   Divider,
   Checkbox,
-  Loader,
 } from '@mantine/core';
-import { LogIn, Mail, Lock, AlertCircle, ArrowLeft, Clock } from 'lucide-react';
+import { Mail, Lock, AlertCircle, ArrowLeft, Clock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { AuthBackground } from '@/components/auth/auth-background';
 import { useTheme } from '@/context/theme-provider';
 import { cn } from '@/lib/utils';
 import { useUserProfile } from '@/context/user-profile';
 import { Logo } from '@/components/logo';
+import {
+  PUBLIC_FEATURE_SIGN_IN_REASON,
+  getCustomerSignInDestination,
+} from '@/lib/public-feature-auth';
 
 const formSchema = z.object({
   email: z.string().email('Please enter a valid email address.'),
@@ -49,7 +50,6 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 const staffSignInError = 'This is a staff account. Sign in through System Access with your access key.';
-// Survives a temporary page remount while Firebase Auth/profile state changes.
 let customerSignInInProgress = false;
 
 function SignInContent() {
@@ -67,11 +67,13 @@ function SignInContent() {
   const { toast } = useToast();
   const { authUser, profile, loading: authLoading, status: profileStatus } = useUserProfile();
 
-  const returnTo = safeProductReturn(searchParams?.get('returnTo') ?? null);
   const reason = searchParams?.get('reason');
+  const returnTo = getCustomerSignInDestination(
+    reason,
+    searchParams?.get('returnTo') ?? null
+  );
   const visibleError = error || (!loading && !googleLoading && reason === 'staff_account' ? staffSignInError : null);
 
-  // Customer sign-in must never route a staff session into the admin portal.
   useEffect(() => {
     if (customerSignInInProgress || loading || googleLoading || redirectingRef.current) return;
     if (authUser && (profileStatus === 'missing' || profileStatus === 'error')) {
@@ -127,7 +129,6 @@ function SignInContent() {
     let signedInUserId: string | null = null;
 
     try {
-      // Keep the provisional Auth session tab-scoped until the account is verified.
       sessionStorage.removeItem('buildbot_admin_session_active');
       await setPersistence(auth, browserSessionPersistence);
       const userCredential = await signInWithEmailAndPassword(auth, values.email, values.password);
@@ -156,7 +157,6 @@ function SignInContent() {
           return;
         }
       } else {
-        // If profile is missing in Firestore, create standard customer profile
         const newProfile = {
           email: user.email,
           name: user.displayName || user.email?.split('@')[0] || 'User',
@@ -168,7 +168,6 @@ function SignInContent() {
         await setDoc(userDocRef, newProfile);
       }
 
-      // Synchronize claims and refresh client token
       const idToken = await user.getIdToken();
       const claimsResult = await syncUserClaimsAction(idToken);
       if ('error' in claimsResult) throw new Error('Unable to verify account permissions. Please try again.');
@@ -249,15 +248,8 @@ function SignInContent() {
     }
   };
 
-  // An existing session is being restored or redirected. Keep the sign-in form
-  // out of view without interrupting an active submission's loading state.
   if ((authUser || redirectingRef.current) && !loading && !googleLoading) {
-    return (
-      <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center gap-3 bg-slate-50 text-slate-600 dark:bg-[#0c0f14] dark:text-slate-300" role="status">
-        <Loader size="sm" color="cyan" />
-        <Text size="sm">Verifying your account...</Text>
-      </div>
-    );
+    return null;
   }
 
   return (
@@ -270,7 +262,6 @@ function SignInContent() {
       <AuthBackground />
 
       <div className="w-full max-w-[440px] z-10 flex flex-col gap-2.5">
-        {/* Navigation & Brand Header */}
         <div className="flex items-center justify-start px-1">
           <Link
             href="/"
@@ -288,7 +279,6 @@ function SignInContent() {
           className="w-full bg-white/85 dark:bg-[#111722] border-slate-200/80 dark:border-white/10 shadow-sm relative transition-all"
         >
           <Stack gap="md">
-            {/* Header / Logo + Title */}
             <div className="text-center flex flex-col items-center gap-1.5">
               <Link href="/" className="mb-0.5">
                 <Logo showText={false} size="lg" />
@@ -304,7 +294,6 @@ function SignInContent() {
               </Text>
             </div>
 
-            {/* Social Authentication */}
             <Button
               variant="default"
               size="md"
@@ -326,7 +315,6 @@ function SignInContent() {
               }}
             />
 
-            {/* Session Timeout Notice */}
             {reason === 'idle_timeout' && !error && (
               <Alert
                 color="yellow"
@@ -340,7 +328,19 @@ function SignInContent() {
               </Alert>
             )}
 
-            {/* Error Message */}
+            {reason === PUBLIC_FEATURE_SIGN_IN_REASON && !error && (
+              <Alert
+                color="yellow"
+                variant="light"
+                radius="md"
+                icon={<AlertCircle size={16} />}
+                title="Sign In Required"
+                className="text-xs"
+              >
+                You need to sign in to use this feature.
+              </Alert>
+            )}
+
             {visibleError && (
               <Alert
                 color="red"
@@ -354,7 +354,6 @@ function SignInContent() {
               </Alert>
             )}
 
-            {/* Form */}
             <form onSubmit={handleSubmit(onSubmit)}>
               <Stack gap="md">
                 <Controller
@@ -448,7 +447,6 @@ function SignInContent() {
               </Stack>
             </form>
 
-            {/* Footer Links */}
             <div className="text-center text-xs text-slate-500 dark:text-slate-400 pt-2 border-t border-slate-200 dark:border-white/10">
               Don&apos;t have an account yet?{' '}
               <Anchor

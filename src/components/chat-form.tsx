@@ -16,8 +16,10 @@ import {
 } from "@mantine/core";
 import { Search, Sparkles } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { AiDisclaimer } from "@/components/ai-disclaimer";
 import { parsePesoBudget } from '@/lib/parse-peso-budget';
 import { BUILD_ADVISOR_GOALS, getBuildAdvisorGoal, type BuildAdvisorIntendedUse } from '@/lib/build-advisor-goals';
+import { BudgetSlider, MAX_BUDGET, MIN_BUDGET } from '@/components/budget-slider';
 
 const formSchema = z.object({
   intendedUse: z.string().min(1, "Please select an intended use."),
@@ -30,9 +32,15 @@ const formSchema = z.object({
   if (values.intendedUse && values.workloadGoal && !getBuildAdvisorGoal(values.intendedUse, values.workloadGoal)) {
     context.addIssue({ code: z.ZodIssueCode.custom, path: ['workloadGoal'], message: 'Select a priority for the chosen intended use.' });
   }
+  if (!values.allowAiSearch && values.allowWebSearch) {
+    context.addIssue({ code: z.ZodIssueCode.custom, path: ['allowWebSearch'], message: 'Web Search requires AI Recommendations.' });
+  }
 });
 
 const BUILD_ADVISOR_FORM_STORAGE_KEY = 'buildbot_advisor_create_form_v1';
+function formatBudget(value: number) {
+  return value.toLocaleString('en-PH');
+}
 
 export type FormSchema = z.infer<typeof formSchema>;
 
@@ -157,24 +165,35 @@ export function ChatForm({ getRecommendations, isPending }: ChatFormProps) {
       <Controller
         name="budget"
         control={form.control}
-        render={({ field, fieldState }) => (
-          <TextInput
-            label="Budget"
-            placeholder="e.g., ~₱50,000, 75k PHP budget"
-            leftSection={<span className="text-xs font-bold text-slate-400">₱</span>}
-            value={field.value}
-            onChange={field.onChange}
-            error={fieldState.error?.message}
-            radius="md"
-            size="sm"
-            classNames={{
-              label:
-                "text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5",
-              input:
-                "bg-slate-50 dark:bg-slate-900/60 border-slate-300 dark:border-white/10 text-slate-900 dark:text-slate-100 font-medium focus:border-cyan-500 transition-colors",
-            }}
-          />
-        )}
+        render={({ field, fieldState }) => {
+          const parsedBudget = parsePesoBudget(field.value);
+          const sliderValue = Math.min(MAX_BUDGET, Math.max(MIN_BUDGET, parsedBudget ?? MIN_BUDGET));
+
+          return (
+            <div>
+              <TextInput
+                label="Budget"
+                placeholder="e.g., ~₱50,000, 75k PHP budget"
+                leftSection={<span className="text-xs font-bold text-slate-400">₱</span>}
+                value={field.value}
+                onChange={field.onChange}
+                error={fieldState.error?.message}
+                radius="md"
+                size="sm"
+                classNames={{
+                  label:
+                    "text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300 mb-1.5",
+                  input:
+                    "bg-slate-50 dark:bg-slate-900/60 border-slate-300 dark:border-white/10 text-slate-900 dark:text-slate-100 font-medium focus:border-cyan-500 transition-colors",
+                }}
+              />
+              <BudgetSlider
+                value={sliderValue}
+                onChange={value => field.onChange(formatBudget(value))}
+              />
+            </div>
+          );
+        }}
       />
 
       <Controller
@@ -225,18 +244,24 @@ export function ChatForm({ getRecommendations, isPending }: ChatFormProps) {
                 <Group gap={6} align="center">
                   <Sparkles className="w-3.5 h-3.5 text-cyan-500 shrink-0" />
                   <Text size="xs" fw={700} className="text-slate-800 dark:text-slate-200">
-                    AI Search
+                    AI Recommendations
                   </Text>
                 </Group>
                 <Text size="xs" c="dimmed" className="text-[10px] sm:text-[11px] leading-tight">
-                  Allows AI to recommend parts based on it's knowledge.
+                  {field.value
+                    ? 'On: AI can suggest parts beyond our inventory.'
+                    : 'Off: in-stock parts are selected using budget and compatibility rules.'}
                 </Text>
               </Stack>
               <Switch
                 color="cyan"
                 size="sm"
                 checked={field.value}
-                onChange={(event) => field.onChange(event.currentTarget.checked)}
+                aria-label="AI Recommendations"
+                onChange={(event) => {
+                  field.onChange(event.currentTarget.checked);
+                  if (!event.currentTarget.checked) form.setValue('allowWebSearch', false);
+                }}
               />
             </Group>
           </Paper>
@@ -271,12 +296,15 @@ export function ChatForm({ getRecommendations, isPending }: ChatFormProps) {
                 size="sm"
                 className="min-h-11 flex items-center"
                 checked={field.value}
+                disabled={!form.watch('allowAiSearch')}
                 onChange={(event) => field.onChange(event.currentTarget.checked)}
               />
             </Group>
           </Paper>
         )}
       />
+
+      <AiDisclaimer />
 
       <div>
         <Button

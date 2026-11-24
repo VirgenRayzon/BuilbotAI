@@ -1,11 +1,12 @@
 'use client';
+import { PrebuiltShowcaseSkeleton } from '@/components/loading/prebuilt-showcase-skeleton';
 
 import dynamic from 'next/dynamic';
 import { useNearViewport } from '@/hooks/use-near-viewport';
 
 const PrebuiltShowcase = dynamic(
   () => import('./prebuilt-showcase').then(module => module.PrebuiltShowcase),
-  { loading: () => <div className="min-h-[900px]" aria-label="Loading featured systems" aria-busy="true" /> },
+  { loading: () => <PrebuiltShowcaseSkeleton /> },
 );
 
 export function DeferredPrebuiltShowcase() {
@@ -13,7 +14,7 @@ export function DeferredPrebuiltShowcase() {
 
   return (
     <div ref={ref} id="prebuilts" className="scroll-mt-24">
-      {isNear ? <PrebuiltShowcase /> : <div className="min-h-[900px]" />}
+      {isNear ? <PrebuiltShowcase /> : <PrebuiltShowcaseSkeleton />}
     </div>
   );
 }

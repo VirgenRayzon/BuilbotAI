@@ -33,7 +33,6 @@ export default function FAQPage() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
 
-  // Handle URL hash on initial load (e.g. #shipping-amp-delivery)
   useEffect(() => {
     if (typeof window !== "undefined" && window.location.hash) {
       const hash = window.location.hash.replace("#", "");
@@ -72,7 +71,6 @@ export default function FAQPage() {
       <AuthBackground className="fixed" />
 
       <div className="w-full max-w-5xl mx-auto px-4 sm:px-6 md:px-8 lg:px-8 xl:px-10 relative z-10">
-        {/* Header */}
         <div className="text-center mb-10 sm:mb-14">
           <motion.div
             initial={{ opacity: 0, y: 15 }}
@@ -110,7 +108,6 @@ export default function FAQPage() {
           </motion.p>
         </div>
 
-        {/* Search Bar */}
         <motion.div
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -135,7 +132,6 @@ export default function FAQPage() {
           />
         </motion.div>
 
-        {/* Category Navigation Quick Filter Chips */}
         <div className="flex flex-wrap items-center justify-center gap-2 mb-12 max-w-4xl mx-auto">
           <button
             type="button"
@@ -188,7 +184,6 @@ export default function FAQPage() {
           })}
         </div>
 
-        {/* FAQ Categories & Separated Mantine Accordions */}
         <div className="space-y-12">
           {filteredFaq.length > 0 ? (
             filteredFaq.map((cat, catIndex) => {
@@ -269,7 +264,6 @@ export default function FAQPage() {
           )}
         </div>
 
-        {/* Footer Support CTA */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}

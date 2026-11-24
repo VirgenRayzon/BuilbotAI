@@ -1,17 +1,14 @@
-/**
- * types — Central TypeScript type definitions for the Buildbot AI platform.
- * Defines: Part, PrebuiltSystem, ComponentData, Build, Order, UserProfile,
- * Notification, SystemNotification, and related domain types.
- */
 
 import type { AiBuildAdvisorRecommendationsOutput } from "@/ai/schemas/build-advisor-schemas";
 
 export type Resolution = '1080p' | '1440p' | '4K';
-export type WorkloadType = 'Esports' | 'AAA' | 'Balanced';
+export type WorkloadType = 'Esports' | 'AAA' | 'VideoEditing' | 'Rendering' | 'Office' | 'Balanced';
 
 export type ComponentData = {
   id: string;
   isExternal?: boolean;
+  isIntegratedGraphics?: boolean;
+  sourceCpuId?: string;
   model: string;
   description: string;
   price: number;
@@ -23,8 +20,8 @@ export type ComponentData = {
   wattage?: number;
   socket?: string;
   ramType?: string;
-  performanceTier?: number; // 1-4 (Entry=1, Mid=2, High=3, Enthusiast=4)
-  performanceScore?: number; // 0-100 (preferred — used for tier fallback)
+  performanceTier?: number;
+  performanceScore?: number;
   dimensions?: {
     width: number;
     height: number;
@@ -70,8 +67,8 @@ export type Part = {
   images?: string[];
   specifications: Record<string, string | number>;
   wattage?: number;
-  performanceTier?: number; // 1-4 (Entry=1, Mid=2, High=3, Enthusiast=4)
-  performanceScore?: number; // 0-100 (preferred — used for tier fallback)
+  performanceTier?: number;
+  performanceScore?: number;
   socket?: string;
   ramType?: string;
   dimensions?: {
@@ -84,6 +81,18 @@ export type Part = {
   createdAt?: any;
   isArchived?: boolean;
 };
+
+export interface PrebuiltComponentSummary {
+  key: string;
+  category: Part['category'];
+  partId: string;
+  productId: string | null;
+  name: string;
+  price: number;
+  imageUrl: string;
+  inStock: boolean;
+  isArchived: boolean;
+}
 
 export type PrebuiltSystem = {
   productId?: string;
@@ -106,6 +115,8 @@ export type PrebuiltSystem = {
     case?: string;
     cooler?: string;
   };
+  componentSummaries?: PrebuiltComponentSummary[];
+  componentPartIds?: string[];
   aiReport?: any;
   createdAt?: any;
   isArchived?: boolean;
@@ -124,6 +135,7 @@ export type UserProfile = {
   city?: string;
   state?: string;
   zip?: string;
+  addressBook?: SavedAddress[];
   isManager: boolean;
   isSuperAdmin?: boolean;
   createdAt?: any;
@@ -134,15 +146,58 @@ export type OrderItem = {
   name: string;
   category: string;
   price: number;
+  productId?: string;
+  quantity?: number;
+  imageUrl?: string;
+  lineTotal?: number;
+  groupName?: string;
+  buildType?: "custom-build" | "prebuilt" | "part" | "additional";
+  prebuiltName?: string;
+  lineId?: string;
+  rigInstanceId?: string;
 };
 
 export type Order = {
   id: string;
+  orderNumber?: string;
   userId: string;
   userEmail: string;
   items: OrderItem[];
+  subtotal?: number;
+  shippingFee?: number;
+  protectionFee?: number;
+  discountAmount?: number;
+  voucherCode?: string;
   totalPrice: number;
   status: 'pending' | 'building' | 'finished building' | 'cancelled';
+  workflowRevision?: number;
+  fulfillmentStage?: OrderFulfillmentStage;
+  queueStage?: OrderFulfillmentStage | 'cancelled';
+  paymentMethod?: PaymentMethod;
+  paymentStatus?: PaymentStatus;
+  paymentReference?: string;
+  paidAt?: any;
+  paymentAttempts?: number;
+  holdExpiresAt?:
+    | { toDate?: () => Date; seconds?: number; nanoseconds?: number }
+    | Date
+    | string
+    | null;
+  paymongoCheckoutSessionId?: string;
+  paymongoCheckoutUrl?: string;
+  paymongoMode?: "live_test_api" | "local_sandbox_fallback";
+  paymongoPaymentId?: string;
+  refundStatus?: 'none' | 'due' | 'pending' | 'partial' | 'refunded';
+  refundedAmount?: number;
+  refunds?: OrderRefund[];
+  pendingRefundOperationId?: string;
+  pendingPaymongoRefundId?: string;
+  stockState?: OrderStockState;
+  stockRestoredAt?: unknown;
+  paymentHistory?: OrderPaymentEvent[];
+  shippingMethod?: ShippingMethod;
+  shippingAddress?: OrderShippingAddress;
+  includeCrateProtection?: boolean;
   isArchived?: boolean;
   archivedAt?: unknown;
   archivedBy?: string;
@@ -150,7 +205,64 @@ export type Order = {
   prebuiltId?: string;
   prebuiltName?: string;
   prebuiltTier?: PrebuiltSystem['tier'];
-  createdAt: any; // Firestore Timestamp
+  cancellationReason?: string;
+  cancelledAt?: any;
+  autoCancelled?: boolean;
+  assemblyVerificationPassed?: boolean;
+  legacyAssemblyReviewed?: boolean;
+  physicalReturnRequired?: boolean;
+  physicalReturnConfirmedAt?: unknown;
+  physicalReturnConfirmedBy?: string;
+  stockExceptions?: Array<{ path: string; quantity: number }>;
+  createdAt: any;
+  updatedAt?: any;
+};
+
+export type OrderFulfillmentStage =
+  | 'order_placed'
+  | 'assembling_testing'
+  | 'out_for_delivery'
+  | 'delivered';
+
+export type OrderStockState = 'reserved' | 'restored' | 'pending_return' | 'restored_with_exceptions';
+
+export type OrderRefundDestination =
+  | 'original_payment_method'
+  | 'gcash'
+  | 'bank_transfer'
+  | 'cash'
+  | 'store_credit';
+
+export type OrderRefundResultStatus = 'succeeded' | 'pending' | 'failed';
+
+export type OrderRefund = {
+  id: string;
+  amount: number;
+  method: 'manual' | 'paymongo';
+  destination?: OrderRefundDestination;
+  reason: string;
+  reference: string;
+  proofUrl?: string;
+  actorId: string;
+  actorName: string;
+  actorRole?: 'Manager' | 'Super Admin';
+  status?: OrderRefundResultStatus;
+  createdAt: unknown;
+};
+
+export type OrderPaymentEvent = {
+  kind?: 'collection' | 'correction' | 'verification';
+  relatedEventId?: string;
+  id: string;
+  status: PaymentStatus;
+  method: PaymentMethod;
+  reference?: string;
+  amount?: number;
+  actorId?: string;
+  actorName: string;
+  actorRole: 'Customer' | 'Manager' | 'Super Admin' | 'Webhook' | 'System';
+  note?: string;
+  createdAt: unknown;
 };
 
 export type PopularityMetrics = {
@@ -169,43 +281,79 @@ export type Notification = {
   targetId?: string;
   type?: 'support_reply' | 'support_status';
   read: boolean;
-  createdAt: any; // Firestore Timestamp
+  createdAt: any;
+  expiresAt?:
+    | { toDate?: () => Date; toMillis?: () => number; seconds?: number; nanoseconds?: number }
+    | Date
+    | string
+    | number
+    | null;
 };
+
 export type SystemNotification = {
   id: string;
-  type: 'reservation_received' | 'item_archived' | 'status_changed' | 'user_cancelled' | 'stock_added' | 'contact_inquiry' | 'contact_reply_received';
+  type: 'reservation_received' | 'item_archived' | 'status_changed' | 'user_cancelled' | 'order_auto_cancelled' | 'stock_added' | 'contact_inquiry' | 'contact_reply_received';
   actorId: string;
   actorName: string;
   title: string;
   message: string;
-  targetId: string; // part ID or order ID
-  readBy: string[]; // List of user IDs who have seen it
-  createdAt: any; // Firestore Timestamp
+  targetId: string;
+  readBy: string[];
+  createdAt: any;
+  expiresAt?:
+    | { toDate?: () => Date; toMillis?: () => number; seconds?: number; nanoseconds?: number }
+    | Date
+    | string
+    | number
+    | null;
 };
 
 export type AuditLog = {
   id: string;
-  actionName: 'created' | 'updated' | 'deleted' | 'archived' | 'restored' | 'status_changed' | 'auth_update' | 'other';
+  actionName:
+    | 'created'
+    | 'updated'
+    | 'deleted'
+    | 'archived'
+    | 'restored'
+    | 'status_changed'
+    | 'payment_updated'
+    | 'refunded'
+    | 'auth_update'
+    | 'auto_cancelled'
+    | 'other';
   actorId: string;
   actorName: string;
   actorEmail?: string;
-  scope: 'Part' | 'Prebuilt' | 'Order' | 'User' | 'System';
+  scope: import('./audit-scopes').StaffAuditScope;
   resourceName: string;
   resourceId?: string;
   details?: string;
-  createdAt: any; // Firestore Timestamp
+  createdAt: any;
+  expiresAt?:
+    | { toDate?: () => Date; toMillis?: () => number; seconds?: number; nanoseconds?: number }
+    | Date
+    | string
+    | number
+    | null;
 };
 
 export type UserAuditLog = {
   id: string;
   userId: string;
   userEmail?: string;
-  actionName: 'created' | 'updated' | 'deleted' | 'restored' | 'status_changed' | 'auth_update' | 'other';
-  scope: 'Order' | 'Favorite' | 'Profile' | 'System';
+  actionName: 'created' | 'updated' | 'deleted' | 'restored' | 'status_changed' | 'auth_update' | 'auto_cancelled' | 'other';
+  scope: import('./audit-scopes').CustomerAuditScope;
   resourceName: string;
   resourceId?: string;
   details?: string;
-  createdAt: any; // Firestore Timestamp
+  createdAt: any;
+  expiresAt?:
+    | { toDate?: () => Date; toMillis?: () => number; seconds?: number; nanoseconds?: number }
+    | Date
+    | string
+    | number
+    | null;
 };
 
 export type FavoriteBuildPart = {
@@ -221,10 +369,50 @@ export type FavoriteBuild = {
   parts: FavoriteBuildPart[];
   totalPrice: number;
   source: 'builder' | 'advisor';
-  createdAt: any; // Firestore Timestamp
+  createdAt: any;
   loadContext?: {
-    type: 'prebuilt';
+    type: 'prebuilt' | 'advisor';
     systemName: string;
     unavailableParts: string[];
   };
+};
+
+export type SavedAddress = {
+  id: string;
+  label: string;
+  fullName: string;
+  phone: string;
+  email: string;
+  region: string;
+  city: string;
+  barangay: string;
+  streetAddress: string;
+  postalCode: string;
+  notes?: string;
+  isDefault?: boolean;
+  createdAt?: string;
+};
+
+export type PaymentMethod =
+  | 'cod'
+  | 'gcash_simulated'
+  | 'paymongo_simulated'
+  | 'card_simulated';
+
+export type PaymentStatus = 'unpaid' | 'pending' | 'paid' | 'failed' | 'cancelled';
+
+export type SimulatedPaymentOutcome = 'success' | 'failed' | 'cancelled';
+
+export type ShippingMethod = 'standard_courier' | 'sameday_express' | 'store_pickup';
+
+export type OrderShippingAddress = {
+  fullName: string;
+  phone: string;
+  email: string;
+  region: string;
+  city: string;
+  barangay: string;
+  streetAddress: string;
+  postalCode: string;
+  notes?: string;
 };

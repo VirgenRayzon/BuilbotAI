@@ -1,80 +1,108 @@
 # UI page, popup, and modal audit
 
-This is a source-code audit of the 17 `src/app/**/page.tsx` routes and the overlays reachable from their rendered components, inspected on 17 October 2026. “Visible” means the element is rendered when its route, role, viewport, data, and loading conditions allow it; this is not a screenshot or a claim that every element appears simultaneously. Repeated cards, icons, decorative backgrounds, and loading skeletons are described by function rather than enumerated per instance. Actual labels and data can vary with Firestore content.
+This is a source-code audit of the 24 `src/app/**/page.tsx` routes and the overlays reachable from their rendered components, inspected on 26 October 2026. “Visible” means an item appears when the page, role, screen size, data, and loading state allow it. Actual labels and data can change based on Firestore content.
 
 ## Shared interface
 
 `src/app/layout.tsx` and `src/components/app-layout.tsx` provide the app-wide header, optional footer, theme, notifications, loading state, and session handling. Public/onboarding routes use `HeaderMegaMenu`: logo, navigation links, sign-in entry, and mobile navigation drawer. Signed-in customers see Builder, Build Advisor, and Pre-builts links; staff see Dashboard and Prebuilt Builder. The signed-in header also has a role/account menu, profile/settings links, sign out, a theme toggle, and either customer notifications or the staff notification center (`src/components/header.tsx`). The footer, where enabled, links to FAQ, About, Group, and Contact; its “Privacy Policy” and “Terms of Service” links currently route to FAQ (`src/components/footer.tsx`). Loading, missing-profile, and maintenance screens can replace page content (`src/components/app-layout.tsx`).
 
-## Page-by-page visible elements and purpose
+## Page routes and their purpose
 
 ### `/` — public landing page
 
-The hero shows a product image, headline, descriptive copy, hardware-preview cards, and “Launch Builder” and “AI Advisor” buttons; both buttons currently lead to sign-in for guests. Its feature section illustrates bottleneck analysis, build critique, and generated builds. A deferred prebuilt showcase displays available systems from Firestore when data loads, while the accessories section introduces peripheral categories. The final call-to-action links to sign-in. The hardware examples and performance numbers inside the hero/feature artwork are promotional illustrations, not a live analysis of a visitor’s build (`src/components/landing/landing-page.tsx`, `hero-section.tsx`, `features-section.tsx`, `prebuilt-showcase.tsx`, `accessories-section.tsx`, `cta-section.tsx`). Signed-in users are redirected to the customer builder or staff dashboard.
+This page introduces BuildbotAI, its PC building tools, featured systems, accessories, and main actions. Guests can start the sign-in flow, while signed-in customers and staff are sent to their main work page (`src/app/page.tsx`, `src/components/landing/`).
 
 ### `/about` — public About page
 
-The heading and introduction explain the project. A section-navigation list jumps to content sections; each section shows a title, Markdown-formatted text, optional subtopics, and optional images. Image controls open a larger preview. A builder link leads into the customer flow. Content is read from `siteContent/about` when available, otherwise from the page’s default content (`src/app/about/page.tsx`).
+This page explains the store, its history, hardware skills, warranties, delivery service, and customer support. It also gives key business facts and a link to the PC Builder (`src/app/about/page.tsx`).
 
 ### `/team` — public team page
 
-The page displays the shared `TeamSection` presentation: section heading, team-member photos, role badges, names, descriptions, and social-media icons. Those icons are rendered as icons without links in the inspected component. It has no page-specific form or data mutation (`src/app/team/page.tsx`, `src/components/landing/team-section.tsx`).
+This page introduces the project team with member photos, names, roles, and short descriptions. It does not contain a form or change saved data (`src/app/team/page.tsx`, `src/components/landing/team-section.tsx`).
+
+### `/group` — team page alias
+
+This address opens the same content as `/team`. It exists as another way to reach the team page (`src/app/group/page.tsx`).
 
 ### `/contact` — public contact page
 
-Contact cards display an email address, phone number, and location/hours information. The message form contains full name, email, subject, and message controls plus a send button. An inline success alert and “send another” path appear after submission. The submit handler only waits briefly and changes local UI state; it does not send email, save a ticket, or call an API (`src/app/contact/page.tsx`).
+This page shows the store’s contact details and lets a visitor send an inquiry. Signed-in users can follow staff replies in the Contact Inbox on their Profile, while guest inquiries cannot be followed inside the app (`src/app/contact/page.tsx`, `src/app/api/contact/route.ts`).
 
 ### `/faq` — public FAQ page
 
-The page has an introduction, a search box that filters question text and answers, category headings, expandable question/answer accordions, an empty-search state, and a contact link. Answers are static content in the page source; they are not a live policy or shipment-status lookup (`src/app/faq/page.tsx`).
+This page answers common questions about the store, PC builds, orders, delivery, and support. Users can search the questions, open each answer, or go to Contact for more help (`src/app/faq/page.tsx`, `src/app/faq/faq-data.ts`).
 
 ### `/signin` — customer sign-in
 
-The page shows logo, heading, back navigation, Google sign-in button, email and password fields, password-reset link, “remember me” checkbox, submit button, and sign-up link. Inline validation/authentication and session-expiry messages explain errors or redirects. Staff accounts are rejected from this customer flow and directed to System Access (`src/app/signin/page.tsx`).
+This page lets customers sign in with email and password or Google. It also links to password recovery and account creation, while staff are directed to System Access (`src/app/signin/page.tsx`).
 
 ### `/signup` — customer registration
 
-The page presents a terms-of-agreement dialog, then logo, Google registration, email and password fields, password-strength feedback, a terms checkbox/link, registration button, and sign-in link. Validation and registration errors appear inline. It creates the Firebase Auth account and Firestore customer profile when successful (`src/app/signup/page.tsx`, `src/components/auth/terms-of-agreement-modal.tsx`).
+This page creates a customer account using email and password or Google. It checks the password, requires agreement to the terms, and creates the customer profile (`src/app/signup/page.tsx`, `src/components/auth/terms-of-agreement-modal.tsx`).
 
 ### `/forgot-password` — password recovery
 
-The page contains a back-to-sign-in link, logo, explanatory heading, email field, submit button, and validation/error alerts. A success state states that a reset link was requested and offers a return to sign-in. Submission calls Firebase Auth’s password-reset email method (`src/app/forgot-password/page.tsx`).
+This page lets a customer request a password reset link by email. It shows a clear success or error message and links back to sign-in (`src/app/forgot-password/page.tsx`).
 
 ### `/system-access` — staff sign-in
 
-This separate staff form shows manager/superadmin role selection, email and password fields, a role-key field, email/password sign-in, Google sign-in, request-key entry, manager registration link, and customer sign-in link. Inline notices explain session expiry, authentication errors, and key errors. A verified staff session leads to `/admin` (`src/app/system-access/page.tsx`).
+This page lets Managers and Super Admins sign in with their staff account and role key. Managers can also request a key or open the manager sign-up page (`src/app/system-access/page.tsx`).
 
 ### `/system-access/signup` — manager registration
 
-The page has a back link, logo/heading, Google signup option, email, password and password-strength display, assigned manager-key field, register button, sign-in link, and validation alerts. The manager key is checked through a server action before the staff profile is created or updated (`src/app/system-access/signup/page.tsx`).
+This page creates a Manager account using email and password or Google. A valid Manager key is required before the staff profile is saved (`src/app/system-access/signup/page.tsx`, `src/app/actions.ts`).
+
+### `/parts` — public parts catalog
+
+This page lists available PC parts with search, category and brand filters, sorting, stock details, and grid or list views. Users can open a part, and cart buttons appear when E-Commerce Mode is on (`src/app/parts/page.tsx`, `src/components/public-parts-catalog.tsx`).
+
+### `/parts/[productId]` — part details
+
+This page shows one part’s images, price, stock, description, and technical details. Customers can reserve the part or add it to the cart when allowed, while staff can open it in inventory management (`src/app/parts/[productId]/page.tsx`, `src/components/public-part-page.tsx`).
 
 ### `/builder` — customer PC builder
 
-The heading identifies the builder. The catalog area provides a search field, category and brand filters, sort selector and direction, compatible-only toggle, grid/list switch, paginated product cards, stock/price/specification summaries, and add/remove selection controls. The “Your Build” area lists core and optional part slots, current selections, price and wattage totals, resolution/workload settings, compatibility/performance analysis, and action buttons for reservation or analysis. Its options menu offers save, PDF download when a complete customer build is eligible, clear, and saved-configuration loading. On mobile, the build area opens as a floating-button drawer. A floating AI chat panel can answer questions and use current build context. Initial catalog data is prefetched by the server route and then handled by client hooks (`src/app/builder/page.tsx`, `builder-page.tsx`, `components/inventory-view.tsx`, `src/components/your-build.tsx`).
+This customer page lets users choose PC parts and check price, power use, fit, and expected performance. Users can save, load, clear, download, or reserve a build, and they can ask the AI chat about their current choices (`src/app/builder/page.tsx`, `src/app/builder/builder-page.tsx`, `src/components/your-build.tsx`).
 
 ### `/ai-build-advisor` — customer AI advisor
 
-The heading and maintenance alert explain AI availability. The Critique tab places “Your Build” beside an analysis panel with status, results, refresh, retry, and cancel controls where applicable. The Generate tab has an intended-use selector, goal/performance selector, PHP budget field, flexible-budget, AI Search, and Web Search switches, and a generate button. The result panel shows progress/error states, selected component recommendations, estimated total, research information when enabled, cancel, and save-to-favorites control when a build exists. Tab choice also follows the URL hash (`src/app/ai-build-advisor/page.tsx`, `components/critique-tab.tsx`, `components/recommendation-tab.tsx`, `src/components/chat-form.tsx`, `src/components/build-summary.tsx`).
+This customer page can review a saved PC build or suggest a new build for a chosen use and budget. Users can stop, retry, or save a completed result (`src/app/ai-build-advisor/page.tsx`, `src/app/ai-build-advisor/components/`).
 
 ### `/pre-builts` — customer prebuilt catalog
 
-The heading and introductory copy precede tier filters, search, sort/direction controls, and view controls. System cards/table rows show image, name, tier, price, descriptions/specifications and expandable details, with links to a product page and reservation actions where stock and role allow them. Loading and no-results states explain unavailable content. The list reads `prebuiltSystems` and omits archived entries (`src/app/pre-builts/page.tsx`, `src/components/prebuilt-system-card.tsx`, `src/components/prebuilts-table.tsx`).
+This page lists ready-made PC systems with search, tier filters, sorting, and grid or list views. Users can open a system to see its full details, and staff can open the same catalog in preview mode (`src/app/pre-builts/page.tsx`).
 
 ### `/pre-builts/[id]` — individual prebuilt
 
-The page has a return link, product image gallery, name/tier/description/price, component accordion with part names and stock status, AI highlights or analysis panel, and an action card. The action card offers “Customize in Builder” and, for eligible customers with a complete in-stock configuration, “Reserve this Build”; it displays missing-part or out-of-stock notices otherwise. Loading and not-found states include a way back. Part names can open detailed specifications, and the image opens a full-screen preview (`src/app/pre-builts/[id]/page.tsx`, its `components/` and `hooks/use-prebuilt-details.ts`).
+This page shows one ready-made PC, including its images, parts, price, stock, and AI review. Customers can customize or reserve an available build, while staff can view it without customer actions (`src/app/pre-builts/[id]/page.tsx`, `src/app/pre-builts/[id]/components/`).
+
+### `/checkout` — simulated store checkout
+
+This page walks through delivery, address, payment, order review, and a sample receipt when E-Commerce Mode is on. It is clearly marked as a UI simulation and does not complete a real payment (`src/app/checkout/page.tsx`, `src/context/ecommerce-context.tsx`).
 
 ### `/profile` — registered account
 
-The identity banner shows user information/role and account actions. A navigation sidebar selects Profile and Settings for all signed-in roles; customers also see Reservations, Saved Favourites, and Activity Logs with counts; superadmins also see System Safeguards. Profile shows identity, account summary, reservation/favorite summaries, and a settings link. Settings includes display name, biography, profile photo upload or URL, personal/contact/address fields, and save controls; staff settings can expose key controls. Customer Reservations lists order status, items, dates and prices with cancellation/deletion actions. Saved Favourites lists named builds with load, rename, delete, and “Create New Build.” Activity Logs shows recorded customer actions. System Safeguards shows maintenance, Storage, and AI switches for superadmins (`src/app/profile/page.tsx`, `src/app/profile/components/`).
+This page lets signed-in users view their profile, change account details, and read or reply to contact inquiries. Customers also get reservations or sample orders, saved builds, and activity logs, while Super Admins get system safety controls (`src/app/profile/page.tsx`, `src/app/profile/components/`).
+
+### `/support-requests` — old support link
+
+This route does not show its own page. It sends the user to the Contact Inbox on `/profile` and keeps the selected inquiry ID when one is provided (`src/app/support-requests/page.tsx`).
+
+### `/admin/contact-inquiries` — old staff inbox link
+
+This route does not show its own page. It sends the user to the shared Contact Inbox on `/profile` and keeps the selected inquiry ID when one is provided (`src/app/admin/contact-inquiries/page.tsx`).
 
 ### `/admin` — staff dashboard
 
-The page has a tab-specific heading and horizontal tab bar. Stock contains component counts, search, category/brand/availability/sort filters, card/table presentations, selection/bulk actions, and add/edit/stock/archive/delete controls. Prebuilts contains tier filtering, system cards, add/edit, archive/delete, and selection/bulk actions. Reservations displays order counts/value, status filtering and order records with customer, component, price, and status information; staff can change status or delete records. Archive lists inactive parts and systems for restore or deletion. Audit shows staff event records. Superadmin-only tabs add Sales & Analytics (charts/metrics and exports), Management Portal (manager accounts, keys and requests), AI (model routing/projects and system prompts), and Site Content (editable About text/images). The header conditionally shows pending-order counts and sales test-data/reset controls (`src/app/admin/page.tsx`, `src/app/admin/components/`, `src/components/sales-analytics.tsx`, `src/components/super-admin-settings.tsx`).
+This staff page now uses a collapsible side menu, a top bar, page search, alerts, and clear section headings. Managers can handle stock, prebuilts, reservations, archives, and audit logs; Super Admins also get sales reports, account and key management, AI model settings, and system prompts. Storefront preview links open the public Parts and Pre-builts pages without leaving the staff flow (`src/app/admin/page.tsx`, `src/app/admin/components/`).
 
 ### `/admin/prebuilt-builder` — staff system composer
 
-The heading introduces prebuilt creation. It reuses “Your Build” for selected parts and analysis, with staff-specific save/add-prebuilt action. The catalog offers search, category/brand filters, compatibility filtering, sort/direction, grid/list views, part selection, and pagination. Selected state is saved in browser storage. The floating AI chat can discuss the proposed configuration. Completion opens the prebuilt creation flow, which collects a name and saves a system to the catalog (`src/app/admin/prebuilt-builder/page.tsx`, `src/components/your-build.tsx`, `src/components/build/build-action-footer.tsx`).
+This staff page is used to choose parts and create a ready-made PC for the store. It includes search and filters, fit checks, build totals, saved browser state, AI chat, and the final save action (`src/app/admin/prebuilt-builder/page.tsx`, `src/components/your-build.tsx`).
+
+### `/q/[token]` — QR opening screen
+
+This short loading page checks a product QR code and sends the user to the matching product page. If the code cannot be used, it shows an error with retry, sign-in, or browse options (`src/app/q/[token]/page.tsx`, `src/hooks/use-qr-resolver.ts`).
 
 ## Popups, dialogs, drawers, and other overlays
 
@@ -147,6 +175,6 @@ Menus, filters, tooltips, selectors, stock/specification accordions, status aler
 ## Audit notes
 
 - The list documents source wiring, not a visual check against a running Firebase dataset. Empty, loading, error, staff/customer, and mobile states change what appears.
-- The Contact page’s “Message Received” alert is a local simulated state, not evidence of message delivery. The FAQ’s shipping and warranty statements are static copy.
+- The Contact page sends an inquiry through `/api/contact`. Signed-in users can follow replies in their Profile, but guests cannot follow replies inside the app. The FAQ’s shipping and warranty statements are static page content.
 - The landing feature illustrations contain fixed example values; they should not be read as calculated results for the viewer.
 - Several admin controls perform destructive data operations, so the confirmation dialogs above are part of the user flow and should be tested with appropriate nonproduction data before deployment.

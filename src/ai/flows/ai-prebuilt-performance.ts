@@ -5,6 +5,7 @@ import { z } from "genkit";
 import { getGenkitModelName, safeGenkitGenerate } from '@/lib/ai-model-resolver';
 
 const ComponentDataSchema = z.object({
+    id: z.string().optional(),
     model: z.string(),
     price: z.number(),
     brand: z.string().optional(),
@@ -29,10 +30,6 @@ const AiPrebuiltPerformanceInputSchema = z.record(
 
 export type AiPrebuiltPerformanceInput = z.infer<typeof AiPrebuiltPerformanceInputSchema>;
 
-/**
- * Unified Output Schema for the Prebuilt Performance Analysis.
- * As requested, this strictly only returns Pros/Strengths.
- */
 const aiPrebuiltPerformanceOutputSchema = z.object({
     pros: z.array(z.string()),
 });
@@ -65,6 +62,8 @@ export async function aiPrebuiltPerformanceAction(input: AiPrebuiltPerformanceIn
         })
         .join('\n');
 
+    const usesIntegratedGraphics = Object.values(input).some(value =>
+        value && !Array.isArray(value) && value.id === 'included-integrated-gpu');
     const prompt = `
 You are an enthusiastic and expert PC building marketer and mentor. Analyze the prebuilt PC provided and give an inspiring list of its absolute best strengths.
 Since this is for a prebuilt sales page, the tone should be highly supportive, exciting, and authoritative about its capabilities.
@@ -73,6 +72,7 @@ STRENGTHS (EXPRESSED WITH EXPERTISE):
 - Highlight the synergy, raw power, and specific use cases this build excels at.
 - Be specific about what makes these particular components great together.
 - DO NOT list any cons, bottlenecks, or limitations. Only focus on the absolute pros.
+${usesIntegratedGraphics ? '- This build uses CPU integrated graphics with shared system RAM. Do not claim dedicated GPU, discrete VRAM, or high-end gaming performance. Focus on supported everyday strengths.' : ''}
 
 Current Build:
 ${buildContext}
@@ -82,7 +82,6 @@ ${buildContext}
 
     try {
         const dynamicModel = await getGenkitModelName('prebuiltAdvisor');
-        // Step 1: Plain-text research call WITH googleSearchRetrieval (no structured output)
         console.log("[AI Prebuilt Performance] Step 1: Running web search pre-research for component capabilities...");
         const researchResponse = await safeGenkitGenerate(ai, {
             model: dynamicModel,
@@ -106,7 +105,6 @@ Provide detailed, enthusiastic findings focusing ONLY on the strengths and posit
         const webResearchContext = researchResponse.text;
         console.log("[AI Prebuilt Performance] Step 1 complete. Research context obtained.");
 
-        // Step 2: Structured output prompt WITHOUT googleSearchRetrieval
         console.log("[AI Prebuilt Performance] Step 2: Generating structured strengths...");
         const consolidatedPrompt = `${prompt}
 
@@ -145,4 +143,3 @@ Output strictly the JSON object.`;
         throw error;
     }
 }
-

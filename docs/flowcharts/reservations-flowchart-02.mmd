@@ -15,3 +15,5 @@ flowchart TD
   Notify --> Result{Commit succeeds?}
   Result -- No --> Denied
   Result -- Yes --> Done
+  Denied --> Finish([END])
+  Done --> Finish

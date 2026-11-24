@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server';
 import { getAdminFirestore } from '@/firebase/server-init';
 import { contactStatusSchema } from '@/lib/contact-schemas';
 import { contactErrorResponse, getBearerToken, requireContactStaff } from '@/lib/server/contact-auth';
+import { computeExpiresAt } from '@/lib/ttl-policies';
 
 export const runtime = 'nodejs';
 
@@ -36,6 +37,7 @@ export async function POST(request: NextRequest) {
         type: 'support_status',
         read: false,
         createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        expiresAt: admin.firestore.Timestamp.fromDate(computeExpiresAt('notifications')),
       });
     }
     await batch.commit();

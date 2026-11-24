@@ -4,7 +4,6 @@ import type { QRHealthRecord, QRHealthReport } from '../qr-health';
 const skuPattern = /^SKU-(CPU|GPU|MTB|RAM|STG|PSU|CSE|CLR|MNT|KBD|MOU|HDT|PC)[23456789ABCDEFGHJKMNPQRSTVWXYZ]{8}$/;
 type Input = { products: QRHealthRecord[]; ids: QRHealthRecord[]; skus: QRHealthRecord[]; links: QRHealthRecord[]; counter: unknown };
 
-/** Pure diagnostics: no repair, allocation or writes. */
 export function analyzeQRHealth(input: Input): QRHealthReport {
   const issues: QRHealthReport['issues'] = [];
   const ids = new Map(input.ids.map(row => [row.id, row]));
@@ -42,7 +41,6 @@ export function analyzeQRHealth(input: Input): QRHealthReport {
     if (!qrMap || qrMap.productId !== productId || typeof qrMap.enabled !== 'boolean') add(row, 'QR_MAPPING', 'QR directory is missing or inconsistent.');
     else if (qrMap.enabled === false) disabled++;
   }
-  // Also inspect registry records that no canonical product references.
   for (const [rows, field, pattern] of [[input.ids, 'productId', PRODUCT_ID_PATTERN], [input.skus, 'sku', skuPattern]] as const) {
     for (const row of rows) {
       if (field === 'productId' && pattern.test(row.id)) highest = Math.max(highest, Number(row.id.slice(4)));

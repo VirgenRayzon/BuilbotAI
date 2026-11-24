@@ -5,7 +5,6 @@ interface AuthBackgroundProps {
   className?: string;
 }
 
-/** Decorative hardware drawings for authentication and public informational pages. */
 export function AuthBackground({ className }: AuthBackgroundProps = {}) {
   return (
     <div className={cn(styles.background, className)} aria-hidden="true">

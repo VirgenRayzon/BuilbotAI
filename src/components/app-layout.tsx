@@ -3,15 +3,13 @@
 import { useUserProfile } from "@/context/user-profile";
 import { Header } from "@/components/header";
 import { Footer } from "@/components/footer";
-import { NeutralPageLoader } from "@/components/neutral-page-loader";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { MaintenanceScreen } from "@/components/maintenance-screen";
 import { useSiteSettings } from "@/context/site-settings-context";
 import { cn } from "@/lib/utils";
 
-import { Button, Paper, Text, Title } from "@mantine/core";
-import { AnimatePresence } from "framer-motion";
+import { Button, Paper, Skeleton, Text, Title } from "@mantine/core";
 import { SignOutLoader } from "@/components/auth/sign-out-loader";
 import { SignOutTransitionContext } from "@/context/sign-out-transition";
 import { EcommerceProvider } from "@/context/ecommerce-context";
@@ -21,6 +19,7 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
   const { loading, status, authUser, profile } = useUserProfile();
   const pathname = usePathname();
   const [mounted, setMounted] = useState(false);
+  const [isAdminPreview, setIsAdminPreview] = useState(false);
   const [signOutStartedAt, setSignOutStartedAt] = useState<number | null>(null);
 
   const { isMaintenanceMode } = useSiteSettings();
@@ -32,13 +31,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     setMounted(true);
   }, []);
 
-  const isLandingRedirect = pathname === "/" && !!authUser;
+  useEffect(() => {
+    const isPreviewCatalog = pathname === '/parts' || pathname.startsWith('/parts/') || pathname === '/pre-builts' || pathname.startsWith('/pre-builts/');
+    setIsAdminPreview(isPreviewCatalog && new URLSearchParams(window.location.search).get('preview') === 'admin');
+  }, [pathname]);
+
   const isAuthPage = ['/signin', '/signup', '/system-access'].includes(pathname);
   const isPublicCatalog = pathname === '/parts' || pathname.startsWith('/parts/') || pathname === '/pre-builts' || pathname.startsWith('/pre-builts/') || pathname === '/checkout' || pathname.startsWith('/q/');
   const isCustomerSignInPage = pathname === '/signin';
 
-  // Keep the sign-out overlay mounted across the route change, then let its
-  // existing 400 ms exit animation reveal the ready sign-in page once.
   useEffect(() => {
     if (signOutStartedAt === null || !isAuthPage || authUser !== null) return;
     const remaining = Math.max(0, 600 - (Date.now() - signOutStartedAt));
@@ -46,29 +47,15 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
     return () => window.clearTimeout(timeout);
   }, [signOutStartedAt, isAuthPage, authUser]);
 
-  // Routes exempt from maintenance screen (admin pages & system access login)
   const isAdminRoute = pathname.startsWith('/admin') || pathname === '/system-access';
 
-  // Kill Switch Logic: Only block PUBLIC non-admin users on non-admin routes
-  // Admins (Super Admin & Manager) and Admin routes are exempted from maintenance mode
   const showMaintenance = isMaintenanceMode && !isAdmin && !loading && !isAdminRoute;
 
-  // Routes where the global footer SHOULD appear (Whitelist)
   const showFooterRoutes = ['/about', '/faq', '/contact', '/team'];
   const isLandingPage = pathname === '/';
   const shouldShowFooter = isLandingPage || showFooterRoutes.some(route => pathname === route);
 
-  const isHeaderHidden = false;
-
-  // Loader overlay condition:
-  // 1. Initial auth profile is loading (the customer sign-in form owns its transition)
-  // 2. Landing page is redirecting an authenticated user
-  // 3. User is authenticated on an auth page other than /signin while route redirection completes
-  const showLoaderOverlay = signOutStartedAt === null && (
-    (loading && !isCustomerSignInPage && !isPublicCatalog) ||
-    isLandingRedirect ||
-    (isAuthPage && !isCustomerSignInPage && !!authUser)
-  );
+  const isHeaderHidden = pathname.startsWith('/admin') || (pathname === '/profile' && isAdmin) || isAdminPreview;
 
   if ((status === 'missing' || status === 'error') && !isCustomerSignInPage && !isPublicCatalog) {
     return (
@@ -88,6 +75,20 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
 
   if (showMaintenance) return <MaintenanceScreen />;
 
+  if (pathname === '/profile' && loading) {
+    return (
+      <div className="min-h-screen w-full bg-slate-50 dark:bg-[#0a0d14] p-6">
+        <div className="max-w-[1600px] mx-auto space-y-6">
+          <Skeleton h={120} radius="lg" />
+          <div className="flex flex-col lg:flex-row gap-6">
+            <Skeleton h={360} w={{ base: '100%', lg: 325 }} radius="lg" />
+            <Skeleton h={480} className="flex-1" radius="lg" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <EcommerceProvider>
       <SignOutTransitionContext.Provider value={{
@@ -95,21 +96,13 @@ export function AppLayout({ children }: { children: React.ReactNode }) {
         cancelSignOut: () => setSignOutStartedAt(null),
       }}>
         <div className="flex flex-col min-h-screen overflow-x-clip relative">
-          <AnimatePresence>
-            {showLoaderOverlay && (
-              <NeutralPageLoader
-                key="neutral-page-loader"
-                isOverlay
-              />
-            )}
-          </AnimatePresence>
           <SignOutLoader visible={signOutStartedAt !== null} />
 
-          {signOutStartedAt === null && <Header />}
+          {signOutStartedAt === null && !isHeaderHidden && <Header />}
           {signOutStartedAt === null && <CartDrawer />}
           <main className={cn(
-            "flex-1 min-h-[calc(100vh-4rem)]",
-            !isHeaderHidden && "pt-16",
+            "flex-1",
+            isHeaderHidden ? "min-h-screen" : "min-h-[calc(100vh-4rem)] pt-16",
             isMaintenanceMode && !isAdmin && !isAdminRoute && "grayscale-[0.5] contrast-125"
           )}>
             {signOutStartedAt === null && children}

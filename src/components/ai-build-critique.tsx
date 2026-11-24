@@ -1,11 +1,11 @@
 import { useState, useEffect, useMemo, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { SparkleButton } from "./ui/sparkle-button";
 import { Badge } from "@/components/ui/badge";
 import { Paper, Text, Group, ThemeIcon, Box, Stack } from "@mantine/core";
 import { AnimatedIconButton, AnimatedRotateIcon, AnimatedBrainIcon, AnimatedBotIcon } from "./ui/animated-icons";
-import { BrainCircuit, ThumbsUp, ThumbsDown, AlertTriangle, MonitorPlay, Zap, Plus, Sparkles, Gamepad2, CheckCircle2, Circle, Loader2 } from "lucide-react";
+import { ThumbsUp, AlertTriangle, MonitorPlay, Zap, Sparkles, Gamepad2 } from "lucide-react";
 import { getAiBuildCritique } from "@/app/actions";
 import { ComponentData } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
@@ -13,6 +13,7 @@ import ReactMarkdown from 'react-markdown';
 import { useFirestore, useDoc } from "@/firebase";
 import { doc } from "firebase/firestore";
 import { cn } from "@/lib/utils";
+import { AiDisclaimer } from "@/components/ai-disclaimer";
 import { useQuickBuildChecks } from '@/hooks/use-quick-build-checks';
 import { QuickReviewChecks } from '@/components/build/quick-review-checks';
 
@@ -77,7 +78,6 @@ export function AIBuildCritique({
     const activeDuration = isControlled ? (externalDuration ?? finalResponseTime) : finalResponseTime;
     const quickChecks = useQuickBuildChecks(build, performanceLevel, intendedUse);
 
-    // Load critique telemetry history from localStorage
     useEffect(() => {
         const saved = localStorage.getItem('pc_critique_telemetry_v1');
         if (saved) {
@@ -89,7 +89,6 @@ export function AIBuildCritique({
         }
     }, []);
 
-    // Save critique telemetry to history on completion
     useEffect(() => {
         if (!loading && analysis && activeDuration) {
             const saved = localStorage.getItem('pc_critique_telemetry_v1');
@@ -109,7 +108,6 @@ export function AIBuildCritique({
         }
     }, [loading, analysis, activeDuration]);
 
-    // Timer logic (counts up elapsed seconds)
     useEffect(() => {
         let timerInterval: NodeJS.Timeout;
 
@@ -148,8 +146,6 @@ export function AIBuildCritique({
         : 'On par with average';
 
     const { toast } = useToast();
-
-
 
     const handleAnalyze = async () => {
         if (isAiKillSwitch) {
@@ -240,7 +236,6 @@ export function AIBuildCritique({
                                 <span>{activeDuration.toFixed(1)}s Turnaround Time</span>
                             </span>
 
-                            {/* Tooltip Content positioned downwards and leftwards so it stays visible */}
                             <div className="absolute right-0 top-full mt-2 w-64 p-3 rounded-xl border border-slate-200 dark:border-cyan-500/20 bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl shadow-2xl opacity-0 group-hover/tooltip:opacity-100 transition-opacity duration-300 pointer-events-none z-50 text-[10px] font-mono text-slate-700 dark:text-zinc-300 space-y-1.5 leading-relaxed">
                                 <div className="border-b border-slate-200 dark:border-white/5 pb-1 flex justify-between">
                                     <span className="text-[9px] font-black text-cyan-600 dark:text-cyan-400 uppercase">Review Time</span>
@@ -278,6 +273,7 @@ export function AIBuildCritique({
                                 <Text size="sm" className="text-slate-600 dark:text-slate-400 leading-relaxed">
                                     Click the &quot;Analyze Build&quot; button to review your PC component selection.
                                 </Text>
+                                <AiDisclaimer centered className="pt-1" />
                             </div>
                             {!isControlled && (
                                 <SparkleButton
@@ -300,12 +296,10 @@ export function AIBuildCritique({
                         exit={{ opacity: 0, scale: 0.96 }}
                         className="flex flex-col items-center justify-center py-14 space-y-7"
                     >
-                        {/* Glowing Radial Elapsed Timer (Counting UP) */}
                         <div className="relative flex items-center justify-center">
                             <div className="absolute inset-0 bg-cyan-500/15 blur-3xl rounded-full animate-pulse pointer-events-none" />
 
                             <svg className="w-36 h-36 transform -rotate-90 relative z-10">
-                                {/* Subtle background ring */}
                                 <circle
                                     cx="72"
                                     cy="72"
@@ -314,7 +308,6 @@ export function AIBuildCritique({
                                     strokeWidth="4"
                                     fill="transparent"
                                 />
-                                {/* Smooth rotating active ring */}
                                 <motion.circle
                                     cx="72"
                                     cy="72"
@@ -333,7 +326,6 @@ export function AIBuildCritique({
                                 />
                             </svg>
 
-                            {/* Center Elapsed Counter */}
                             <div className="absolute z-20 flex flex-col items-center justify-center text-center font-mono">
                                 <span className="text-[22px] font-black text-cyan-400 tracking-tight leading-none">
                                     {(() => {
@@ -351,7 +343,6 @@ export function AIBuildCritique({
 
                         <QuickReviewChecks checks={quickChecks} />
 
-                        {/* Stop Diagnostics Button */}
                         {onCancel && (
                             <motion.div
                                 initial={{ opacity: 0, y: 8 }}
@@ -372,18 +363,46 @@ export function AIBuildCritique({
                     </motion.div>
                 )}
 
-                {error && (
-                    <div className="bg-destructive/10 text-destructive p-4 rounded-md">
-                        <p className="font-semibold flex items-center gap-2"><AlertTriangle className="h-5 w-5" /> Analysis Failed</p>
-                        <p className="text-sm mt-1">{error}</p>
-                        <SparkleButton onClick={isControlled && onRefresh ? onRefresh : handleAnalyze} className="mt-3">Try Again</SparkleButton>
-                    </div>
+                {error && !loading && (
+                    <motion.div
+                        key="error"
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="p-6 rounded-2xl border-2 border-dashed border-rose-500/30 bg-rose-500/5 dark:bg-rose-950/20 text-center space-y-4"
+                    >
+                        <div className="flex justify-center">
+                            <ThemeIcon size={56} radius="xl" variant="light" color="red" className="bg-rose-500/10 border border-rose-500/20 shadow-inner">
+                                <AlertTriangle className="h-7 w-7 text-rose-500 dark:text-rose-400" />
+                            </ThemeIcon>
+                        </div>
+                        <div className="space-y-2 max-w-lg mx-auto">
+                            <h3 className="font-headline font-bold text-lg text-slate-900 dark:text-slate-100">
+                                Review Generation Failed
+                            </h3>
+                            <div className="text-xs text-rose-700 dark:text-rose-300 font-mono bg-rose-50/80 dark:bg-rose-950/40 p-3 rounded-lg border border-rose-200 dark:border-rose-900/50 break-words text-left leading-relaxed">
+                                {error}
+                            </div>
+                            <p className="text-xs text-slate-500 dark:text-slate-400 pt-1">
+                                The AI critique could not complete the review. You can retry the analysis or adjust your component selection.
+                            </p>
+                        </div>
+                        <div className="pt-2 flex justify-center gap-3">
+                            <SparkleButton
+                                onClick={isControlled && onRefresh ? onRefresh : handleAnalyze}
+                                icon={<Sparkles className="h-4 w-4" />}
+                                className="px-6 text-xs font-bold uppercase tracking-wider"
+                            >
+                                Retry Review
+                            </SparkleButton>
+                        </div>
+                    </motion.div>
                 )}
 
                 {analysis && !loading && (
                     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
 
-                        {/* Strengths and Opportunities */}
+                        <AiDisclaimer />
+
                         <div className="space-y-4">
                             <div className="bg-emerald-500/10 rounded-lg p-3 border border-emerald-500/20">
                                 <h4 className="font-semibold text-emerald-600 dark:text-emerald-400 flex items-center gap-2 mb-3">
@@ -407,7 +426,6 @@ export function AIBuildCritique({
                             </div>
                         </div>
 
-                        {/* Bottleneck Analysis */}
                         <div className="space-y-3">
                             <h4 className="font-semibold flex items-center gap-2">
                                 <AlertTriangle className="h-5 w-5 text-yellow-500" /> Bottleneck Analysis
@@ -417,14 +435,13 @@ export function AIBuildCritique({
                             </div>
                         </div>
 
-                        {/* FPS Estimates */}
                         <div className="space-y-3">
                             <h4 className="font-semibold flex items-center gap-2">
                                 <MonitorPlay className="h-5 w-5 text-primary" /> Estimated Performance
                             </h4>
                             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
                                 {analysis.fpsEstimates && Array.isArray(analysis.fpsEstimates) && analysis.fpsEstimates.map((est: any, idx: number) => {
-                                    if (!est.fps) return null; // Skip old format
+                                    if (!est.fps) return null;
                                     const perf = getPerformanceStyle(est.fps);
                                     return (
                                         <div key={idx} className="bg-card border rounded-xl overflow-hidden flex flex-col hover:border-primary/30 transition-all shadow-sm">
@@ -461,7 +478,6 @@ export function AIBuildCritique({
                             </div>
                         </div>
 
-                        {/* Suggestions */}
                         {analysis.suggestions && analysis.suggestions.length > 0 && (
                             <div className="space-y-3">
                                 <h4 className="font-semibold flex items-center gap-2">

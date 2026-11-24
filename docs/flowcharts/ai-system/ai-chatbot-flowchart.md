@@ -1,5 +1,9 @@
 # Floating chatbot workflow
 
+## Simple explanation
+
+This flowchart shows how the floating AI chat works in the builders. The user writes a question, and the app also sends useful details about the current build. The AI may search stock, check the build, or read hardware guides. Its reply appears as it is being made and may include suggested products. Chat history is kept in the user’s browser, and failed replies can be tried again.
+
 The builder and staff prebuilt builder mount the floating chat (`src/components/builder-floating-chat.tsx`, `src/app/builder/builder-page.tsx`, `src/app/admin/prebuilt-builder/page.tsx`).
 
 ```mermaid
@@ -40,6 +44,8 @@ flowchart TD
   Error --> Retry{Retry or close?}
   Retry -- Retry --> Post
   Retry -- Close --> End([Chat closed])
+  Bad --> Finish([END])
+  End --> Finish
 ```
 
 The client invokes `useChat` and persists `pc_chat_history_v2` and telemetry in local storage. The server route offers `analyzeCurrentBuild`, `searchInventory`, `queryCompatibilityGuides`, and `queryPartSpecifications`; the model decides whether to call them. There is no separate deterministic intent classifier in the route. Sources: `src/components/chat/hooks/use-floating-chat.ts`, `src/components/chat/`, `src/app/api/chat/route.ts`, `src/lib/chat-part-specifications.ts`, `src/lib/chat-stream-fallback.ts`.

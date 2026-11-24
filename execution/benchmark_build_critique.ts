@@ -1,5 +1,3 @@
-// Run with `npx tsx execution/benchmark_build_critique.ts`.
-// Uses a fixed example build and prints timing plus response shape only.
 import 'dotenv/config';
 import { aiBuildCritiqueAction } from '../src/ai/flows/ai-build-critique';
 

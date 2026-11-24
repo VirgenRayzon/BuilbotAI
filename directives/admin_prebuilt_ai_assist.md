@@ -16,6 +16,8 @@ Generate a concise prebuilt product description from the saved descriptions of e
 
 Keep **AI Assist** disabled until the build contains a CPU, motherboard, GPU, cooler, power supply, case, at least one RAM module, and at least one storage drive. The storage requirement accepts either NVMe or SATA. Repeat this validation inside the action handler so stale UI state cannot start an incomplete request.
 
+The saved prebuilt must contain all eight required component categories. Enforce this in the form and the server product schema; the builder's 8/8 display alone is not persistence validation. A `BOX` CPU is retail packaging, not proof of a bundled cooler. Only add the reserved `included-stock-cooler` when the CPU catalog has an explicit positive thermal-solution specification, and validate that claim again when resolving a saved prebuilt. The Ryzen 7 9850X3D manufacturer specification says its in-box thermal solution is not included, so it requires a separately selected cooler.
+
 ## Execution
 
 1. Resolve the active model.

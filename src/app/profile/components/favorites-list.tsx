@@ -1,4 +1,5 @@
 "use client";
+import { ProfileListSkeleton } from "@/components/loading/profile-list-skeleton";
 
 import React, { useState } from "react";
 import {
@@ -28,7 +29,9 @@ import {
   Play,
 } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
-import type { FavoriteBuild } from "@/lib/types";
+import type { FavoriteBuild, FavoriteBuildPart } from "@/lib/types";
+import { isIncludedStockCoolerPart } from "@/lib/included-cpu-cooler";
+import { INCLUDED_INTEGRATED_GPU_ID } from "@/lib/integrated-graphics";
 import { useRouter } from "next/navigation";
 import {
   AlertDialog,
@@ -58,16 +61,22 @@ export function FavoritesList({ favorites, loading, onDelete, onRename }: Favori
 
   const allParts = useFavoriteInventory();
 
-  const getPartStatus = (partId: string) => {
-    const livePart = allParts.find((p) => p.id === partId);
+  const getPartStatus = (part: FavoriteBuildPart) => {
+    if (isIncludedStockCoolerPart(part) || part.partId === INCLUDED_INTEGRATED_GPU_ID) {
+      return "available";
+    }
+    const livePart = allParts.find((p) => p.id === part.partId || (part.name && p.name.toLowerCase() === part.name.toLowerCase()));
     if (!livePart) return "missing";
     if (livePart.stock <= 0 || livePart.isArchived) return "out_of_stock";
     return "available";
   };
 
-  const getLivePrice = (partId: string, fallbackPrice: number) => {
-    const livePart = allParts.find((p) => p.id === partId);
-    return livePart?.price ?? fallbackPrice;
+  const getLivePrice = (part: FavoriteBuildPart) => {
+    if (isIncludedStockCoolerPart(part) || part.partId === INCLUDED_INTEGRATED_GPU_ID) {
+      return 0;
+    }
+    const livePart = allParts.find((p) => p.id === part.partId || (part.name && p.name.toLowerCase() === part.name.toLowerCase()));
+    return livePart?.price ?? part.price;
   };
 
   const handleLoadInBuilder = (favorite: FavoriteBuild) => {
@@ -88,7 +97,7 @@ export function FavoritesList({ favorites, loading, onDelete, onRename }: Favori
     setEditName("");
   };
 
-  if (loading) return null;
+  if (loading && favorites.length === 0) return <ProfileListSkeleton favorite />;
 
   if (favorites.length === 0) {
     return (
@@ -131,11 +140,11 @@ export function FavoritesList({ favorites, loading, onDelete, onRename }: Favori
       <div className="grid grid-cols-1 gap-5">
         {favorites.map((favorite) => {
           const liveTotal = favorite.parts.reduce(
-            (sum, p) => sum + getLivePrice(p.partId, p.price),
+            (sum, p) => sum + getLivePrice(p),
             0
           );
           const hasIssues = favorite.parts.some(
-            (p) => getPartStatus(p.partId) !== "available"
+            (p) => getPartStatus(p) !== "available"
           );
 
           return (
@@ -147,7 +156,6 @@ export function FavoritesList({ favorites, loading, onDelete, onRename }: Favori
               className="bg-white dark:bg-[#121824] border-slate-200 dark:border-white/10 shadow-sm hover:shadow-md transition-all duration-200"
             >
               <Stack gap="md">
-                {/* Header: Rig title, origin badge, and actions */}
                 <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 pb-4 border-b border-slate-200 dark:border-white/10">
                   <div className="space-y-1">
                     <div className="flex flex-wrap items-center gap-2.5">
@@ -220,7 +228,6 @@ export function FavoritesList({ favorites, loading, onDelete, onRename }: Favori
                   </div>
 
                   <div className="flex items-center justify-between sm:justify-end gap-4">
-                    {/* Live price display */}
                     <div className="text-left sm:text-right pr-4 sm:border-r border-slate-200 dark:border-white/10">
                       <Text size="xs" fw={700} className="uppercase tracking-wider text-slate-500 dark:text-slate-400">
                         Live Rig Price
@@ -258,12 +265,11 @@ export function FavoritesList({ favorites, loading, onDelete, onRename }: Favori
                   </div>
                 </div>
 
-                {/* Parts Breakdown List */}
                 <div className="rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50/80 dark:bg-black/20 overflow-hidden">
                   <div className="max-h-[190px] overflow-y-auto divide-y divide-slate-200 dark:divide-white/5">
                     {favorite.parts.map((part, idx) => {
-                      const status = getPartStatus(part.partId);
-                      const livePrice = getLivePrice(part.partId, part.price);
+                      const status = getPartStatus(part);
+                      const livePrice = getLivePrice(part);
 
                       return (
                         <div
@@ -322,7 +328,6 @@ export function FavoritesList({ favorites, loading, onDelete, onRename }: Favori
         })}
       </div>
 
-      {/* Delete Confirmation Alert Dialog */}
       <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
         <AlertDialogContent className="bg-white dark:bg-slate-900 border-slate-200 dark:border-white/10 rounded-2xl shadow-xl">
           <AlertDialogHeader>

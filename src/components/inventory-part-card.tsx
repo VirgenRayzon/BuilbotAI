@@ -1,8 +1,5 @@
-/**
- * InventoryPartCard — Grid-view card for a single inventory part in the admin dashboard.
- * Shows image, specs, stock, price, and provides archive/delete/edit actions with tooltips.
- */
 'use client';
+import { adminPartLayout } from './loading/admin-inventory-skeleton';
 
 import { AddPartDialog } from './add-part-dialog';
 import { type AddPartFormSchema } from '@/hooks/use-part-form';
@@ -19,17 +16,7 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { useSiteSettings } from '@/context/site-settings-context';
 import { AddStockDialog } from './add-stock-dialog';
-import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogCancel,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle,
-    AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { ConfirmationAlertDialog } from "@/components/ui/confirmation-alert-dialog";
 import { Separator } from '@/components/ui/separator';
 import { TooltipProvider } from "@/components/ui/tooltip";
 import React from 'react';
@@ -106,11 +93,11 @@ export function InventoryPartCard({
                         </div>
                     )}
 
-                    <div className="p-2 md:p-3.5 pb-0 space-y-1.5 md:space-y-2.5 z-10 flex-grow flex flex-col">
+                    <div className={adminPartLayout.body}>
                         <div className="flex justify-between items-start gap-2">
                             <div className={cn("space-y-0.5 flex-grow", isSelected && "pl-5")}>
                                 <p className="text-[8px] md:text-[10px] text-muted-foreground uppercase tracking-widest font-bold">{part.brand}</p>
-                                <div className="h-10 md:h-12 flex flex-col justify-center overflow-hidden">
+                                <div className={adminPartLayout.title}>
                                     <CardTitle className="text-xs md:text-base font-headline leading-snug line-clamp-2 m-0 p-0">
                                         {part.name.length > 60 ? `${part.name.substring(0, 57)}...` : part.name}
                                     </CardTitle>
@@ -131,42 +118,26 @@ export function InventoryPartCard({
                                         </Link>
                                     </Button>
                                 )}
-                                <AlertDialog>
-                                    <AlertDialogTrigger asChild>
-                                        <Button variant="ghost" size="icon" className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground/40 hover:text-primary hover:bg-primary/10 transition-colors -mt-1" onClick={(event) => event.stopPropagation()} title={isArchiveView ? "Restore" : "Archive"}>
-                                            {isArchiveView ? <RotateCcw className="h-3 w-3 md:h-4 md:w-4" /> : <Archive className="h-3 w-3 md:h-4 md:w-4" />}
-                                        </Button>
-                                    </AlertDialogTrigger>
-                                    <AlertDialogContent onClick={(event) => event.stopPropagation()}>
-                                        <AlertDialogHeader>
-                                            <AlertDialogTitle>{isArchiveView ? "Restore Part?" : "Archive Part?"}</AlertDialogTitle>
-                                            <AlertDialogDescription>{isArchiveView ? `This will restore ${part.name} to the active inventory.` : `This will move ${part.name} to the archive. It will no longer be visible to customers.`}</AlertDialogDescription>
-                                        </AlertDialogHeader>
-                                        <AlertDialogFooter>
-                                            <AlertDialogCancel onClick={(event) => event.stopPropagation()}>Cancel</AlertDialogCancel>
-                                            <AlertDialogAction onClick={(event) => { event.stopPropagation(); onArchive(part.id, part.category, !isArchiveView); }} className={isArchiveView ? "bg-primary hover:bg-primary/90" : "bg-orange-500 hover:bg-orange-600"}>{isArchiveView ? "Restore" : "Archive"}</AlertDialogAction>
-                                        </AlertDialogFooter>
-                                    </AlertDialogContent>
-                                </AlertDialog>
+                                <ConfirmationAlertDialog
+                                    trigger={<Button variant="ghost" size="icon" className="h-6 w-6 md:h-8 md:w-8 text-muted-foreground/40 hover:text-primary hover:bg-primary/10 transition-colors -mt-1" onClick={(event) => event.stopPropagation()} title={isArchiveView ? "Restore" : "Archive"}>{isArchiveView ? <RotateCcw className="h-3 w-3 md:h-4 md:w-4" /> : <Archive className="h-3 w-3 md:h-4 md:w-4" />}</Button>}
+                                    icon={isArchiveView ? <RotateCcw className="h-4 w-4" /> : <Archive className="h-4 w-4" />}
+                                    title={isArchiveView ? "Restore Part" : "Archive Part"}
+                                    description={isArchiveView ? `This will restore ${part.name} to the active inventory.` : `This will move ${part.name} to the archive. It will no longer be visible to customers.`}
+                                    actionLabel={isArchiveView ? "Restore" : "Archive"}
+                                    tone={isArchiveView ? "cyan" : "orange"}
+                                    onConfirm={() => onArchive(part.id, part.category, !isArchiveView)}
+                                />
 
                                 {isSuperAdmin && (
-                                    <AlertDialog>
-                                        <AlertDialogTrigger asChild>
-                                            <Button variant="ghost" size="icon" onClick={(event) => event.stopPropagation()} className="h-8 w-8 text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors -mt-1 -mr-1">
-                                                <Trash2 className="h-3 w-3 md:h-4 md:w-4" />
-                                            </Button>
-                                        </AlertDialogTrigger>
-                                        <AlertDialogContent onClick={(event) => event.stopPropagation()}>
-                                            <AlertDialogHeader>
-                                                <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                                <AlertDialogDescription>This action cannot be undone. This will permanently delete {part.name}.</AlertDialogDescription>
-                                            </AlertDialogHeader>
-                                            <AlertDialogFooter>
-                                                <AlertDialogCancel onClick={(event) => event.stopPropagation()}>Cancel</AlertDialogCancel>
-                                                <AlertDialogAction onClick={(event) => { event.stopPropagation(); onDelete(part.id, part.category); }} className="bg-destructive hover:bg-destructive/90">Delete</AlertDialogAction>
-                                            </AlertDialogFooter>
-                                        </AlertDialogContent>
-                                    </AlertDialog>
+                                    <ConfirmationAlertDialog
+                                        trigger={<Button variant="ghost" size="icon" onClick={(event) => event.stopPropagation()} className="h-8 w-8 text-muted-foreground/40 hover:text-destructive hover:bg-destructive/10 transition-colors -mt-1 -mr-1"><Trash2 className="h-3 w-3 md:h-4 md:w-4" /></Button>}
+                                        icon={<Trash2 className="h-4 w-4" />}
+                                        title="Delete Part"
+                                        description={<>This action cannot be undone. This will permanently delete <strong>{part.name}</strong>.</>}
+                                        actionLabel="Delete"
+                                        tone="red"
+                                        onConfirm={() => onDelete(part.id, part.category)}
+                                    />
                                 )}
                             </div>
                         </div>
@@ -190,7 +161,7 @@ export function InventoryPartCard({
 
                         <Separator className={isOutOfStock ? "bg-yellow-500/20" : "bg-border/40"} />
 
-                        <div className="grid grid-cols-2 gap-x-2 gap-y-1 md:gap-x-3 md:gap-y-1.5 py-0.5">
+                        <div className={adminPartLayout.specs}>
                             {specKeys.map((key) => {
                                 const value = part.specifications?.[key] || (key === 'Wattage' ? part.wattage : null);
                                 return (
@@ -203,7 +174,7 @@ export function InventoryPartCard({
                         </div>
                     </div>
 
-                    <div className="mt-auto p-2 md:p-3 pt-0 z-20" onClick={(event) => event.stopPropagation()}>
+                    <div className={adminPartLayout.footer} onClick={(event) => event.stopPropagation()}>
                         <AddStockDialog part={part} onAddStock={onAddStock || ((id, category, amount) => onUpdateStock(id, category, part.stock + amount))}>
                             <Button variant="outline" size="sm" className={cn("w-full h-8 md:h-9 text-xs md:text-sm font-semibold transition-all gap-1.5 shadow-sm", isOutOfStock ? "border-yellow-500/30 hover:border-yellow-500/60 hover:bg-yellow-500/10" : "border-primary/20 hover:border-primary/50 hover:bg-primary/10")}>
                                 <span>Edit Stock</span>

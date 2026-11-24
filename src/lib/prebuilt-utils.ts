@@ -24,13 +24,20 @@ export type PrebuiltPartStatus = ResolvedPrebuiltPart & {
     issue: 'missing' | 'out-of-stock' | null;
 };
 
-/**
- * Returns a list of component categories that are missing in a prebuilt system.
- * Essential components are: cpu, gpu, motherboard, ram, storage, psu, case, cooler.
- * 
- * @param system The prebuilt system to check
- * @returns Array of missing component names (human readable)
- */
+export function getIncludedStockCooler(partId: string): Part | null {
+    if (partId !== 'included-stock-cooler') return null;
+    return {
+        id: partId,
+        name: 'Included stock cooler',
+        category: 'Cooler',
+        brand: 'Included',
+        price: 0,
+        stock: Number.MAX_SAFE_INTEGER,
+        imageUrl: '/placeholders/components/cooler.jpg',
+        specifications: { Type: 'Air (Stock)' },
+    };
+}
+
 export function getMissingParts(system: PrebuiltSystem): string[] {
     const missing = essentialParts
         .filter(part => {
@@ -42,7 +49,6 @@ export function getMissingParts(system: PrebuiltSystem): string[] {
     return missing;
 }
 
-/** Describe each configured item, including unavailable units and empty required slots. */
 export function getPrebuiltPartStatuses(
     system: PrebuiltSystem,
     resolvedParts: ResolvedPrebuiltPart[],
@@ -81,26 +87,13 @@ export function getPrebuiltPartStatuses(
     return statuses.sort((a, b) => Number(b.issue !== null) - Number(a.issue !== null));
 }
 
-/**
- * Checks if a prebuilt system is complete (has all essential parts).
- * 
- * @param system The prebuilt system to check
- * @returns boolean true if complete, false otherwise
- */
 export function isSystemComplete(system: PrebuiltSystem): boolean {
     return getMissingParts(system).length === 0;
 }
 
-/**
- * Checks if all components in a prebuilt system are in stock.
- * 
- * @param components Record of resolved Part objects for the system
- * @returns boolean true if all parts are in stock, false if any part is out of stock or missing
- */
 export function checkSystemStock(components: Record<string, { stock: number } | null>): boolean {
     const essentialKeys = ['cpu', 'gpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooler'];
     
-    // Check if any essential component is missing or out of stock
     for (const key of essentialKeys) {
         const part = components[key];
         if (!part || part.stock <= 0) {

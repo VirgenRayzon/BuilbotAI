@@ -1,34 +1,25 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import type { Part, ComponentData, Build, FavoriteBuild } from '@/lib/types';
+import type { Part, ComponentData, FavoriteBuild } from '@/lib/types';
 import { checkCompatibility } from "@/lib/compatibility";
+import { INCLUDED_INTEGRATED_GPU_ID, isIncludedIntegratedGpu, syncIntegratedGraphics } from '@/lib/integrated-graphics';
+import { includedCpuCoolerName, isIncludedStockCoolerPart } from '@/lib/included-cpu-cooler';
 import { useToast } from "@/hooks/use-toast";
-import { 
-    Cpu, Server, CircuitBoard, MemoryStick, Database, Power, 
-    RectangleVertical, Wind, Monitor, Keyboard, Mouse, Headphones 
+import {
+    Cpu, Server, CircuitBoard, MemoryStick, Database, Power,
+    RectangleVertical, Wind, Monitor, Keyboard, Mouse, Headphones
 } from "lucide-react";
 
 const componentIcons: Record<string, any> = {
-  CPU: Cpu, GPU: Server, Motherboard: CircuitBoard, RAM: MemoryStick, 
-  Storage: Database, PSU: Power, Case: RectangleVertical, Cooler: Wind, 
-  Monitor: Monitor, Keyboard: Keyboard, Mouse: Mouse, Headset: Headphones
+    CPU: Cpu, GPU: Server, Motherboard: CircuitBoard, RAM: MemoryStick,
+    Storage: Database, PSU: Power, Case: RectangleVertical, Cooler: Wind,
+    Monitor: Monitor, Keyboard: Keyboard, Mouse: Mouse, Headset: Headphones
 };
 
 const isIncludedStockCooler = (component: ComponentData | null | undefined) =>
-    component?.id === 'included-stock-cooler'
-    || component?.id === 'uGiAh2JerLwnDe5VW431'
-    || (component?.price === 0 && (
-        component.imageHint === 'included cooler'
-        || component.description?.includes('Bundled cooler')
-        || component.model?.toLowerCase().includes('stock cooler')
-        || component.model?.toLowerCase().includes('laminar')
-        || component.model?.toLowerCase().includes('wraith')
-    ));
+    isIncludedStockCoolerPart(component);
 
-/**
- * Hook to manage the PC build logic, including part toggling, removal, and compatibility.
- */
 export function useBuilderLogic(allParts: Part[]) {
     const { toast } = useToast();
     const [build, setBuild] = useState<Record<string, ComponentData | ComponentData[] | null>>({
@@ -39,11 +30,7 @@ export function useBuilderLogic(allParts: Part[]) {
     const hasRestoredBuildRef = useRef(false);
     const hasProcessedPendingBuildRef = useRef(false);
 
-    // Persistence
     useEffect(() => {
-        // React Strict Mode replays mount effects in development. Restoring only
-        // once prevents that replay from replacing a freshly imported pre-built
-        // with the older persisted draft after the transfer payload is consumed.
         if (hasRestoredBuildRef.current) return;
         hasRestoredBuildRef.current = true;
 
@@ -54,7 +41,7 @@ export function useBuilderLogic(allParts: Part[]) {
                 if (!parsedState.CPU && isIncludedStockCooler(parsedState.Cooler)) {
                     parsedState.Cooler = null;
                 }
-                setBuild(prev => ({ ...prev, ...parsedState }));
+                setBuild(prev => syncIntegratedGraphics({ ...prev, ...parsedState }));
             } catch (e) {
                 console.error("Failed to parse saved build", e);
             }
@@ -68,9 +55,22 @@ export function useBuilderLogic(allParts: Part[]) {
         }
     }, [build, isLoaded]);
 
+    useEffect(() => {
+        if (!isLoaded || !allParts.length) return;
+        setBuild(previous => {
+            const cpu = previous.CPU as ComponentData | null;
+            const cooler = previous.Cooler as ComponentData | null;
+            if (!cpu || !isIncludedStockCooler(cooler)) return previous;
+            const catalogCpu = allParts.find(part => part.category === 'CPU' && part.id === cpu.id);
+            return catalogCpu && !includedCpuCoolerName(catalogCpu)
+                ? { ...previous, Cooler: null }
+                : previous;
+        });
+    }, [allParts, isLoaded]);
+
     const getCountInBuild = useCallback((partName: string) => {
         let count = 0;
-        Object.entries(build).forEach(([category, data]) => {
+        Object.values(build).forEach((data) => {
             if (Array.isArray(data)) {
                 count += data.filter(d => d.model === partName).length;
             } else if (data && data.model === partName) {
@@ -115,7 +115,11 @@ export function useBuilderLogic(allParts: Part[]) {
             }
         }
 
-        setBuild(next);
+        if (category === 'GPU' && isIncludedIntegratedGpu(build.GPU as ComponentData | null)) {
+            next.CPU = null;
+            if (isIncludedStockCooler(next.Cooler as ComponentData | null)) next.Cooler = null;
+        }
+        setBuild(syncIntegratedGraphics(next));
         if (toastMsg) toast(toastMsg);
     };
 
@@ -124,12 +128,9 @@ export function useBuilderLogic(allParts: Part[]) {
         let nextBuild = { ...build };
         const toastsToShow: { title: string; description: string; variant?: "default" | "destructive" }[] = [];
 
-        // Determine if we are removing an existing part
-        const isCurrentlySelected = (category === 'Storage' || category === 'RAM') 
-            ? false 
+        const isCurrentlySelected = (category === 'Storage' || category === 'RAM')
+            ? false
             : (build[category] as ComponentData)?.model === part.name;
-
-        // Sequence Validation (Removed)
 
         const { compatible, message } = checkCompatibility(part, build);
 
@@ -164,7 +165,7 @@ export function useBuilderLogic(allParts: Part[]) {
 
             const currentItems = Array.isArray(nextBuild[category]) ? (nextBuild[category] as ComponentData[]) : [];
             nextBuild[category] = [...currentItems, componentData];
-            setBuild(nextBuild);
+            setBuild(syncIntegratedGraphics(nextBuild));
             toast({ title: 'Part Added', description: `${part.name} added.` });
             return;
         }
@@ -234,15 +235,9 @@ export function useBuilderLogic(allParts: Part[]) {
             }
 
             if (category === 'CPU') {
-                const isBoxed = part.packageType === 'BOX' ||
-                    (part as any).specifications?.['Package Type']?.toString().toUpperCase() === 'BOX';
-                if (isBoxed) {
-                    const isIntel = part.brand.toLowerCase().includes('intel');
-                    const isAmd = part.brand.toLowerCase().includes('amd');
-                    const coolerModel = isIntel ? "Intel Laminar RM1 CPU Cooler" : isAmd ? "AMD Wraith MAX CPU Cooler with RGB LED" : "Stock Cooler";
+                const coolerModel = includedCpuCoolerName(part);
+                if (coolerModel) {
                     nextBuild['Cooler'] = {
-                        // Bundled coolers use a reserved identity so CPU removal and
-                        // boxed-to-tray CPU replacement can clean them up reliably.
                         id: 'included-stock-cooler',
                         model: coolerModel,
                         price: 0,
@@ -260,11 +255,10 @@ export function useBuilderLogic(allParts: Part[]) {
             toastsToShow.push({ title: 'Part Added', description: `${part.name} added.` });
         }
 
-        setBuild(nextBuild);
+        setBuild(syncIntegratedGraphics(nextBuild));
         toastsToShow.forEach(t => toast(t));
     }, [build, toast, getCountInBuild]);
 
-    // AI suggestion matching
     useEffect(() => {
         const findPartRobustly = (suggestion?: string, partId?: string) => {
             if (partId) {
@@ -300,7 +294,6 @@ export function useBuilderLogic(allParts: Part[]) {
         };
     }, [allParts, handlePartToggle, toast]);
 
-    // Favorite loading handler
     const loadFavoriteBuild = useCallback((favorite: FavoriteBuild) => {
         if (!allParts.length) return;
 
@@ -311,7 +304,28 @@ export function useBuilderLogic(allParts: Part[]) {
         const skipped: string[] = [];
         const outOfStock: string[] = [];
 
+        const cpuFav = favorite.parts.find(p => p.category === 'CPU');
+        const liveCpu = cpuFav ? allParts.find(p => p.id === cpuFav.partId || (cpuFav.name && p.name.toLowerCase() === cpuFav.name.toLowerCase())) : null;
+        const bundledCoolerName = liveCpu ? includedCpuCoolerName(liveCpu) : null;
+
         for (const favPart of favorite.parts) {
+            if (favPart.category === 'GPU' && favPart.partId === INCLUDED_INTEGRATED_GPU_ID) continue;
+
+            if (favPart.category === 'Cooler' && isIncludedStockCoolerPart(favPart)) {
+                newBuild['Cooler'] = {
+                    id: 'included-stock-cooler',
+                    model: favPart.name || bundledCoolerName || 'Intel Laminar RM1',
+                    price: 0,
+                    description: 'Bundled cooler.',
+                    image: '/placeholders/components/cooler.jpg',
+                    imageHint: 'included cooler',
+                    icon: Wind,
+                    wattage: 0,
+                    specifications: { 'Type': 'Air (Stock)' },
+                };
+                continue;
+            }
+
             const livePart = allParts.find(p => p.id === favPart.partId || (favPart.name && p.name.toLowerCase() === favPart.name.toLowerCase()));
             if (!livePart) {
                 skipped.push(favPart.name);
@@ -348,26 +362,47 @@ export function useBuilderLogic(allParts: Part[]) {
             }
         }
 
-        setBuild(newBuild);
+        const loadedCpu = newBuild['CPU'] as ComponentData | null;
+        if (loadedCpu && !newBuild['Cooler']) {
+            const hasAftermarketInFav = favorite.parts.some(p => p.category === 'Cooler' && !isIncludedStockCoolerPart(p));
+            if (!hasAftermarketInFav && bundledCoolerName) {
+                newBuild['Cooler'] = {
+                    id: 'included-stock-cooler',
+                    model: bundledCoolerName,
+                    price: 0,
+                    description: 'Bundled cooler.',
+                    image: '/placeholders/components/cooler.jpg',
+                    imageHint: 'included cooler',
+                    icon: Wind,
+                    wattage: 0,
+                    specifications: { 'Type': 'Air (Stock)' },
+                };
+            }
+        }
 
-        if (favorite.loadContext?.type === 'prebuilt') {
+        setBuild(syncIntegratedGraphics(newBuild));
+
+        if (favorite.loadContext) {
             const unavailableParts = Array.from(new Set([
                 ...favorite.loadContext.unavailableParts,
                 ...skipped,
                 ...outOfStock,
             ]));
             const loadedCount = favorite.parts.length - skipped.length - outOfStock.length;
+            const isAdvisorBuild = favorite.loadContext.type === 'advisor';
 
             if (unavailableParts.length > 0) {
                 toast({
                     variant: 'warning',
-                    title: `Pre-built loaded with ${unavailableParts.length} missing part${unavailableParts.length === 1 ? '' : 's'}`,
-                    description: `${loadedCount} available component${loadedCount === 1 ? '' : 's'} loaded. Add ${unavailableParts.join(', ')} to complete ${favorite.loadContext.systemName}.`,
+                    title: `${isAdvisorBuild ? 'Build Advisor recommendation' : 'Pre-built'} loaded with ${unavailableParts.length} missing part${unavailableParts.length === 1 ? '' : 's'}`,
+                    description: `${loadedCount} available component${loadedCount === 1 ? '' : 's'} loaded. Add ${unavailableParts.join(', ')} to complete ${isAdvisorBuild ? 'your recommended build' : favorite.loadContext.systemName}.`,
                 });
             } else {
                 toast({
-                    title: 'Pre-built loaded into PC Builder',
-                    description: `${loadedCount} components from ${favorite.loadContext.systemName} are ready to customize.`,
+                    title: isAdvisorBuild ? 'Build Advisor recommendation loaded' : 'Pre-built loaded into PC Builder',
+                    description: isAdvisorBuild
+                        ? `${loadedCount} recommended components are ready to customize.`
+                        : `${loadedCount} components from ${favorite.loadContext.systemName} are ready to customize.`,
                 });
             }
             return;
@@ -388,15 +423,19 @@ export function useBuilderLogic(allParts: Part[]) {
         }
     }, [allParts, setBuild, toast]);
 
-    // Listen for load-favorite-build event
+    const handleLoadFavorite = useCallback((e: Event) => {
+        const customEvent = e as CustomEvent<FavoriteBuild>;
+        if (customEvent.detail) {
+            loadFavoriteBuild(customEvent.detail);
+        }
+    }, [loadFavoriteBuild]);
+
     useEffect(() => {
-        const handleLoadFavorite = (e: any) => {
-            loadFavoriteBuild(e.detail as FavoriteBuild);
-        };
+        const controller = new AbortController();
+        window.addEventListener('load-favorite-build', handleLoadFavorite, {
+            signal: controller.signal,
+        });
 
-        window.addEventListener('load-favorite-build', handleLoadFavorite);
-
-        // Also check if there's a pending favorite in localStorage (from profile page redirect)
         if (allParts.length > 0 && !hasProcessedPendingBuildRef.current) {
             const pending = localStorage.getItem('pc_builder_load_favorite');
             if (pending) {
@@ -405,14 +444,14 @@ export function useBuilderLogic(allParts: Part[]) {
                     hasProcessedPendingBuildRef.current = true;
                     loadFavoriteBuild(pendingBuild);
                     localStorage.removeItem('pc_builder_load_favorite');
-                } catch (e) { /* ignore parse errors */ }
+                } catch (e) { }
             }
         }
 
         return () => {
-            window.removeEventListener('load-favorite-build', handleLoadFavorite);
+            controller.abort();
         };
-    }, [allParts, loadFavoriteBuild]);
+    }, [allParts, handleLoadFavorite, loadFavoriteBuild]);
 
     return {
         build,
@@ -420,6 +459,7 @@ export function useBuilderLogic(allParts: Part[]) {
         handlePartToggle,
         handleRemovePart,
         handleClearBuild,
+        handleLoadFavorite,
         getCountInBuild,
         isLoaded
     };

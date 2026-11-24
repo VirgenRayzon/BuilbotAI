@@ -5,6 +5,7 @@ import { CONTACT_EMAIL_ENABLED } from '@/lib/contact-config';
 import { contactErrorResponse, getBearerToken, getOptionalCustomerIdentity } from '@/lib/server/contact-auth';
 import type { NextRequest } from 'next/server';
 import * as admin from 'firebase-admin';
+import { computeExpiresAt } from '@/lib/ttl-policies';
 
 export const runtime = 'nodejs';
 
@@ -32,7 +33,6 @@ export async function POST(request: NextRequest) {
     }
 
     const submission = parsed.data;
-    // Quietly accept honeypot submissions without writing or notifying staff.
     if (submission.companyWebsite.trim()) return Response.json({ success: true });
 
     const identity = await getOptionalCustomerIdentity(getBearerToken(request));
@@ -103,6 +103,7 @@ export async function POST(request: NextRequest) {
       targetId: inquiryRef.id,
       readBy: [],
       createdAt: now,
+      expiresAt: admin.firestore.Timestamp.fromDate(computeExpiresAt('notifications')),
     });
     await batch.commit();
 

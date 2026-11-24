@@ -1,6 +1,8 @@
 flowchart TD
   UStart([Customer sign-in or sign-up]) --> UHome{Choose feature}
   UHome -- Public pages --> UPublic[Home, About, Team, FAQ, Contact; theme and navigation]
+  UHome -- Parts store --> UParts[Search and filter parts; open details; reserve or add to cart]
+  UParts --> UCheckout[Store Mode: sample checkout, receipt and order tracking]
   UHome -- Builder --> UBuilder[Browse and filter parts; inspect details; select compatible build]
   UBuilder --> UBuildChoice{Build action}
   UBuildChoice -- Save --> UFavorite[Name and save favorite]
@@ -13,7 +15,18 @@ flowchart TD
   UPrebuilt --> UPrebuiltChoice{Customize or reserve?}
   UPrebuiltChoice -- Customize --> UBuilder
   UPrebuiltChoice -- Reserve --> UReserve
-  UHome -- Profile --> UProfile[Edit profile/settings; favorites, reservations and activity]
+  UHome -- Profile --> UProfile[Edit profile/settings; Contact Inbox, saved builds, orders and activity]
   UHome -- Notifications --> UNotice[Filter, mark or delete; inspect linked order]
   UProfile --> UCancel[Cancellation choice: keep order or contact staff]
   UHome -- Sign out --> UExit([Confirm and sign out])
+  UPublic --> Finish([END])
+  UCheckout --> Finish
+  UFavorite --> Finish
+  UReserve --> Finish
+  UPdf --> Finish
+  UCritique --> Finish
+  UChat --> Finish
+  UAdvisor --> Finish
+  UNotice --> Finish
+  UCancel --> Finish
+  UExit --> Finish

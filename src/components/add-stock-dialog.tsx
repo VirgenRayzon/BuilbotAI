@@ -1,7 +1,3 @@
-/**
- * AddStockDialog / EditStockDialog — Modal allowing admins/managers to manually adjust (add or reduce) stock of an inventory part.
- * Automatically triggers system notification to staff (excluding actor & non-admins) and writes an audit log.
- */
 'use client';
 
 import React, { useState } from 'react';
@@ -24,21 +20,28 @@ interface AddStockDialogProps {
     part: Part;
     onAddStock?: (partId: string, category: Part['category'], amount: number) => Promise<void> | void;
     children?: React.ReactNode;
+    open?: boolean;
+    onOpenChange?: (open: boolean) => void;
 }
 
-export function AddStockDialog({ part, onAddStock, children }: AddStockDialogProps) {
-    const [open, setOpen] = useState(false);
+export function AddStockDialog({ part, onAddStock, children, open: controlledOpen, onOpenChange }: AddStockDialogProps) {
+    const [internalOpen, setInternalOpen] = useState(false);
     const [mode, setMode] = useState<'add' | 'reduce'>('add');
-    const [quantity, setQuantity] = useState<number>(10);
+    const [quantity, setQuantity] = useState<number>(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const currentStock = part.stock ?? 0;
     const validQuantity = Number.isFinite(quantity) && quantity > 0 ? Math.floor(quantity) : 0;
     
-    // Calculate new stock depending on add or reduce mode
     const effectiveDelta = mode === 'add' ? validQuantity : -Math.min(currentStock, validQuantity);
     const newStock = Math.max(0, currentStock + effectiveDelta);
     const isReducing = mode === 'reduce' && validQuantity > 0;
+
+    const open = controlledOpen ?? internalOpen;
+    const setOpen = (nextOpen: boolean) => {
+        if (controlledOpen === undefined) setInternalOpen(nextOpen);
+        onOpenChange?.(nextOpen);
+    };
 
     const handleConfirm = async (e: React.MouseEvent) => {
         e.preventDefault();
@@ -49,7 +52,7 @@ export function AddStockDialog({ part, onAddStock, children }: AddStockDialogPro
             setIsSubmitting(true);
             await onAddStock(part.id, part.category, effectiveDelta);
             setOpen(false);
-            setQuantity(10);
+            setQuantity(1);
             setMode('add');
         } catch (error) {
             console.error("Failed to update stock:", error);
@@ -62,7 +65,7 @@ export function AddStockDialog({ part, onAddStock, children }: AddStockDialogPro
         if (!isSubmitting) {
             setOpen(isOpen);
             if (isOpen) {
-                setQuantity(10);
+                setQuantity(1);
                 setMode('add');
             }
         }
@@ -76,7 +79,7 @@ export function AddStockDialog({ part, onAddStock, children }: AddStockDialogPro
                 <DialogTrigger asChild onClick={(e) => e.stopPropagation()}>
                     {children}
                 </DialogTrigger>
-            ) : (
+            ) : controlledOpen === undefined ? (
                 <DialogTrigger asChild onClick={(e) => e.stopPropagation()}>
                     <Button
                         variant="outline"
@@ -86,7 +89,7 @@ export function AddStockDialog({ part, onAddStock, children }: AddStockDialogPro
                         <span>Edit Stock</span>
                     </Button>
                 </DialogTrigger>
-            )}
+            ) : null}
 
             <DialogContent 
                 className="sm:max-w-[440px] bg-background/95 backdrop-blur-2xl border-white/10 shadow-2xl !p-3"
@@ -109,7 +112,6 @@ export function AddStockDialog({ part, onAddStock, children }: AddStockDialogPro
                 </DialogHeader>
 
                 <div className="space-y-3.5 p-3 py-1">
-                    {/* Action Selector: Add Stock vs Reduce Stock */}
                     <div className="grid grid-cols-2 gap-1.5 p-1 bg-muted/50 rounded-lg border border-white/5">
                         <button
                             type="button"
@@ -137,7 +139,6 @@ export function AddStockDialog({ part, onAddStock, children }: AddStockDialogPro
                         </button>
                     </div>
 
-                    {/* Warning banner when about to reduce stock */}
                     {isReducing && (
                         <div className="flex items-start gap-2.5 p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-500 text-xs font-medium animate-in fade-in duration-200">
                             <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5 text-amber-500" />
@@ -150,7 +151,6 @@ export function AddStockDialog({ part, onAddStock, children }: AddStockDialogPro
                         </div>
                     )}
 
-                    {/* Stock Projection Card */}
                     <div className="p-3 rounded-xl bg-muted/40 border border-white/5 space-y-2">
                         <div className="flex items-center justify-between text-xs text-muted-foreground font-medium">
                             <span>Current Stock</span>
@@ -181,7 +181,6 @@ export function AddStockDialog({ part, onAddStock, children }: AddStockDialogPro
                         </div>
                     </div>
 
-                    {/* Quantity Input Stepper */}
                     <div className="space-y-1.5">
                         <label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
                             {mode === 'add' ? 'Quantity to Add' : 'Quantity to Reduce'}
@@ -223,7 +222,6 @@ export function AddStockDialog({ part, onAddStock, children }: AddStockDialogPro
                         </div>
                     </div>
 
-                    {/* Quick Presets */}
                     <div className="space-y-1.5">
                         <span className="text-[10px] uppercase font-bold text-muted-foreground tracking-wider">
                             {mode === 'add' ? 'Quick Add Presets' : 'Quick Presets'}
@@ -263,7 +261,6 @@ export function AddStockDialog({ part, onAddStock, children }: AddStockDialogPro
                         </div>
                     </div>
 
-                    {/* Notice */}
                     <div className="flex items-start gap-2 p-2 rounded-lg bg-primary/5 border border-primary/10 text-muted-foreground text-[11px] leading-relaxed">
                         <ShieldAlert className="h-4 w-4 text-primary shrink-0 mt-0.5" />
                         <span>

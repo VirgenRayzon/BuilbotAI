@@ -2,10 +2,16 @@ import 'server-only';
 import { getAdminFirestore } from '@/firebase/server-init';
 import type { Part } from '@/lib/types';
 import { INVENTORY_CATEGORY_SLUGS, inventoryItemsPath } from '@/lib/inventory-paths';
+import { getCatalogMeta } from './catalog-meta-store';
+import { createBuilderCatalogReader } from './builder-catalog-reader';
 
-let catalogCache: Part[] | null = null;
-let catalogCacheTime = 0;
-const CATALOG_CACHE_TTL = 10 * 60 * 1000;
+const defaultBuilderCatalogReader = createBuilderCatalogReader({
+  loader: fetchBuilderCatalog,
+  readVersion: async () => {
+    const meta = await getCatalogMeta();
+    return meta.catalogVersion;
+  },
+});
 
 function serializeDate(value: unknown): string | undefined {
   if (!value) return undefined;
@@ -18,13 +24,7 @@ function serializeDate(value: unknown): string | undefined {
   return undefined;
 }
 
-/** Same public catalog, serialization and cache policy used by the server action.
- * Kept separate from AI actions so the page does not bootstrap Genkit to read it. */
-export async function getBuilderCatalog(): Promise<Part[]> {
-  const now = Date.now();
-  const hasGalleryShape = catalogCache?.every(part => Array.isArray(part.images));
-  if (catalogCache && hasGalleryShape && now - catalogCacheTime < CATALOG_CACHE_TTL) return catalogCache;
-
+async function fetchBuilderCatalog(): Promise<Part[]> {
   const db = getAdminFirestore();
   const snapshots = await Promise.all(INVENTORY_CATEGORY_SLUGS.map(slug =>
     db.collection(inventoryItemsPath(slug)).where('isArchived', '==', false).get()
@@ -34,6 +34,9 @@ export async function getBuilderCatalog(): Promise<Part[]> {
     const data = document.data();
     fetchedParts.push({
       id: document.id,
+      productId: typeof data.productId === 'string' ? data.productId : undefined,
+      sku: typeof data.sku === 'string' ? data.sku : undefined,
+      qrToken: typeof data.qrToken === 'string' ? data.qrToken : undefined,
       name: data.name || '',
       category: data.category as Part['category'],
       brand: data.brand || '',
@@ -55,12 +58,13 @@ export async function getBuilderCatalog(): Promise<Part[]> {
       isArchived: data.isArchived || false,
     });
   });
-  catalogCache = fetchedParts;
-  catalogCacheTime = now;
   return fetchedParts;
 }
 
+export async function getBuilderCatalog(): Promise<Part[]> {
+  return defaultBuilderCatalogReader.getBuilderCatalog();
+}
+
 export function clearBuilderCatalogCache() {
-  catalogCache = null;
-  catalogCacheTime = 0;
+  defaultBuilderCatalogReader.clearBuilderCatalogCache();
 }

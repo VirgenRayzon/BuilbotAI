@@ -4,16 +4,29 @@ flowchart TD
   Auth -- Customer --> Builder([Builder])
   Auth -- Staff --> Admin([Admin])
   Auth -- Guest --> Nav{Select link or menu}
-  Nav -- About --> About[Read Firestore siteContent or fallback copy; image preview]
+  Nav -- About --> About[Read store history, services and support details]
   Nav -- Team --> Team[Static team section]
   Nav -- FAQ --> FAQ[Search static questions; expand answer]
+  Nav -- Catalog --> Parts[Search and filter public parts; open product]
+  Nav -- Pre-builts --> Prebuilt[Browse ready-made PCs; open product]
   Nav -- Contact --> Contact[/Enter contact form fields/]
   Contact --> Valid{Form valid?}
   Valid -- No --> ContactError[/Field error/]
-  Valid -- Yes --> Simulate[Local timer and success state]
+  Valid -- Yes --> Submit[Send inquiry to contact API]
+  Submit --> Sent{Saved?}
+  Sent -- No --> ContactError
+  Sent -- Yes --> ContactDone[Show reference; signed-in user can open Contact Inbox]
+  Nav -- Cart, Store Mode --> Cart[Review cart items]
+  Cart --> Checkout[Open sample checkout and receipt flow]
   Nav -- Sign in or register --> SignIn([Authentication flow])
   Nav -- Builder or advisor CTA --> SignIn
-  Nav -- Prebuilt card --> Prebuilt([Prebuilt route or sign-in path])
+  Nav -- Prebuilt card --> Prebuilt
   Nav -- Mobile menu --> Drawer[Open navigation drawer]
   Drawer --> Nav
   Nav -- Theme --> Theme[Toggle client theme] --> Nav
+  Builder --> Finish([END])
+  Admin --> Finish
+  ContactDone --> Finish
+  Checkout --> Finish
+  SignIn --> Finish
+  Nav -- Leave site --> Finish

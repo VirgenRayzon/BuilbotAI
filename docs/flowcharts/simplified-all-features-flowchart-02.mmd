@@ -1,5 +1,6 @@
 flowchart TD
   MStart([Staff sign-in with role key]) --> MHome{Choose staff feature}
+  MHome -- Staff screen --> MShell[Collapsible side menu, top bar, search, alerts and profile menu]
   MHome -- Stock --> MStock[Search/filter parts; add, edit, adjust stock, archive or restore]
   MStock --> MAutofill[Optional AI part autofill]
   MHome -- Prebuilts --> MPrebuilt[Search/filter systems; add, edit, archive or restore]
@@ -11,5 +12,20 @@ flowchart TD
   MHome -- Audit --> MAudit[Filter staff audit records]
   MHome -- Product detail --> MReport[Generate or re-evaluate prebuilt AI report]
   MHome -- Profile/notifications --> MProfile[Edit account; inspect staff notices]
+  MHome -- Contact Inbox --> MInbox[Read customer inquiry and send reply]
+  MHome -- Storefront preview --> MPreview[Open public Parts or Pre-builts view]
   MHome -- Public pages --> MPublic[Home, About, Team, FAQ and Contact]
   MHome -- Sign out --> MExit([Confirm and sign out])
+  MShell --> Finish([END])
+  MAutofill --> Finish
+  MAssist --> Finish
+  MChat --> Finish
+  MOrders --> Finish
+  MArchive --> Finish
+  MAudit --> Finish
+  MReport --> Finish
+  MProfile --> Finish
+  MInbox --> Finish
+  MPreview --> Finish
+  MPublic --> Finish
+  MExit --> Finish

@@ -27,3 +27,9 @@ flowchart TD
   UserChoice -- Save or apply --> Mutation[Favorite, catalog field or prebuilt report write]
   UserChoice -- Regenerate --> Model
   UserChoice -- Dismiss --> End([Return to parent workflow])
+  Denied --> Finish([END])
+  Paused --> Finish
+  Validate --> Finish
+  Error --> Finish
+  Mutation --> Finish
+  End --> Finish

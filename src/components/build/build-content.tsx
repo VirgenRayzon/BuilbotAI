@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef, useId } from "react";
 import { Cpu, Server, CircuitBoard, MemoryStick, Database, Power, RectangleVertical as CaseIcon, Wind, Monitor, Keyboard, Mouse, Headphones, ChevronDown, HardDrive } from "lucide-react";
 import { Paper } from "@mantine/core";
-import { Separator } from "@/components/ui/separator";
 import { cn, formatCurrency } from "@/lib/utils";
 import { ComponentData } from "@/lib/types";
 import { BuildItem } from "./build-item";
@@ -19,6 +18,8 @@ interface BuildContentProps {
   totalWattage: number;
   psuWattage: number;
   totalPrice: number;
+  budget?: number;
+  budgetShortfall?: number | null;
   activeFilter?: string | null;
   missingCategories?: string[];
   showMissingValidation?: boolean;
@@ -47,11 +48,11 @@ export function BuildContent({
   onRemovePart,
   onCategorySelect,
   activeFilter,
-  categories,
-  showSystemBalance,
   totalWattage,
   psuWattage,
   totalPrice,
+  budget,
+  budgetShortfall,
   missingCategories = [],
   showMissingValidation = false,
 }: BuildContentProps) {
@@ -85,7 +86,6 @@ export function BuildContent({
     Storage: false,
   });
 
-  // Auto-expand if filter is active
   useEffect(() => {
     if (activeFilter === 'RAM') {
       setExpandedSections({ RAM: true, Storage: false });
@@ -99,7 +99,6 @@ export function BuildContent({
   const toggleSection = (section: string) => {
     setExpandedSections(prev => {
       const isCurrentlyOpen = prev[section];
-      // Close others when opening one (exclusive focus)
       if (!isCurrentlyOpen) {
         return { RAM: false, Storage: false, [section]: true };
       }
@@ -108,7 +107,7 @@ export function BuildContent({
   };
 
   return (
-    <div className="p-3 flex flex-col h-full overflow-y-auto no-scrollbar">
+    <div className="p-3 flex flex-col h-full">
       <div className="space-y-3 py-1 flex-1">
         {mainCategories.map((name) => {
           const mobo = build['Motherboard'] as ComponentData | null;
@@ -345,7 +344,7 @@ export function BuildContent({
           p={12}
           className="bg-slate-50/70 dark:bg-white/[0.03] border-slate-200 dark:border-white/10 shadow-xs"
         >
-          <div className="flex justify-between items-center">
+          <div className="flex justify-between items-center gap-3">
             <div>
               <span className="block text-[11px] font-bold font-headline uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Total Value
@@ -358,6 +357,24 @@ export function BuildContent({
               {formatCurrency(totalPrice)}
             </span>
           </div>
+          {budget && (
+            <div className="mt-2 space-y-1 border-t border-slate-200 pt-2 dark:border-white/10">
+              <div className="flex items-center justify-between gap-3 text-xs">
+                <span className="font-medium text-slate-500 dark:text-slate-400">Budget set</span>
+                <span className="font-bold tabular-nums text-slate-800 dark:text-slate-200">
+                  {formatCurrency(budget)}
+                </span>
+              </div>
+              {budgetShortfall != null && budgetShortfall > 0 && (
+                <div className="flex items-center justify-between gap-3 text-xs">
+                  <span className="font-semibold text-rose-700 dark:text-rose-300">Shortfall</span>
+                  <span className="font-bold tabular-nums text-rose-700 dark:text-rose-300">
+                    {formatCurrency(budgetShortfall)}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
         </Paper>
       </div>
     </div>

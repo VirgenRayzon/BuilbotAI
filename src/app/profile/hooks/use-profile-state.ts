@@ -7,9 +7,6 @@ import { updateDoc, doc } from "firebase/firestore";
 import { useToast } from "@/hooks/use-toast";
 import { createUserAuditLog } from "@/firebase/audit";
 
-/**
- * Hook to manage profile and settings state and updates.
- */
 export function useProfileState() {
     const { authUser, profile } = useUserProfile();
     const firestore = useFirestore();
@@ -17,12 +14,10 @@ export function useProfileState() {
 
     const [isEditing, setIsEditing] = useState(false);
     
-    // User Information
     const [name, setName] = useState("");
     const [bio, setBio] = useState("");
     const [photoURL, setPhotoURL] = useState("");
 
-    // Account Information
     const [firstName, setFirstName] = useState("");
     const [lastName, setLastName] = useState("");
     const [email, setEmail] = useState("");
@@ -52,7 +47,6 @@ export function useProfileState() {
         }
     }, [profile]);
 
-    // Save User Information (Name, Bio, Avatar)
     const handleSaveUserInfo = useCallback(async () => {
         if (!authUser || !firestore) return;
         setIsSavingUser(true);
@@ -88,7 +82,6 @@ export function useProfileState() {
         }
     }, [authUser, firestore, name, bio, photoURL, email, toast]);
 
-    // Save Account Information (First Name, Last Name, Address, Location)
     const handleSaveAccountInfo = useCallback(async () => {
         if (!authUser || !firestore) return;
         setIsSavingAccount(true);
@@ -130,7 +123,6 @@ export function useProfileState() {
         }
     }, [authUser, firestore, firstName, lastName, name, address, apartment, city, state, zip, email, toast]);
 
-    // Legacy general save
     const handleSaveProfile = useCallback(async () => {
         if (!authUser || !firestore) return;
         setIsSaving(true);
@@ -182,4 +174,3 @@ export function useProfileState() {
         isSavingAccount, handleSaveAccountInfo,
     };
 }
-

@@ -3,7 +3,7 @@
 import { use } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Container, Grid, Title, Text, Paper, Button, Loader } from "@mantine/core";
+import { Container, Grid, Title, Text, Paper, Button } from "@mantine/core";
 import { ArrowLeft } from "lucide-react";
 import { usePrebuiltDetails } from "./hooks/use-prebuilt-details";
 import { PrebuiltImageView } from "./components/prebuilt-image-view";
@@ -13,7 +13,9 @@ import { PrebuiltHeaderCard } from "./components/prebuilt-header-card";
 import { PrebuiltAiHighlights } from "./components/prebuilt-ai-highlights";
 import { PrebuiltPartsList } from "./components/prebuilt-parts-list";
 import { PrebuiltShowcase } from "@/components/landing/prebuilt-showcase";
+import { AccessoriesSection } from "@/components/landing/accessories-section";
 import { getEcommerceFallbackImage } from "@/context/ecommerce-context";
+import { PrebuiltDetailSkeleton } from "@/components/loading/prebuilt-detail-skeleton";
 
 export default function LegacyPrebuiltProductPage({ params }: { params: Promise<{ id: string }> }) {
     const { id: systemId } = use(params);
@@ -52,19 +54,10 @@ export default function LegacyPrebuiltProductPage({ params }: { params: Promise<
         }
     };
 
-    // 1. Loading State
     if (loadingSystem) {
-        return (
-            <div className="min-h-[70vh] flex flex-col items-center justify-center gap-3">
-                <Loader size="md" color="cyan" />
-                <Text size="sm" c="dimmed" fw={500}>
-                    Loading system specifications...
-                </Text>
-            </div>
-        );
+        return <PrebuiltDetailSkeleton />;
     }
 
-    // 2. Not Found State
     if (!system) {
         return (
             <Container size="sm" py={80} className="text-center">
@@ -87,6 +80,8 @@ export default function LegacyPrebuiltProductPage({ params }: { params: Promise<
     const ecommerceSubComponents = Object.entries(components)
         .filter(([, part]) => Boolean(part))
         .map(([cat, part]) => ({
+            id: part!.id,
+            productId: part!.productId,
             category: cat.toUpperCase(),
             name: part!.name,
             price: part!.price || 0,
@@ -104,7 +99,6 @@ export default function LegacyPrebuiltProductPage({ params }: { params: Promise<
             />
 
             <div className="relative z-10 w-full max-w-[1600px] mx-auto px-4 py-8 sm:px-6 md:px-8 lg:px-8 xl:px-10">
-                {/* Top Navigation */}
                 <div className="mb-6">
                     <Button
                         component={Link}
@@ -120,12 +114,9 @@ export default function LegacyPrebuiltProductPage({ params }: { params: Promise<
                     </Button>
                 </div>
 
-                {/* 2-Column Blueprint Layout */}
                 <Grid gutter={{ base: "xl", lg: 32 }} align="start">
-                    {/* LEFT COLUMN: Image Preview + (Desktop only: Performance Analyzer & AI Highlights) */}
                     <Grid.Col span={{ base: 12, lg: 6 }}>
                         <div className="flex flex-col gap-8">
-                            {/* Image Preview */}
                             <PrebuiltImageView
                                 imageUrl={system.imageUrl}
                                 images={system.images}
@@ -133,7 +124,6 @@ export default function LegacyPrebuiltProductPage({ params }: { params: Promise<
                                 tier={system.tier}
                             />
 
-                            {/* Desktop-only: Performance Analyzer & AI Highlights */}
                             <div className="hidden lg:flex flex-col gap-8">
                                 <PrebuiltPerformanceAnalyzer
                                     components={components}
@@ -153,10 +143,8 @@ export default function LegacyPrebuiltProductPage({ params }: { params: Promise<
                         </div>
                     </Grid.Col>
 
-                    {/* RIGHT COLUMN: Header Card (Badges, Name, Description, Starting At + Customize on right), Parts List, Bottom Action Card */}
                     <Grid.Col span={{ base: 12, lg: 6 }}>
                         <div className="flex flex-col gap-5">
-                            {/* Combined Header Card: Badges, Prebuilt Name, Description, Starting At + Price, and Customize on right */}
                             <PrebuiltHeaderCard
                                 system={system}
                                 price={system.price}
@@ -164,16 +152,15 @@ export default function LegacyPrebuiltProductPage({ params }: { params: Promise<
                                 isInStock={isInStock}
                                 loadingParts={loadingParts}
                                 hasComponents={hasComponents}
+                                isAdminPreview={backLink.includes("preview=admin")}
                                 onCustomize={handleCustomizePrebuilt}
                             />
 
-                            {/* Parts in List View */}
                             <PrebuiltPartsList
                                 parts={componentStatuses}
                                 loading={loadingParts}
                             />
 
-                            {/* Bottom Price Display and Action Buttons */}
                             <PrebuiltActionCard
                                 systemId={system.id}
                                 systemName={system.name}
@@ -195,7 +182,6 @@ export default function LegacyPrebuiltProductPage({ params }: { params: Promise<
                     </Grid.Col>
                 </Grid>
 
-                {/* Mobile-only: Performance Analyzer and AI System Highlights placed at the end before "You might also like" */}
                 <div className="flex lg:hidden flex-col gap-8 mt-10">
                     <PrebuiltPerformanceAnalyzer
                         components={components}
@@ -213,7 +199,6 @@ export default function LegacyPrebuiltProductPage({ params }: { params: Promise<
                     />
                 </div>
 
-                {/* Full-width Carousel: "You might also like." */}
                 <div className="mt-16 sm:mt-24 pt-8 border-t border-slate-200/80 dark:border-white/10">
                     <PrebuiltShowcase
                         badge="Battle-Ready"
@@ -221,8 +206,11 @@ export default function LegacyPrebuiltProductPage({ params }: { params: Promise<
                         subtitle="Expertly architected PC builds, validated by Buildbot AI for zero-bottleneck performance."
                         excludeId={system.id}
                         className="py-12 sm:py-16"
+                        isAdminPreview={backLink.includes("preview=admin")}
+                        layout="carousel"
                     />
                 </div>
+                <AccessoriesSection title="Frequently Bought Together" className="mt-8 border-b-0" />
             </div>
         </div>
     );

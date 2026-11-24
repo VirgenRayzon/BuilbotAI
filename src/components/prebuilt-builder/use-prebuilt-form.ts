@@ -18,14 +18,14 @@ export const prebuiltFormSchema = z.object({
     description: z.string().optional(),
     price: z.coerce.number().min(0, "Price must be a positive number."),
     imageUrl: z.string().optional().or(z.literal("")),
-    cpu: z.string().optional(),
-    gpu: z.string().optional(),
-    motherboard: z.string().optional(),
-    ram: z.array(z.string()).min(1, "At least one RAM module is required."),
-    storage: z.array(z.string()).min(1, "At least one storage drive is required."),
-    psu: z.string().optional(),
-    case: z.string().optional(),
-    cooler: z.string().optional(),
+    cpu: z.string().min(1, "CPU is required."),
+    gpu: z.string().min(1, "GPU is required."),
+    motherboard: z.string().min(1, "Motherboard is required."),
+    ram: z.array(z.string().min(1)).min(1, "At least one RAM module is required."),
+    storage: z.array(z.string().min(1)).min(1, "At least one storage drive is required."),
+    psu: z.string().min(1, "PSU is required."),
+    case: z.string().min(1, "Case is required."),
+    cooler: z.string().min(1, "Cooler is required."),
 });
 
 export type PrebuiltBuilderAddFormSchema = z.infer<typeof prebuiltFormSchema>;
@@ -35,9 +35,10 @@ interface UsePrebuiltFormParams {
     initialData?: PrebuiltSystem;
     onSave: (data: PrebuiltBuilderAddFormSchema, operationId?: string) => Promise<CreatedProduct | void>;
     onClose: () => void;
+    onCreated?: (name: string, saved?: CreatedProduct) => void;
 }
 
-export function usePrebuiltForm({ parts, initialData, onSave, onClose }: UsePrebuiltFormParams) {
+export function usePrebuiltForm({ parts, initialData, onSave, onClose, onCreated }: UsePrebuiltFormParams) {
     const [isAiPending, setIsAiPending] = useState(false);
     const [isSaving, setIsSaving] = useState(false);
     const { getOperation, resetOperation } = useProductSaveOperation();
@@ -202,11 +203,12 @@ export function usePrebuiltForm({ parts, initialData, onSave, onClose }: UsePreb
         setIsSaving(true);
         try {
             const saved = await onSave(values, getOperation(values));
-            toast({ title: initialData ? 'Prebuilt Updated!' : 'Prebuilt System Added!', description: saved ? `${saved.productId} · ${saved.sku}` : `${values.name} saved.` });
+            if (initialData) toast({ title: 'Prebuilt Updated!', description: saved ? `${saved.productId} · ${saved.sku}` : `${values.name} saved.` });
             if (!initialData) form.reset();
             resetOperation();
             onClose();
-            if (saved) window.location.assign(saved.adminUrl);
+            if (!initialData) onCreated?.(values.name, saved || undefined);
+            if (initialData && saved) window.location.assign(saved.adminUrl);
         } catch (error) {
             toast({ title: 'Save failed', variant: 'destructive', description: error instanceof Error ? error.message : 'Please retry.' });
         } finally { setIsSaving(false); }

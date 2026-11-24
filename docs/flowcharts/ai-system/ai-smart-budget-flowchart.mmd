@@ -10,3 +10,7 @@ flowchart TD
   Review --> Choice{Apply or close?}
   Choice -- Apply --> Event[Apply matching parts to supplied build callback]
   Choice -- Close --> End([Close component])
+  Toast --> Finish([END])
+  Error --> Finish
+  Event --> Finish
+  End --> Finish

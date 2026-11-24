@@ -1,5 +1,9 @@
 # AI build critique
 
+## Simple explanation
+
+This flowchart shows how the AI reviews a PC build. The user first needs selected parts in the Builder. The app checks the parts and looks for an earlier saved result. If no saved result can be used, the AI creates a new review. The page then shows the findings or gives the user a clear retry option.
+
 ```mermaid
 flowchart TD
   Start([Customer opens Critique tab or Analyze Build]) --> Build[Load selected builder state and workload/resolution]
@@ -22,6 +26,9 @@ flowchart TD
   Choice -- Apply --> Event[Dispatch part suggestion to builder] --> Build
   Choice -- Cancel --> Cancel([Stop local pending result])
   Error --> Choice
+  Disabled --> Finish([END])
+  Cancel --> Finish
+  Choice -- Leave tab --> Finish
 ```
 
 The advisor page controls critique in `src/app/ai-build-advisor/hooks/use-critique-logic.ts`; `src/components/ai-build-critique.tsx` renders the analysis and retry controls. The server flow is `src/ai/flows/ai-build-critique.ts`, wrapped by `getAiBuildCritique` in `src/app/actions.ts`. Its Firestore cache collection is `ai_critique_cache_v1`. A cancelled client request does not establish remote cancellation.

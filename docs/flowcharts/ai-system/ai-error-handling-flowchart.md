@@ -1,5 +1,9 @@
 # AI error handling
 
+## Simple explanation
+
+This flowchart shows what happens when an AI request cannot finish normally. The app can stop early when AI is turned off, input is missing, or a time limit is reached. Some features try another model or make another request. The user sees an error message instead of a broken or empty result. Retry and cancel buttons are shown where the page supports them.
+
 ```mermaid
 flowchart TD
   Start([AI request]) --> Failure{Failure type}
@@ -27,6 +31,9 @@ flowchart TD
   AdvisorError --> End
   WebError --> End
   Empty --> End
+  End --> Finish([END])
+  Success --> Finish
+  Cancel --> Finish
 ```
 
 The server action wrappers use a three-minute timeout and convert several errors into response objects (`src/app/actions.ts`). The advisor validates output after generation and retries up to three times; its `ReadableStream` does not stream model tokens (`src/app/api/ai/build-advisor/recommendations/route.ts`). Chat has a specific tuned stream fallback and a client Retry action (`src/app/api/chat/route.ts`, `src/lib/chat-stream-fallback.ts`, `src/components/chat/hooks/use-floating-chat.ts`). The exact behavior of a remote model request after client cancellation cannot be verified from static code.

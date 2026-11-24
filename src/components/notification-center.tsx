@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   Bell,
   Check,
+  Clock,
   Archive,
   ShieldCheck,
   History,
@@ -14,7 +15,6 @@ import {
   PackageCheck,
   CheckCheck,
   SlidersHorizontal,
-  ChevronRight,
   ExternalLink,
 } from "lucide-react";
 import {
@@ -27,7 +27,6 @@ import {
   Group,
   Stack,
   ThemeIcon,
-  ScrollArea,
   Paper,
   Divider,
 } from "@mantine/core";
@@ -39,7 +38,6 @@ import { SystemNotification } from "@/lib/types";
 import { formatDistanceToNow } from "date-fns";
 import { cn } from "@/lib/utils";
 
-/* ── Web Audio Feedback ── */
 let _audioCtx: AudioContext | null = null;
 function playSoftTick() {
   try {
@@ -61,12 +59,10 @@ function playSoftTick() {
     src.connect(g).connect(_audioCtx.destination);
     src.start();
   } catch {
-    /* silent on browser restrictions */
   }
 }
 
-/* ── Categories ── */
-const CATEGORIES = ["All", "Reservations", "Support", "Stock", "Status", "Archived"] as const;
+const CATEGORIES = ["All", "Orders", "Support", "Stock", "Status", "Archived"] as const;
 type CategoryType = (typeof CATEGORIES)[number];
 
 export function NotificationCenter() {
@@ -102,7 +98,8 @@ export function NotificationCenter() {
     switch (n.type) {
       case "reservation_received":
       case "user_cancelled":
-        return "Reservations";
+      case "order_auto_cancelled":
+        return "Orders";
       case "contact_inquiry":
       case "contact_reply_received":
         return "Support";
@@ -120,7 +117,7 @@ export function NotificationCenter() {
   const categoryCounts = useMemo(() => {
     const counts: Record<CategoryType, number> = {
       All: notifications.length,
-      Reservations: 0,
+      Orders: 0,
       Support: 0,
       Stock: 0,
       Status: 0,
@@ -170,6 +167,7 @@ export function NotificationCenter() {
   };
 
   const handleNotificationClick = (notification: SystemNotification) => {
+    setPopoverOpened(false);
     setSelectedNotification(notification);
     if (!notification.readBy?.includes(profile?.id || "")) {
       handleMarkAsRead(notification.id);
@@ -206,6 +204,12 @@ export function NotificationCenter() {
         return (
           <ThemeIcon size="sm" radius="md" color="red" variant="light" className="shrink-0 mt-0.5">
             <X size={14} />
+          </ThemeIcon>
+        );
+      case "order_auto_cancelled":
+        return (
+          <ThemeIcon size="sm" radius="md" color="orange" variant="light" className="shrink-0 mt-0.5">
+            <Clock size={14} />
           </ThemeIcon>
         );
       default:
@@ -255,7 +259,6 @@ export function NotificationCenter() {
         </Popover.Target>
 
         <Popover.Dropdown p={0} className="w-full max-w-[calc(100vw-1rem)] overflow-hidden rounded-md border-0 bg-white shadow-lg dark:bg-[#111722]">
-          {/* Header */}
           <div className="flex items-center justify-between px-3 py-2 border-b border-slate-100 dark:border-white/5">
             <div className="flex items-center gap-2">
               <span className="text-[13px] font-semibold text-slate-900 dark:text-white tracking-tight">
@@ -282,7 +285,6 @@ export function NotificationCenter() {
             )}
           </div>
 
-          {/* Spring Pill Filter Bar (Rauno Freiberg craft inspired) */}
           <div className="overflow-x-auto overscroll-x-contain border-b border-slate-100 px-3 py-1.5 [scrollbar-width:thin] dark:border-white/5 sm:[scrollbar-width:none] sm:[&::-webkit-scrollbar]:hidden" aria-label="Alert category filters">
             <div className="flex min-w-max items-center gap-1.5 py-0.5 sm:min-w-full">
               {CATEGORIES.map((cat) => {
@@ -325,7 +327,6 @@ export function NotificationCenter() {
             </div>
           </div>
 
-          {/* Alerts List with Staggered Transition */}
           <div className="max-h-[340px] overflow-y-auto">
             {loading ? (
               <div className="flex items-center justify-center h-32">
@@ -439,7 +440,6 @@ export function NotificationCenter() {
             )}
           </div>
 
-          {/* Footer View Audit Log */}
           <div className="p-2 border-t border-slate-100 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02]">
             <Button
               variant="subtle"
@@ -459,7 +459,6 @@ export function NotificationCenter() {
         </Popover.Dropdown>
       </Popover>
 
-      {/* Mantine Alert Details Modal */}
       <Modal
         opened={!!selectedNotification}
         onClose={() => setSelectedNotification(null)}
@@ -544,6 +543,28 @@ export function NotificationCenter() {
                 className="text-xs font-semibold"
               >
                 Open Inquiry
+              </Button>
+            ) : selectedNotification?.type === 'reservation_received' ||
+                selectedNotification?.type === 'user_cancelled' ||
+                selectedNotification?.type === 'order_auto_cancelled' ||
+                (selectedNotification?.type === 'status_changed' && Boolean(selectedNotification?.targetId)) ? (
+              <Button
+                color="cyan"
+                size="xs"
+                radius="md"
+                leftSection={<ExternalLink size={14} />}
+                onClick={() => {
+                  const orderId = selectedNotification?.targetId;
+                  setSelectedNotification(null);
+                  router.push(
+                    orderId
+                      ? `/admin?tab=orders&orderId=${encodeURIComponent(orderId)}`
+                      : "/admin?tab=orders"
+                  );
+                }}
+                className="text-xs font-semibold"
+              >
+                Open Orders
               </Button>
             ) : (
               <Button

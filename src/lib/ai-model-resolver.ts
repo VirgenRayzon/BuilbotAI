@@ -1,11 +1,3 @@
-/**
- * ai-model-resolver.ts — Centralized resolution of the active AI model.
- * Inspects Firestore `siteSettings/main` (or fallback environment variables)
- * to determine whether to use the Default Gemini API (gemini-2.5-flash)
- * or the fine-tuned Vertex AI model.
- *
- * Includes automatic degradation detection, fallback handling, and Service Account token management.
- */
 
 import { getAdminFirestore } from '@/firebase/server-init';
 import { createGoogleGenerativeAI } from '@ai-sdk/google';
@@ -35,7 +27,7 @@ export interface ActiveAiModelConfig {
     isDegraded: boolean;
 }
 
-export const DEFAULT_MODEL = 'gemini-2.5-flash';
+export const DEFAULT_MODEL = 'gemini-3.8-flash';
 export const DEFAULT_TUNED_MODEL_ID = 'projects/781722135778/locations/us-central1/endpoints/2302171190132736000';
 export const TUNED_MODEL_RESOURCE_ID = 'projects/781722135778/locations/us-central1/models/2614243376421142528';
 export const TUNED_ENDPOINT_RESOURCE_ID = 'projects/781722135778/locations/us-central1/endpoints/2302171190132736000';
@@ -49,15 +41,13 @@ interface CachedSettingsData {
     location: string;
 }
 
-// In-memory cache to prevent excessive Firestore reads across rapid chat messages & flows
 let cachedSettings: CachedSettingsData | null = null;
 let lastCacheTime = 0;
-const CACHE_TTL_MS = 15000; // 15 seconds cache
+const CACHE_TTL_MS = 15000;
 
-// Degradation circuit breaker for fine-tuned model
 let isTunedModelDegraded = false;
 let degradedUntil = 0;
-const DEGRADED_COOLDOWN_MS = 60000; // 60 seconds cooldown if permission/network error occurs
+const DEGRADED_COOLDOWN_MS = 60000;
 
 export function markTunedModelDegraded(reason: string) {
     isTunedModelDegraded = true;
@@ -81,9 +71,7 @@ export function isCurrentlyDegraded(): boolean {
 export function normalizeModelId(rawId?: string): string {
     if (!rawId) return DEFAULT_TUNED_MODEL_ID;
     let normalized = rawId.trim();
-    // Normalize typo project 7817221357778 (4 sevens) -> 781722135778 (3 sevens)
     normalized = normalized.replace('7817221357778', '781722135778');
-    // If user configured the model registry ID '2614243376421142528', map to the active deployed endpoint '2302171190132736000'
     if (normalized.includes('2614243376421142528')) {
         normalized = TUNED_ENDPOINT_RESOURCE_ID;
     }
@@ -111,7 +99,8 @@ export async function getActiveAiModelConfig(feature?: AiFeatureKey): Promise<Ac
                     rawModelId = process.env.GEMINI_FINE_TUNED_MODEL;
                 }
                 if (data?.defaultGeminiModel?.trim()) {
-                    configuredDefaultGeminiModel = data.defaultGeminiModel.trim();
+                    const candidate = data.defaultGeminiModel.trim();
+                    configuredDefaultGeminiModel = (candidate === 'gemini-2.5-pro' || candidate === 'gemini-2.5-flash') ? 'gemini-3.8-flash' : candidate;
                 }
 
                 if (data?.featureModelRouting) {
@@ -121,7 +110,6 @@ export async function getActiveAiModelConfig(feature?: AiFeatureKey): Promise<Ac
                         prebuiltAdvisor: data.featureModelRouting.prebuiltAdvisor === 'finetuned' ? 'finetuned' : 'default',
                     };
                 } else {
-                    // Fall back to global aiModelProvider if featureModelRouting hasn't been configured yet
                     featureRouting = {
                         chatbot: globalProvider,
                         buildAdvisor: globalProvider,
@@ -193,25 +181,16 @@ export async function getActiveAiModelConfig(feature?: AiFeatureKey): Promise<Ac
     };
 }
 
-/**
- * Returns model identifier formatted for Genkit flows:
- * e.g. 'googleai/gemini-2.5-flash' or fine-tuned model path
- */
 export async function getGenkitModelName(feature?: AiFeatureKey): Promise<string> {
     const config = await getActiveAiModelConfig(feature);
     if (config.isFineTuned && !config.isDegraded) {
-        // If the path already has a provider prefix, return as is
         if (config.modelId.startsWith('vertexai/')) return config.modelId;
         if (config.modelId.startsWith('googleai/')) return config.modelId;
-        // Vertex AI Genkit plugin supports vertexai/modelName
         return `vertexai/${config.modelId}`;
     }
     return `googleai/${config.modelId || DEFAULT_MODEL}`;
 }
 
-/**
- * Invalidate model cache when a Super Admin changes the model in settings
- */
 export function invalidateAiModelCache() {
     cachedSettings = null;
     lastCacheTime = 0;
@@ -220,9 +199,6 @@ export function invalidateAiModelCache() {
     markTunedModelHealthy();
 }
 
-/**
- * Acquire Google Cloud OAuth2 Access Token for Vertex AI invocation
- */
 let cachedAccessToken: string | null = null;
 let tokenExpiry = 0;
 
@@ -250,7 +226,7 @@ export async function getVertexAccessToken(forceRefresh = false): Promise<string
             const tokenResponse = await client.getAccessToken();
             if (tokenResponse.token) {
                 cachedAccessToken = tokenResponse.token;
-                tokenExpiry = now + 3500 * 1000; // ~1 hour
+                tokenExpiry = now + 3500 * 1000;
                 return cachedAccessToken;
             }
         } catch (err) {
@@ -258,7 +234,6 @@ export async function getVertexAccessToken(forceRefresh = false): Promise<string
         }
     }
 
-    // Fallback: Attempt Google Application Default Credentials (ADC)
     try {
         const auth = new GoogleAuth({
             scopes: ['https://www.googleapis.com/auth/cloud-platform']
@@ -271,16 +246,11 @@ export async function getVertexAccessToken(forceRefresh = false): Promise<string
             return cachedAccessToken;
         }
     } catch {
-        // No local ADC found
     }
 
     return null;
 }
 
-/**
- * Resolves the active LanguageModel instance for Vercel AI SDK (Chat Route & Server Actions).
- * Automatically provides fallback to Gemini 2.5 Flash if fine-tuned model cannot be initialized.
- */
 export async function getLanguageModelForChat(options?: { forceDefault?: boolean; feature?: AiFeatureKey }): Promise<{
     model: LanguageModel;
     modelId: string;
@@ -325,12 +295,9 @@ export async function getLanguageModelForChat(options?: { forceDefault?: boolean
             };
         }
 
-        // Custom fetch that injects Google Cloud OAuth2 Bearer token, rewrites endpoints path, and strips API key header
         const vertexFetch = async (url: string | URL | Request, init?: RequestInit) => {
             const currentToken = await getVertexAccessToken();
             let finalUrl = String(url);
-            // @ai-sdk/google automatically prepends /models/ to the model name.
-            // If targeting a Vertex AI Endpoint (/endpoints/...), rewrite /models/endpoints/ -> /endpoints/
             finalUrl = finalUrl.replace('/models/endpoints/', '/endpoints/');
 
             const headers = new Headers(init?.headers);
@@ -347,13 +314,11 @@ export async function getLanguageModelForChat(options?: { forceDefault?: boolean
             fetch: vertexFetch,
         });
 
-        // Determine clean model resource for Vertex AI
         let cleanModelName = config.modelId;
         const endpointsIdx = cleanModelName.indexOf('/endpoints/');
         const modelsIdx = cleanModelName.indexOf('/models/');
 
         if (endpointsIdx !== -1) {
-            // Target the deployed endpoint
             cleanModelName = `endpoints/${cleanModelName.slice(endpointsIdx + 11)}`;
         } else if (modelsIdx !== -1) {
             cleanModelName = `publishers/google/models/${cleanModelName.slice(modelsIdx + 8)}`;
@@ -379,12 +344,6 @@ export async function getLanguageModelForChat(options?: { forceDefault?: boolean
     }
 }
 
-/**
- * Safe wrapper around ai.generate() for Genkit flows.
- * Attempts execution with the configured model (default or fine-tuned);
- * if the fine-tuned model throws any error (e.g. 403, 404, network), it
- * immediately falls back to googleai/gemini-2.5-flash and marks the tuned model degraded.
- */
 export async function safeGenkitGenerate<T = any>(
     aiInstance: { generate: (options: any) => Promise<T> },
     options: any

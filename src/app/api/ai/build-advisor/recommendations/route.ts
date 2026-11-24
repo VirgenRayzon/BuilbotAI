@@ -1,15 +1,20 @@
 import { generateText, Output } from 'ai';
-import { createHash } from 'node:crypto';
 import { after } from 'next/server';
 import { getLanguageModelForChat } from '@/lib/ai-model-resolver';
 import { DEFAULT_BUILD_ADVISOR_PROMPT } from '@/lib/constants/default-system-prompts';
 import { AdvisorTiming } from '@/lib/advisor-timing';
 import { retrieveLocalKnowledge } from '@/lib/knowledge-retriever';
 import { getAdvisorInventoryMenu } from '@/lib/advisor-inventory';
+import { getStructuredInventory } from '@/lib/inventory-fetcher';
+import { recommendFromInventory } from '@/lib/rule-based-advisor';
 import { parsePesoBudget } from '@/lib/parse-peso-budget';
 import { validateAdvisorBuild } from '@/lib/validate-advisor-build';
 import { getAdminFirestore } from '@/firebase/server-init';
 import { AdvisorWebSearchError, researchAdvisorHardware } from '@/lib/advisor-web-research';
+import { buildAdvisorRecommendationCacheKey } from '@/lib/server/ai-cache-keys';
+import { getCatalogMeta } from '@/lib/server/catalog-meta-store';
+import { computeExpiresAt, isExpiredAt } from '@/lib/ttl-policies';
+import { authorizeAiRequest, isAiRouteAuthError } from '@/lib/server/ai-route-auth';
 import {
   AiBuildAdvisorRecommendationsInputSchema,
   AiBuildAdvisorRecommendationsOutputSchema,
@@ -20,23 +25,13 @@ export const maxDuration = 180;
 
 const CACHE_COLLECTION = 'ai_recommendation_cache_v3';
 
-const generateCacheKey = (input: AiBuildAdvisorRecommendationsInput, prompt: string, modelSettings: unknown) =>
-  createHash('sha256').update(JSON.stringify({
-    version: 12,
-    intendedUse: input.intendedUse.trim().toLowerCase(),
-    budget: input.budget.trim().toLowerCase(),
-    performanceLevel: input.performanceLevel.trim().toLowerCase(),
-    additionalNotes: (input.additionalNotes || '').trim().toLowerCase(),
-    allowFlexibleBudget: !!input.allowFlexibleBudget,
-    allowAiSearch: !!input.allowAiSearch,
-    allowWebSearch: !!input.allowWebSearch,
-    prompt,
-    modelSettings,
-  })).digest('hex');
-
 export async function POST(req: Request) {
   const timing = new AdvisorTiming('recommendation');
   try {
+    await authorizeAiRequest(req, {
+      allowGuestWithRateLimit: true,
+      maxPerMinute: 15,
+    });
     const rawBody = await req.json();
     const parseResult = AiBuildAdvisorRecommendationsInputSchema.safeParse(rawBody);
 
@@ -53,10 +48,12 @@ export async function POST(req: Request) {
       return Response.json({ error: 'Enter a valid budget in PHP.' }, { status: 400 });
     }
     const budgetLimit = budget * (input.allowFlexibleBudget ? 1.3 : 1);
+    if (!input.allowAiSearch && input.allowWebSearch) {
+      return Response.json({ error: 'Web Search requires AI Recommendations to be enabled.' }, { status: 400 });
+    }
     const db = getAdminFirestore();
     let settingsData: FirebaseFirestore.DocumentData | undefined;
 
-    // 0. Check Maintenance Mode (Kill Switch)
     try {
       const settingsSnap = await db.collection('siteSettings').doc('main').get();
       settingsData = settingsSnap.data();
@@ -71,28 +68,46 @@ export async function POST(req: Request) {
     }
     timing.mark('settings');
 
-    // The same settings snapshot supplies the maintenance flag and active prompt.
+    if (!input.allowAiSearch) {
+      const categories = ['cpu', 'gpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooler'];
+      const inventory = (await Promise.all(categories.map(category => getStructuredInventory(category, undefined, 50, true)))).flat();
+      timing.mark('inventory');
+      const output = recommendFromInventory(input, inventory, budgetLimit);
+      if (!output) {
+        timing.finish('error', { reason: 'no_compatible_inventory_build' });
+        return Response.json({ error: 'No compatible in-stock build fits this budget and workload. Try increasing the budget or enabling AI Recommendations.' }, { status: 422 });
+      }
+      timing.finish('rules_based');
+      return new Response(JSON.stringify(output), { headers: { 'Content-Type': 'text/plain; charset=utf-8' } });
+    }
+
     const storedPrompt = settingsData?.systemPrompts?.buildAdvisor;
     const customSystemPrompt = typeof storedPrompt === 'string' && storedPrompt.trim()
       ? storedPrompt.trim()
       : DEFAULT_BUILD_ADVISOR_PROMPT;
-    const cacheKey = generateCacheKey(input, customSystemPrompt, {
-      routing: settingsData?.featureModelRouting?.buildAdvisor || settingsData?.aiModelProvider,
-      defaultModel: settingsData?.defaultGeminiModel,
-      tunedModel: settingsData?.fineTunedModelId,
-      inventoryRevision: settingsData?.advisorInventoryRevision,
+    const { catalogVersion } = await getCatalogMeta(db);
+    const cacheKey = buildAdvisorRecommendationCacheKey({
+      input,
+      prompt: customSystemPrompt,
+      catalogVersion,
+      modelSettings: {
+        routing: settingsData?.featureModelRouting?.buildAdvisor || settingsData?.aiModelProvider,
+        defaultModel: settingsData?.defaultGeminiModel,
+        tunedModel: settingsData?.fineTunedModelId,
+        inventoryRevision: settingsData?.advisorInventoryRevision,
+      },
     });
 
-    // Web Search requests must perform fresh research for each generation.
     if (!input.allowWebSearch) try {
       const cacheRef = db.collection(CACHE_COLLECTION).doc(cacheKey);
       const cacheSnap = await cacheRef.get();
 
       if (cacheSnap.exists) {
         const cacheData = cacheSnap.data();
+        const isExpired = isExpiredAt(cacheData?.expiresAt);
         const ageMs = Date.now() - (cacheData?.timestamp || 0);
         const maxAgeMs = input.allowAiSearch ? 60 * 60 * 1000 : 5 * 60 * 1000;
-        if (ageMs < maxAgeMs && cacheData?.output) {
+        if (!isExpired && ageMs < maxAgeMs && cacheData?.output) {
           console.log(`[Build Advisor API] Cache Hit for key: ${cacheKey}`);
           timing.mark('cache');
           timing.finish('cache_hit');
@@ -118,9 +133,7 @@ export async function POST(req: Request) {
 
     console.log(`[Build Advisor API] Cache Miss for key: ${cacheKey}. Generating a validated build (AI Search: ${!!input.allowAiSearch}, Web Search: ${!!input.allowWebSearch})...`);
 
-    // 2. Fast Context Gathering using Internal/Local Knowledge and Store Inventory
     const query = `${input.intendedUse} ${input.performanceLevel} ${input.additionalNotes || ''}`;
-    // Candidate selection, local knowledge, and model routing run together.
     const [knowledgeResults, inventory, resolved] = await Promise.all([
       retrieveLocalKnowledge(query, 3),
       getAdvisorInventoryMenu(budgetLimit),
@@ -140,10 +153,8 @@ export async function POST(req: Request) {
     const knowledgeContext = knowledgeResults.join('\n\n');
     const storeInventory = inventory.menu;
 
-    // 3. Model resolution ran alongside knowledge and inventory retrieval.
     console.log(`[Build Advisor API] Using language model: ${resolved.modelId} (isFineTuned: ${resolved.isFineTuned}, isFallback: ${resolved.isFallback})`);
 
-    // 4. Construct Prompt
     const promptText = `
 You are an expert PC building advisor specializing in the Philippine market. Your goal is to recommend a set of compatible core components (CPU, GPU, Motherboard, RAM, Storage, PSU, Case, Cooler) for a user based on their specific needs.
 
@@ -170,12 +181,14 @@ ${input.allowAiSearch
   : `3. INVENTORY AVAILABILITY (STRICT STORE INVENTORY ONLY - STRICT REJECTION RULE):
    - You MUST ONLY recommend components that are explicitly listed in the STORE_INVENTORY_MENU above.
    - DO NOT recommend any parts outside the menu. DO NOT hallucinate inventory items. Ensure model names match exactly.
-   - Every component MUST have a non-empty partId copied from its [ID: ...] entry. Copy its exact listed price.
+   - Every physical component MUST have a non-empty partId copied from its [ID: ...] entry. Copy its exact listed price.
+   - For a CPU whose menu entry says Integrated graphics is available, you may use GPU partId "included-integrated-gpu", GPU estimatedPrice 0, and a model describing that CPU's included graphics. This is the only GPU without a catalog ID. Never use it with a CPU whose menu says No.
    - If the available inventory cannot make a complete compatible build within budget, do not invent stock or select incompatible parts. The server will reject the build and show the user an error.`
 }
 4. COMPATIBILITY: Ensure all recommended components are 100% compatible.
    Match CPU and motherboard sockets, motherboard and RAM generation, motherboard storage slots, motherboard and case form factor, and cooler radiator size with the case. The inventory menu includes these specifications when available.
    For each part chosen from STORE_INVENTORY_MENU, copy its exact ID to partId and its exact listed price to estimatedPrice.
+   An integrated-only build is appropriate for office, development, media, or light gaming goals when the CPU provides graphics. Set GPU partId to "included-integrated-gpu" and GPU estimatedPrice to 0. Explain that it uses shared system RAM and is not a dedicated card. Do not choose it for demanding gaming or GPU compute goals.
    For each external-market part (empty partId), provide its actual compatibility fields in the schema: CPU socket; motherboard socket, RAM type, form factor, NVMe/SATA slots; RAM type; storage type; case motherboard support and maximum radiator size; cooler radiator size (0 for air cooling). If these facts are unknown, choose a store part with known compatibility instead. The server checks the complete build using these fields.
    Before finalizing, add all eight estimatedPrice values and stay within the selected budget limit.
 5. BUDGET ADHERENCE: 
@@ -198,8 +211,6 @@ Please generate the recommendations strictly matching the schema with realistic 
 
     const systemInstruction = customSystemPrompt || DEFAULT_BUILD_ADVISOR_PROMPT;
 
-    // Validate before sending any part to the client. An invalid attempt is retried
-    // with the exact failures, and is never displayed or cached.
     let retryFeedback = '';
     for (let attempt = 1; attempt <= 3; attempt++) {
       const { output, usage } = await generateText({
@@ -209,6 +220,8 @@ Please generate the recommendations strictly matching the schema with realistic 
         prompt: promptText + retryFeedback,
         ...(resolved.modelId.startsWith('gemini-2.5-flash') && !resolved.isFineTuned
           ? { providerOptions: { google: { thinkingConfig: { thinkingBudget: 0 } } } }
+          : resolved.modelId.startsWith('gemini-3.5-flash-lite') && !resolved.isFineTuned
+          ? { providerOptions: { google: { thinkingConfig: { thinkingLevel: 'minimal' } } } }
           : {}),
       });
       const issues = validateAdvisorBuild(output, inventory.selected, budgetLimit, !!input.allowAiSearch);
@@ -225,7 +238,12 @@ Please generate the recommendations strictly matching the schema with realistic 
         });
         if (!input.allowWebSearch) after(async () => {
           try {
-            await db.collection(CACHE_COLLECTION).doc(cacheKey).set({ input, output, timestamp: Date.now() });
+            await db.collection(CACHE_COLLECTION).doc(cacheKey).set({
+              input,
+              output,
+              timestamp: Date.now(),
+              expiresAt: computeExpiresAt('aiRecommendationCache'),
+            });
           } catch (err) {
             console.warn('[Build Advisor API] Failed to cache validated build:', err);
           }
@@ -246,6 +264,9 @@ Please generate the recommendations strictly matching the schema with realistic 
     }, { status: 422 });
   } catch (error: any) {
     timing.finish('error');
+    if (isAiRouteAuthError(error)) {
+      return error.toResponse();
+    }
     console.error("[Build Advisor API] Error generating recommendations stream:", error);
     return new Response(
       JSON.stringify({ error: error.message || "Failed to process AI recommendations stream." }),

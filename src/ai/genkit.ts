@@ -32,5 +32,5 @@ export const ai = genkit({
         : {}),
     }),
   ],
-  model: 'googleai/gemini-2.5-flash',
+  model: 'googleai/gemini-3.8-flash',
 });

@@ -1,17 +1,25 @@
 "use client";
 
-import { AnimatePresence } from "framer-motion";
-import { NeutralPageLoader } from "@/components/neutral-page-loader";
+import { AnimatePresence, motion } from "framer-motion";
+import { LoaderCard } from "@/components/loading/loader-card";
 
 interface SignOutLoaderProps {
   visible: boolean;
 }
 
-/** Mirrors the account-verification loader during the short sign-out transition. */
 export function SignOutLoader({ visible }: SignOutLoaderProps) {
   return (
     <AnimatePresence>
-      {visible && <NeutralPageLoader isOverlay message="Signing you out..." />}
+      {visible && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-sm"
+        >
+          <LoaderCard message="Signing you out..." />
+        </motion.div>
+      )}
     </AnimatePresence>
   );
 }

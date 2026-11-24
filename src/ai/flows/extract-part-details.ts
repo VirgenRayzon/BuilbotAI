@@ -1,24 +1,18 @@
 'use server';
-/**
- * @fileOverview A Genkit flow for extracting PC part details using AI.
- *
- * - extractPartDetails - A function that takes a part name and returns structured details.
- * - ExtractPartDetailsInput - The input type for the extractPartDetails function.
- * - ExtractPartDetailsOutput - The return type for the extractPartDetails function.
- */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 import fs from 'fs';
 import { retrieveHardwareVectorSpecs } from '@/lib/vector-retriever';
 import { getGenkitModelName, safeGenkitGenerate } from '@/lib/ai-model-resolver';
+import { hasExactHardwareModelMatch } from '@/lib/hardware-model-identity';
+import { getChatPartSpecifications } from '@/lib/chat-part-specifications';
 
 const DEBUG_LOG = 'grounding-debug.log';
 
 function logDebug(msg: string) {
   fs.appendFileSync(DEBUG_LOG, `[${new Date().toISOString()}] ${msg}\n`);
 }
-
 
 const SpecificationSchema = z.object({
   key: z.string().describe('The name of the specification (e.g., "Cores", "Socket"). Avoid vendor-specific keys like "CUDA Cores" for non-NVIDIA GPUs.'),
@@ -47,7 +41,7 @@ const ExtractPartDetailsOutputSchema = z.object({
     depth: z.number()
   }).optional().describe("Dimensions in mm. Vital for Case and GPU."),
   specifications: z.array(SpecificationSchema).describe('List of key-value specs.'),
-  packageType: z.enum(['TRAY', 'BOX']).optional().describe('CPU Package Type. TRAY (OEM/Bulk) or BOX (Retail with heatsink).'),
+  packageType: z.enum(['TRAY', 'BOX']).optional().describe('CPU package type. TRAY means OEM/bulk; BOX means retail packaging and does not imply a cooler is included. Record the actual included thermal solution separately in specifications when verified.'),
   description: z.string().optional().describe('Brief product highlights in Markdown format. MANDATORY: ALWAYS put each point on a "NEW PARAGRAPH". Start the description with a new paragraph and an asterisk (*). Use bold text for headers. Example: * **Feature**: Description.'),
 });
 export type ExtractPartDetailsOutput = z.infer<typeof ExtractPartDetailsOutputSchema>;
@@ -59,13 +53,14 @@ export async function extractPartDetails(input: ExtractPartDetailsInput): Promis
 
   let groundedContext = "";
 
-  // 1. Try Hardware Vector Storage (buildbot_hardware_vector in Firestore)
   try {
     const vectorResults = await retrieveHardwareVectorSpecs(input.partName, { limit: 1 });
 
-    if (vectorResults.length > 0) {
+    if (hasExactHardwareModelMatch(input.partName, vectorResults)) {
       groundedContext = vectorResults.join('\n\n');
-      logDebug("Successfully retrieved grounded context from Hardware Vector Store.");
+      logDebug("Successfully retrieved an exact model match from Hardware Vector Store.");
+    } else if (vectorResults.length > 0) {
+      logDebug("Hardware Vector Store returned only similar models. Running web search for exact verification.");
     } else {
       logDebug("Hardware Vector Store returned no matches.");
     }
@@ -73,7 +68,6 @@ export async function extractPartDetails(input: ExtractPartDetailsInput): Promis
     logDebug(`Vector store search failed: ${error.message}`);
   }
 
-  // 2. Fallback notice if grounded context is empty
   if (!groundedContext) {
     logDebug("No grounded context found. Falling back to general AI knowledge.");
   }
@@ -83,36 +77,18 @@ export async function extractPartDetails(input: ExtractPartDetailsInput): Promis
 
     const dynamicModel = await getGenkitModelName();
 
-    // Step 1: If no local database context, run a plain-text search to gather specs and pricing
     if (!groundedContext) {
       logDebug("Step 1: No local context found. Running web search pre-research...");
       console.log(`[Extract Part Details] Step 1: Running web search for: ${input.partName} using model ${dynamicModel}`);
-      const researchResponse = await safeGenkitGenerate(ai, {
-        model: dynamicModel,
-        prompt: `You are a PC hardware specification researcher.
-Research the following PC component and provide detailed specifications and current pricing:
-
-Component: ${input.partName}
-
-Provide:
-1. Full official name and brand.
-2. All key specifications (architecture, cores, clock speeds, memory, TDP, dimensions, etc.)
-3. Current street price in USD and estimated PHP price (multiply USD by 56).
-4. Category (CPU, GPU, Motherboard, RAM, Storage, PSU, Case, or Cooler).
-5. Performance score relative to modern high-end standards (0-100).
-
-Be as specific and detailed as possible with exact numbers.`,
-        config: {
-          temperature: 0,
-          googleSearchRetrieval: {},
-        },
-      });
-      webResearchContext = researchResponse.text;
+      const research = await getChatPartSpecifications(input.partName);
+      if (research.source === 'none') {
+        throw new Error(research.message || 'Google Search could not verify this exact component.');
+      }
+      webResearchContext = `${research.specs.join('\n\n')}\nSources:\n${research.sources.map(source => `${source.title}: ${source.url}`).join('\n')}`;
       logDebug("Step 1 complete. Web research context obtained.");
       console.log(`[Extract Part Details] Step 1 complete. Research context obtained.`);
     }
 
-    // Step 2: Structured output prompt WITHOUT googleSearchRetrieval
     logDebug("Step 2: Formatting part details into structured output...");
 
     const { getActiveSystemPrompt } = await import('@/lib/system-prompts');
@@ -133,10 +109,11 @@ LOGIC RULES:
 3. Verify the exact model and variant. Set exists to false when the exact requested product cannot be verified. Never substitute a similarly named product.
 4. Keep partName clean. Never prepend labels such as "Non-existent Component:" or put warnings in partName. Put the explanation in verificationMessage instead.
 5. Once you have the data, format it strictly into the requested JSON schema.
-6. For prices: Convert USD street price to PHP by multiplying by 56 (e.g., $1000 = ₱56,000) or use local Philippine retailer pricing.
+6. For prices: Convert USD street price to PHP by multiplying by 60 (e.g., $1000 = ₱60,000) or use local Philippine retailer pricing.
+7. For CPUs, do not infer an included cooler from BOX packaging. Include a 'Thermal Solution (PIB)' specification only when the source explicitly confirms its value; use 'Not Included' when the official page says so.
 
 SPECIFICATION RULES (Ensure these keys appear in the JSON 'specifications' array):
-- **CPU**: 'Architecture', 'Cores', 'Threads', 'Base Clock (GHz)', 'Boost Clock (GHz)', 'Socket', 'TDP / Peak Power', 'L3 Cache', 'Memory Support', 'Integrated Graphics'.
+- **CPU**: 'Architecture', 'Cores', 'Threads', 'Base Clock (GHz)', 'Boost Clock (GHz)', 'Socket', 'TDP / Peak Power', 'L3 Cache', 'Memory Support', 'Integrated Graphics', and verified 'Thermal Solution (PIB)' when available.
 - **GPU**: 'Chipset', 'VRAM Capacity', 'Memory Type', 'TGP / Power Draw (W)', 'Length (Depth) (mm)' (Integer), 'Slot Thickness' (Integer), 'Interface', 'CUDA Cores' or 'Stream Processors'.
 - **Motherboard**: 'Chipset', 'Socket', 'Form Factor' (MANDATORY: MUST be exactly one of: eatx, atx, matx, itx), 'RAM Type', 'SATA Slots' (Integer), 'NVMe Slots' (Integer), 'Back-Connect Support', 'Connectivity', 'Memory Slots', 'Memory Type'.
 - **RAM**: 'Generation', 'Capacity', 'Speed', 'CAS Latency', 'Stick Count'.
@@ -163,6 +140,20 @@ Output strictly the JSON object matching the schema.`;
     }
 
     logDebug(`Successfully extracted and formatted details for: ${input.partName}`);
+    if (response.output.category === 'CPU' && response.output.brand.toLowerCase() === 'amd' &&
+        /^(?:AMD\s+)?Ryzen(?:™)?\s+7\s+9850X3D\b/i.test(response.output.partName.trim())) {
+      return {
+        ...response.output,
+        specifications: [
+          ...response.output.specifications.filter(({ key }: { key: string }) =>
+            !/^(?:thermal solution(?: \(pib\))?|included cooler|cooler included|box cooler)$/i.test(key.trim())),
+          { key: 'Thermal Solution (PIB)', value: 'Not Included' },
+        ],
+      };
+    }
+    if (webResearchContext && response.output.exists === false) {
+      throw new Error('Grounded research found the exact component, but AI formatting rejected it. Please retry.');
+    }
     return response.output;
 
   } catch (error: any) {
@@ -170,4 +161,3 @@ Output strictly the JSON object matching the schema.`;
     throw error;
   }
 }
-

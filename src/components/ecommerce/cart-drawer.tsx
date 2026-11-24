@@ -40,12 +40,14 @@ import { formatCurrency, getOptimizedStorageUrl } from "@/lib/utils";
 import { OptimizedImage } from "@/components/ui/optimized-image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { usePublicFeatureAuth } from "@/hooks/use-public-feature-auth";
 
 const FREE_SHIPPING_THRESHOLD = 50000;
 
 export function CartDrawer() {
   const { isEcommerceMode, shouldCorruptImages } = useSiteSettings();
   const router = useRouter();
+  const { requireAuth } = usePublicFeatureAuth();
   const {
     cart,
     cartCount,
@@ -71,9 +73,11 @@ export function CartDrawer() {
   const amountRemaining = Math.max(0, FREE_SHIPPING_THRESHOLD - subtotal);
 
   const handleProceedToCheckout = () => {
-    setIsCartOpen(false);
-    setActiveReceiptOrder(null);
-    router.push("/checkout");
+    requireAuth(() => {
+      setIsCartOpen(false);
+      setActiveReceiptOrder(null);
+      router.push("/checkout");
+    });
   };
 
   return (
@@ -92,7 +96,6 @@ export function CartDrawer() {
         body: "p-0 flex flex-col flex-1 h-full overflow-hidden",
       }}
     >
-      {/* Top Drawer Header — Strictly Non-Wrapping Single Row */}
       <div className="px-4 py-3.5 border-b border-slate-200 dark:border-white/10 bg-slate-50/80 dark:bg-[#131926] flex items-center justify-between gap-3 shrink-0">
         <div className="flex items-center gap-3 min-w-0 flex-1">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-500/10 text-cyan-600 dark:bg-cyan-500/15 dark:text-cyan-400 border border-cyan-500/20">
@@ -137,7 +140,6 @@ export function CartDrawer() {
         </div>
       </div>
 
-      {/* Free Express Shipping Meter */}
       <div className="px-4 py-2.5 bg-cyan-500/5 dark:bg-cyan-500/10 border-b border-cyan-500/20 shrink-0">
         <div className="flex items-center justify-between gap-2 mb-1.5">
           <div className="flex items-center gap-1.5 min-w-0">
@@ -161,7 +163,6 @@ export function CartDrawer() {
         />
       </div>
 
-      {/* Cart Items Area */}
       {cart.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
           <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-cyan-500/10 text-cyan-600 dark:text-cyan-400 mb-4">
@@ -223,7 +224,6 @@ export function CartDrawer() {
                 >
                   <Stack gap="xs">
                     <div className="flex items-start gap-3">
-                      {/* Item Thumbnail Image */}
                       <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-xl border border-slate-200/80 bg-white dark:border-white/10 dark:bg-[#0e131d]">
                         <OptimizedImage
                           src={resolvedImage}
@@ -282,7 +282,6 @@ export function CartDrawer() {
                       </div>
                     </div>
 
-                    {/* Assembly & Burn-In Service Badge for Custom Builds */}
                     {item.kind === "custom-build" && (
                       <Paper
                         withBorder
@@ -305,7 +304,6 @@ export function CartDrawer() {
                       </Paper>
                     )}
 
-                    {/* Expandable Component Breakdown for Custom Builds & Prebuilts */}
                     {hasSubComponents && (
                       <div>
                         <button
@@ -367,7 +365,6 @@ export function CartDrawer() {
                       </div>
                     )}
 
-                    {/* Quantity Stepper & Line Total */}
                     <div className="flex items-center justify-between gap-2 pt-1">
                       <div className="inline-flex items-center gap-1 rounded-lg border border-slate-200 dark:border-white/10 bg-white dark:bg-[#0e131d] px-1.5 py-0.5">
                         <button
@@ -410,7 +407,6 @@ export function CartDrawer() {
         </ScrollArea>
       )}
 
-      {/* Sticky Footer with Checkout CTA */}
       {cart.length > 0 && (
         <div className="p-4 border-t border-slate-200 dark:border-white/10 bg-slate-50/90 dark:bg-[#131926] space-y-3 shrink-0">
           <div className="space-y-1">

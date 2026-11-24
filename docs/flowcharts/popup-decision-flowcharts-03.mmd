@@ -26,3 +26,4 @@ flowchart TD
   Kind -- AI project delete or prompt reset --> AiConfirm{Confirm or cancel?}
   AiConfirm -- Cancel --> Return
   AiConfirm -- Confirm --> AiWrite[Delete browser project or reset stored prompt] --> Return
+  Return --> Finish([END])

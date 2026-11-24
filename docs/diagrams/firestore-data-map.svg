@@ -1,0 +1,117 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="1180" viewBox="0 0 1680 1180" role="img" aria-labelledby="title desc">
+<title id="title">BuildbotAI Firestore data map</title>
+<desc id="desc">Eight document groups with their key fields. Solid lines show subcollections. Dashed lines show IDs or copied item details used by the app.</desc>
+<defs><style>
+  text{font-family:Arial,Helvetica,sans-serif;fill:#1d2b3a}
+  .title{font-size:30px;font-weight:700}.subtitle{font-size:17px;fill:#506377}
+  .card{fill:#fff;stroke:#a7b6c4;stroke-width:2;rx:8}.bar{fill:#28618d}.heading{fill:#fff;font-size:18px;font-weight:700}
+  .field{font-size:16px}.key{font-weight:700}.muted{fill:#647789}.line{fill:none;stroke:#71889a;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round}
+  .ref{stroke-dasharray:8 7}.link-label{font-size:15px;font-weight:700;fill:#244969;paint-order:stroke;stroke:#fff;stroke-width:7px;stroke-linejoin:round}
+  .dot{fill:#fff;stroke:#71889a;stroke-width:2.5}
+</style></defs>
+<rect width="1680" height="1180" fill="#f8fafc"/>
+<text class="title" x="840" y="48" text-anchor="middle">BuildbotAI Firestore data map</text>
+<text class="subtitle" x="840" y="78" text-anchor="middle">Main document paths and the links the app uses</text>
+
+<!-- Connectors sit behind cards. Solid means a nested subcollection; dashed means an ID or copied data. -->
+<path class="line" d="M470 230 H615"/><circle class="dot" cx="470" cy="230" r="4"/><circle class="dot" cx="615" cy="230" r="4"/>
+<text class="link-label" x="543" y="217" text-anchor="middle">parent path</text>
+<path class="line" d="M470 345 H545 V480 H615"/><circle class="dot" cx="470" cy="345" r="4"/><circle class="dot" cx="615" cy="480" r="4"/>
+<text class="link-label" x="567" y="443" text-anchor="middle">parent path</text>
+<path class="line ref" d="M275 170 V115 H1385 V150"/><circle class="dot" cx="275" cy="170" r="4"/><circle class="dot" cx="1385" cy="150" r="4"/>
+<text class="link-label" x="850" y="107" text-anchor="middle">userId, when signed in</text>
+<path class="line ref" d="M275 410 V790"/><circle class="dot" cx="275" cy="410" r="4"/><circle class="dot" cx="275" cy="790" r="4"/>
+<text class="link-label" x="324" y="676">userId</text>
+<path class="line" d="M1385 375 V410"/><circle class="dot" cx="1385" cy="375" r="4"/><circle class="dot" cx="1385" cy="410" r="4"/>
+<text class="link-label" x="1482" y="398" text-anchor="middle">subcollection</text>
+<path class="line ref" d="M1025 280 H1100 V724 H1385 V790"/><circle class="dot" cx="1025" cy="280" r="4"/><circle class="dot" cx="1385" cy="790" r="4"/>
+<text class="link-label" x="1244" y="714" text-anchor="middle">parts[].partId</text>
+<path class="line ref" d="M615 555 H545 V735 H470 V790"/><circle class="dot" cx="615" cy="555" r="4"/><circle class="dot" cx="470" cy="790" r="4"/>
+<text class="link-label" x="525" y="724" text-anchor="middle">orderId</text>
+<path class="line ref" d="M500 862 H615"/><circle class="dot" cx="500" cy="862" r="4"/><circle class="dot" cx="615" cy="862" r="4"/>
+<text class="link-label" x="557" y="848" text-anchor="middle">prebuiltId</text>
+<path class="line ref" d="M1045 862 H1170"/><circle class="dot" cx="1045" cy="862" r="4"/><circle class="dot" cx="1170" cy="862" r="4"/>
+<text class="link-label" x="1108" y="848" text-anchor="middle">component IDs</text>
+<path class="line ref" d="M500 980 H545 V1112 H1385 V1060"/><circle class="dot" cx="500" cy="980" r="4"/><circle class="dot" cx="1385" cy="1060" r="4"/>
+<text class="link-label" x="964" y="1101" text-anchor="middle">items[] stores copied part details</text>
+
+<!-- Users -->
+<rect class="card" x="70" y="170" width="400" height="240"/>
+<path class="bar" d="M78 170 H462 Q470 170 470 178 V213 H70 V178 Q70 170 78 170Z"/>
+<text class="heading" x="88" y="198">users/{uid}</text>
+<text class="field" x="88" y="244"><tspan class="key">uid</tspan><tspan class="muted"> - Firebase account ID</tspan></text>
+<text class="field" x="88" y="277">email, name</text>
+<text class="field" x="88" y="310">isManager, isSuperAdmin</text>
+<text class="field" x="88" y="343">profile details</text>
+<text class="field muted" x="88" y="381">One document per account</text>
+
+<!-- Favorites -->
+<rect class="card" x="615" y="150" width="410" height="225"/>
+<path class="bar" d="M623 150 H1017 Q1025 150 1025 158 V193 H615 V158 Q615 150 623 150Z"/>
+<text class="heading" x="633" y="178">users/{uid}/favorites/{favoriteId}</text>
+<text class="field" x="633" y="224"><tspan class="key">favoriteId</tspan><tspan class="muted"> - saved build ID</tspan></text>
+<text class="field" x="633" y="257">name, source</text>
+<text class="field" x="633" y="290">parts[].partId, parts[].category</text>
+<text class="field" x="633" y="323">totalPrice, createdAt</text>
+
+<!-- Customer notifications -->
+<rect class="card" x="615" y="410" width="410" height="200"/>
+<path class="bar" d="M623 410 H1017 Q1025 410 1025 418 V453 H615 V418 Q615 410 623 410Z"/>
+<text class="heading" x="633" y="438">users/{uid}/notifications/{id}</text>
+<text class="field" x="633" y="484"><tspan class="key">id</tspan><tspan class="muted"> - alert ID</tspan></text>
+<text class="field" x="633" y="517">orderId or targetId</text>
+<text class="field" x="633" y="550">title, message, read</text>
+<text class="field" x="633" y="583">createdAt</text>
+
+<!-- Contact inquiries -->
+<rect class="card" x="1170" y="150" width="430" height="225"/>
+<path class="bar" d="M1178 150 H1592 Q1600 150 1600 158 V193 H1170 V158 Q1170 150 1178 150Z"/>
+<text class="heading" x="1188" y="178">contactInquiries/{inquiryId}</text>
+<text class="field" x="1188" y="224"><tspan class="key">inquiryId</tspan><tspan class="muted"> - conversation ID</tspan></text>
+<text class="field" x="1188" y="257">userId (may be empty)</text>
+<text class="field" x="1188" y="290">fullName, email, subject</text>
+<text class="field" x="1188" y="323">status, messageCount</text>
+
+<!-- Contact messages -->
+<rect class="card" x="1170" y="410" width="430" height="200"/>
+<path class="bar" d="M1178 410 H1592 Q1600 410 1600 418 V453 H1170 V418 Q1170 410 1178 410Z"/>
+<text class="heading" x="1188" y="438">.../messages/{messageId}</text>
+<text class="field" x="1188" y="484"><tspan class="key">messageId</tspan><tspan class="muted"> - message ID</tspan></text>
+<text class="field" x="1188" y="517">body, senderType</text>
+<text class="field" x="1188" y="550">senderId (may be empty)</text>
+<text class="field" x="1188" y="583">createdAt, emailStatus</text>
+
+<!-- Orders -->
+<rect class="card" x="70" y="790" width="430" height="250"/>
+<path class="bar" d="M78 790 H492 Q500 790 500 798 V833 H70 V798 Q70 790 78 790Z"/>
+<text class="heading" x="88" y="818">orders/{orderId}</text>
+<text class="field" x="88" y="864"><tspan class="key">orderId</tspan><tspan class="muted"> - reservation ID</tspan></text>
+<text class="field" x="88" y="897">userId, status, type</text>
+<text class="field" x="88" y="930">items[].id, name, price</text>
+<text class="field" x="88" y="963">totalPrice, createdAt</text>
+<text class="field" x="88" y="996">prebuiltId (when applicable)</text>
+
+<!-- Prebuilt systems -->
+<rect class="card" x="615" y="790" width="430" height="230"/>
+<path class="bar" d="M623 790 H1037 Q1045 790 1045 798 V833 H615 V798 Q615 790 623 790Z"/>
+<text class="heading" x="633" y="818">prebuiltSystems/{systemId}</text>
+<text class="field" x="633" y="864"><tspan class="key">systemId</tspan><tspan class="muted"> - complete PC ID</tspan></text>
+<text class="field" x="633" y="897">productId (when available)</text>
+<text class="field" x="633" y="930">name, tier, price</text>
+<text class="field" x="633" y="963">components: part IDs by category</text>
+<text class="field" x="633" y="996">isArchived (when set)</text>
+
+<!-- Inventory items -->
+<rect class="card" x="1170" y="790" width="430" height="270"/>
+<path class="bar" d="M1178 790 H1592 Q1600 790 1600 798 V833 H1170 V798 Q1170 790 1178 790Z"/>
+<text class="heading" x="1188" y="818">inventory/{category}/items/{partId}</text>
+<text class="field" x="1188" y="864"><tspan class="key">partId</tspan><tspan class="muted"> - part document ID</tspan></text>
+<text class="field" x="1188" y="897">productId (when available)</text>
+<text class="field" x="1188" y="930">name, category, brand</text>
+<text class="field" x="1188" y="963">price, stock</text>
+<text class="field" x="1188" y="996">specifications, imageUrl</text>
+<text class="field" x="1188" y="1029">isArchived (when set)</text>
+
+<path class="line" d="M70 1147 H135"/><text class="field" x="145" y="1153">Nested subcollection</text>
+<path class="line ref" d="M365 1147 H430"/><text class="field" x="440" y="1153">ID or copied data used by the app</text>
+</svg>

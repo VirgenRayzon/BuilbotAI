@@ -16,7 +16,6 @@ interface IdentityFieldsProps {
 export function IdentityFields({ form }: IdentityFieldsProps) {
     return (
         <div className="grid grid-cols-12 gap-8 items-start">
-            {/* Left Column: Image Preview */}
             <div className="col-span-12 md:col-span-4 sticky top-0">
                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary/70 mb-4 flex items-center gap-3">
                     <span className="inline-block w-4 h-px bg-primary/40" />
@@ -39,7 +38,6 @@ export function IdentityFields({ form }: IdentityFieldsProps) {
                 </div>
             </div>
 
-            {/* Right Column: Fields */}
             <div className="col-span-12 md:col-span-8 space-y-6">
                 <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-primary/70 mb-4 flex items-center gap-3">
                     <span className="inline-block w-4 h-px bg-primary/40" />

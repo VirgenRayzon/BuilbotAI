@@ -2,8 +2,12 @@
 
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import {
+  getNextFulfillmentStage,
+  type FulfillmentStage,
+} from "@/lib/order-fulfillment";
 import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore";
-import { useFirestore } from "@/firebase";
+import { useFirestore, useUser } from "@/firebase";
 import { inventoryItemPath, inventoryItemsPath } from "@/lib/inventory-paths";
 import { useToast } from "@/hooks/use-toast";
 
@@ -46,6 +50,8 @@ export function isInvalidPlaceholderUrl(url?: string): boolean {
 }
 
 export interface EcommerceSubComponent {
+  id?: string;
+  productId?: string;
   category: string;
   name: string;
   price: number;
@@ -54,6 +60,7 @@ export interface EcommerceSubComponent {
 
 export interface EcommerceCartItem {
   id: string;
+  productId?: string;
   kind: EcommerceItemKind;
   name: string;
   price: number;
@@ -68,13 +75,17 @@ export interface EcommerceCartItem {
 }
 
 export type ShippingMethodId = "standard_courier" | "sameday_express" | "store_pickup";
-export type PaymentMethodId = "gcash" | "maya" | "qrph" | "card" | "bank_transfer" | "cod";
-export type FulfillmentStage =
-  | "order_placed"
-  | "payment_verified"
-  | "assembling_testing"
-  | "out_for_delivery"
-  | "delivered";
+export type PaymentMethodId =
+  | "cod"
+  | "gcash_simulated"
+  | "paymongo_simulated"
+  | "card_simulated"
+  | "gcash"
+  | "maya"
+  | "qrph"
+  | "card"
+  | "bank_transfer";
+export type { FulfillmentStage } from "@/lib/order-fulfillment";
 
 export interface ShippingAddress {
   fullName: string;
@@ -90,6 +101,7 @@ export interface ShippingAddress {
 
 export interface MockEcommerceOrder {
   id: string;
+  firestoreOrderId?: string;
   orderNumber: string;
   createdAt: string;
   items: EcommerceCartItem[];
@@ -101,7 +113,16 @@ export interface MockEcommerceOrder {
   paymentMethod: PaymentMethodId;
   paymentLabel: string;
   paymentReference: string;
-  paymentStatus: "Paid (Verified)" | "Pending COD" | "Awaiting Bank Transfer";
+  paymentStatus:
+    | "Paid (Verified)"
+    | "Paid (GCash)"
+    | "Paid (PayMongo)"
+    | "Payment Pending"
+    | "Payment Failed"
+    | "Payment Cancelled"
+    | "Unpaid (Pay on Delivery)"
+    | "Pending COD"
+    | "Awaiting Bank Transfer";
   installmentPlan?: string;
   fulfillmentStage: FulfillmentStage;
   includeCrateProtection: boolean;
@@ -131,13 +152,52 @@ interface EcommerceContextType {
   updateQuantity: (id: string, quantity: number) => void;
   toggleAssemblyOption: (id: string) => void;
   clearCart: () => void;
-  placeMockOrder: (payload: Omit<MockEcommerceOrder, "id" | "orderNumber" | "createdAt" | "trackingNumber" | "paymentReference">) => MockEcommerceOrder;
+  placeMockOrder: (
+    payload: Omit<MockEcommerceOrder, "id" | "orderNumber" | "createdAt" | "trackingNumber" | "paymentReference"> & {
+      id?: string;
+      firestoreOrderId?: string;
+      orderNumber?: string;
+      createdAt?: string;
+      trackingNumber?: string;
+      paymentReference?: string;
+    }
+  ) => MockEcommerceOrder;
   advanceOrderStage: (orderId: string) => void;
   resetDemoOrders: () => void;
 }
 
 const CART_STORAGE_KEY = "buildbot_ecommerce_cart_v1";
 const ORDERS_STORAGE_KEY = "buildbot_ecommerce_orders_v2";
+
+type EcommerceStorageScope = "guest" | `user:${string}`;
+
+function getCartStorageKey(scope: EcommerceStorageScope): string {
+  return `${CART_STORAGE_KEY}:${scope}`;
+}
+
+function getOrdersStorageKey(scope: EcommerceStorageScope): string {
+  return `${ORDERS_STORAGE_KEY}:${scope}`;
+}
+
+function sanitizeStoredOrders(parsedOrders: MockEcommerceOrder[]): MockEcommerceOrder[] {
+  return parsedOrders.map((o) => ({
+    ...o,
+    courierName: o.courierName
+      ? o.courierName
+          .replace(/[\u7ab6\uff62\u30fb\u9244]+/g, " — ")
+          .replace(/Center\s*\?\s*Cubao/g, "Center — Cubao")
+      : o.courierName,
+    estimatedDelivery: o.estimatedDelivery
+      ? o.estimatedDelivery
+          .replace(/[\u7ab6\uff62\u30fb\u9244]+/g, "–")
+          .replace(/Ready in 2\?4 Hours/g, "Ready in 2–4 Hours")
+          .replace(/3\?5 Business Days/g, "3–5 Business Days")
+      : o.estimatedDelivery,
+    paymentLabel: o.paymentLabel
+      ? o.paymentLabel.replace(/\s*\(Simulated[^)]*\)/gi, "")
+      : o.paymentLabel,
+  }));
+}
 
 const DEFAULT_DEMO_ORDERS: MockEcommerceOrder[] = [
   {
@@ -179,28 +239,20 @@ const DEFAULT_DEMO_ORDERS: MockEcommerceOrder[] = [
       postalCode: "1109",
       notes: "In-Store Pickup at Netcodex Computer Center (Monday – Sunday, 10:00 AM – 7:00 PM)",
     },
-    paymentMethod: "gcash",
-    paymentLabel: "GCash via QRPh Instant Pay",
-    paymentReference: "GCASH-7749201842",
-    paymentStatus: "Paid (Verified)",
+    paymentMethod: "gcash_simulated",
+    paymentLabel: "GCash",
+    paymentReference: "GCASH-20261101-774920",
+    paymentStatus: "Paid (GCash)",
     fulfillmentStage: "assembling_testing",
     includeCrateProtection: false,
-    voucherCode: "NETCODEX500",
+    voucherCode: "BUILDBOT1000",
     subtotal: 94500,
     shippingFee: 0,
     protectionFee: 0,
-    discountAmount: 500,
-    vatAmount: 10071.43,
-    total: 94000,
+    discountAmount: 1000,
+    vatAmount: 10017.86,
+    total: 93500,
   },
-];
-
-const STAGE_ORDER: FulfillmentStage[] = [
-  "order_placed",
-  "payment_verified",
-  "assembling_testing",
-  "out_for_delivery",
-  "delivered",
 ];
 
 const EcommerceContext = createContext<EcommerceContextType | undefined>(undefined);
@@ -209,13 +261,21 @@ export function EcommerceProvider({ children }: { children: React.ReactNode }) {
   const { toast } = useToast();
   const router = useRouter();
   const firestore = useFirestore();
+  const user = useUser();
+  const storageScope = useMemo<EcommerceStorageScope | null>(() => {
+    if (user === undefined) return null;
+    return user?.uid ? (`user:${user.uid}` as const) : "guest";
+  }, [user]);
   const [cart, setCart] = useState<EcommerceCartItem[]>([]);
   const [orders, setOrders] = useState<MockEcommerceOrder[]>(DEFAULT_DEMO_ORDERS);
   const [isCartOpen, setIsCartOpen] = useState(false);
   const [isCheckoutOpen, setIsCheckoutOpenState] = useState(false);
   const [activeReceiptOrder, setActiveReceiptOrder] = useState<MockEcommerceOrder | null>(null);
-  const [hydrated, setHydrated] = useState(false);
+  const [loadedScope, setLoadedScope] = useState<EcommerceStorageScope | null>(null);
+  const hydrated = storageScope !== null && loadedScope === storageScope;
   const backfillingRef = useRef(false);
+  const previousScopeRef = useRef<EcommerceStorageScope | null>(null);
+  const lastPersistedCartRef = useRef<{ scope: EcommerceStorageScope; raw: string } | null>(null);
 
   const setIsCheckoutOpen = useCallback(
     (open: boolean) => {
@@ -229,28 +289,55 @@ export function EcommerceProvider({ children }: { children: React.ReactNode }) {
   );
 
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (!storageScope || typeof window === "undefined") return;
+
+    const didSwitchUsers =
+      previousScopeRef.current !== null && previousScopeRef.current !== storageScope;
+    previousScopeRef.current = storageScope;
+    backfillingRef.current = false;
+
+    if (didSwitchUsers) {
+      setIsCartOpen(false);
+      setIsCheckoutOpenState(false);
+      setActiveReceiptOrder(null);
+    }
+
+    let nextCart: EcommerceCartItem[] = [];
+    let nextOrders: MockEcommerceOrder[] = DEFAULT_DEMO_ORDERS;
+
     try {
-      const savedCart = window.localStorage.getItem(CART_STORAGE_KEY);
+      // Remove legacy unscoped keys so carts/orders never leak across accounts.
+      window.localStorage.removeItem(CART_STORAGE_KEY);
+      window.localStorage.removeItem(ORDERS_STORAGE_KEY);
+
+      const savedCart = window.localStorage.getItem(getCartStorageKey(storageScope));
       if (savedCart) {
         const parsed = JSON.parse(savedCart);
-        if (Array.isArray(parsed)) setCart(parsed);
+        if (Array.isArray(parsed)) {
+          nextCart = parsed;
+        }
       }
-      const savedOrders = window.localStorage.getItem(ORDERS_STORAGE_KEY);
+
+      const savedOrders = window.localStorage.getItem(getOrdersStorageKey(storageScope));
       if (savedOrders) {
         const parsedOrders = JSON.parse(savedOrders);
         if (Array.isArray(parsedOrders) && parsedOrders.length > 0) {
-          setOrders(parsedOrders);
+          nextOrders = sanitizeStoredOrders(parsedOrders);
         }
       }
     } catch (error) {
       console.warn("Could not load e-commerce state from localStorage:", error);
-    } finally {
-      setHydrated(true);
     }
-  }, []);
 
-  // Automatically backfill missing or broken placeholder imageUrls for cart items & their sub-components from Firestore
+    lastPersistedCartRef.current = {
+      scope: storageScope,
+      raw: JSON.stringify(nextCart),
+    };
+    setCart(nextCart);
+    setOrders(nextOrders);
+    setLoadedScope(storageScope);
+  }, [storageScope]);
+
   useEffect(() => {
     if (!hydrated || !firestore || cart.length === 0 || backfillingRef.current) return;
 
@@ -287,7 +374,6 @@ export function EcommerceProvider({ children }: { children: React.ReactNode }) {
       const collectionName = collectionMap[cleanCat.toLowerCase()] || cleanCat;
 
       try {
-        // 1. Canonical query by name in inventory/{category}/items
         const canonicalQ = query(
           collection(firestore, inventoryItemsPath(collectionName)),
           where("name", "==", partName)
@@ -299,7 +385,6 @@ export function EcommerceProvider({ children }: { children: React.ReactNode }) {
           if (img) return img;
         }
 
-        // 2. Canonical direct doc lookup if partName happens to be a doc ID
         if (!partName.includes("/")) {
           const canonicalDoc = await getDoc(
             doc(firestore, inventoryItemPath(collectionName, partName))
@@ -310,20 +395,7 @@ export function EcommerceProvider({ children }: { children: React.ReactNode }) {
             if (img) return img;
           }
         }
-
-        // 3. Legacy root collection query by name
-        const legacyQ = query(
-          collection(firestore, collectionName),
-          where("name", "==", partName)
-        );
-        const legacySnap = await getDocs(legacyQ);
-        if (!legacySnap.empty) {
-          const data = legacySnap.docs[0].data();
-          const img = data.imageUrl || data.images?.[0];
-          if (img) return img;
-        }
       } catch {
-        // Ignore lookup error and use fallback
       }
       return undefined;
     };
@@ -393,22 +465,51 @@ export function EcommerceProvider({ children }: { children: React.ReactNode }) {
   }, [cart, firestore, hydrated]);
 
   useEffect(() => {
-    if (!hydrated || typeof window === "undefined") return;
+    if (!hydrated || !storageScope || typeof window === "undefined") return;
+    const cartKey = getCartStorageKey(storageScope);
+    const handleStorage = (event: StorageEvent) => {
+      if (event.storageArea !== window.localStorage || event.key !== cartKey) return;
+      try {
+        const nextCart = event.newValue ? JSON.parse(event.newValue) : [];
+        if (Array.isArray(nextCart)) {
+          lastPersistedCartRef.current = {
+            scope: storageScope,
+            raw: JSON.stringify(nextCart),
+          };
+          setCart(nextCart);
+        }
+      } catch {
+      }
+    };
+    window.addEventListener("storage", handleStorage);
+    return () => window.removeEventListener("storage", handleStorage);
+  }, [hydrated, storageScope]);
+
+  useEffect(() => {
+    if (!hydrated || !storageScope || typeof window === "undefined") return;
     try {
-      window.localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+      const serialized = JSON.stringify(cart);
+      if (
+        lastPersistedCartRef.current?.scope === storageScope &&
+        lastPersistedCartRef.current.raw === serialized
+      ) {
+        return;
+      }
+      window.localStorage.setItem(getCartStorageKey(storageScope), serialized);
+      lastPersistedCartRef.current = { scope: storageScope, raw: serialized };
     } catch (error) {
       console.warn("Failed to persist cart:", error);
     }
-  }, [cart, hydrated]);
+  }, [cart, hydrated, storageScope]);
 
   useEffect(() => {
-    if (!hydrated || typeof window === "undefined") return;
+    if (!hydrated || !storageScope || typeof window === "undefined") return;
     try {
-      window.localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(orders));
+      window.localStorage.setItem(getOrdersStorageKey(storageScope), JSON.stringify(orders));
     } catch (error) {
       console.warn("Failed to persist orders:", error);
     }
-  }, [orders, hydrated]);
+  }, [orders, hydrated, storageScope]);
 
   const addToCart = useCallback(
     (item: Omit<EcommerceCartItem, "quantity"> & { quantity?: number }, openDrawer = true) => {
@@ -502,7 +603,14 @@ export function EcommerceProvider({ children }: { children: React.ReactNode }) {
       payload: Omit<
         MockEcommerceOrder,
         "id" | "orderNumber" | "createdAt" | "trackingNumber" | "paymentReference"
-      >
+      > & {
+        id?: string;
+        firestoreOrderId?: string;
+        orderNumber?: string;
+        createdAt?: string;
+        trackingNumber?: string;
+        paymentReference?: string;
+      }
     ): MockEcommerceOrder => {
       const randomSix = Math.floor(100000 + Math.random() * 900000);
       const courierPrefix =
@@ -515,25 +623,25 @@ export function EcommerceProvider({ children }: { children: React.ReactNode }) {
 
       const newOrder: MockEcommerceOrder = {
         ...payload,
-        id: `ec-order-${Date.now()}`,
-        orderNumber: `NCX-EC-${randomSix}`,
-        createdAt: new Date().toISOString(),
-        trackingNumber: `${courierPrefix}-${Math.floor(1000000 + Math.random() * 9000000)}`,
-        paymentReference: `${payPrefix}-${Math.floor(1000000000 + Math.random() * 9000000000)}`,
+        id: payload.id || `ec-order-${Date.now()}`,
+        firestoreOrderId: payload.firestoreOrderId,
+        orderNumber: payload.orderNumber || `BB-${randomSix}`,
+        createdAt: payload.createdAt || new Date().toISOString(),
+        trackingNumber:
+          payload.trackingNumber ||
+          `${courierPrefix}-${Math.floor(1000000 + Math.random() * 9000000)}`,
+        paymentReference:
+          payload.paymentReference ||
+          `${payPrefix}-${Math.floor(1000000000 + Math.random() * 9000000000)}`,
       };
 
-      setOrders((prev) => [newOrder, ...prev]);
+      setOrders((prev) => [newOrder, ...prev.filter((o) => o.id !== newOrder.id)]);
       setCart([]);
       setActiveReceiptOrder(newOrder);
 
-      toast({
-        title: `Order ${newOrder.orderNumber} Confirmed!`,
-        description: `Simulated Netcodex checkout complete via ${newOrder.paymentLabel}.`,
-      });
-
       return newOrder;
     },
-    [toast]
+    []
   );
 
   const advanceOrderStage = useCallback(
@@ -541,13 +649,14 @@ export function EcommerceProvider({ children }: { children: React.ReactNode }) {
       setOrders((prev) =>
         prev.map((order) => {
           if (order.id !== orderId) return order;
-          const idx = STAGE_ORDER.indexOf(order.fulfillmentStage);
-          const nextStage = STAGE_ORDER[(idx + 1) % STAGE_ORDER.length];
+          const nextStage = getNextFulfillmentStage(order);
           return {
             ...order,
             fulfillmentStage: nextStage,
             paymentStatus:
-              nextStage === "delivered" ? "Paid (Verified)" : order.paymentStatus,
+              order.paymentMethod === "cod" && nextStage === "payment_verified"
+                ? "Paid (Verified)"
+                : order.paymentStatus,
           };
         })
       );

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   ActionIcon,
   Badge,
@@ -28,9 +29,14 @@ import { useBuildActions } from "@/hooks/use-build-actions";
 import { useBuildPdfDownload } from "@/hooks/use-build-pdf-download";
 import { useToast } from "@/hooks/use-toast";
 import { formatCurrency, cn } from "@/lib/utils";
-import type { ComponentData, FavoriteBuild, FavoriteBuildPart, Part, Resolution, WorkloadType } from "@/lib/types";
+import type { ComponentData, FavoriteBuild, FavoriteBuildPart, PrebuiltSystem, Resolution, WorkloadType } from "@/lib/types";
 import type { PrebuiltBuilderAddFormSchema } from "@/components/prebuilt-builder-add-dialog";
 import { DualSidebarAnalyzer } from "@/components/bottleneck/dual-sidebar-analyzer";
+import type { SidebarTab } from "@/components/bottleneck/dual-sidebar-analyzer";
+import { LiveRecommendationsPanel } from "@/components/build/live-recommendations-panel";
+import type { useLiveBuildRecommendations } from "@/hooks/use-live-build-recommendations";
+import { PUBLIC_FEATURE_SIGN_IN_URL } from "@/lib/public-feature-auth";
+import { usePublicFeatureAuth } from "@/hooks/use-public-feature-auth";
 
 const UNIFIED_MODAL_CLASSNAMES = {
   content: "bg-white/95 dark:bg-[#141a23]/95 backdrop-blur-md border border-slate-200/80 dark:border-white/10 text-slate-900 dark:text-slate-100 shadow-xl rounded-xl overflow-hidden",
@@ -40,6 +46,7 @@ const UNIFIED_MODAL_CLASSNAMES = {
 };
 
 interface YourBuildProps {
+  openReservation?: boolean;
   build: Record<string, ComponentData | ComponentData[] | null>;
   onClearBuild: () => void;
   onRemovePart: (category: string, index?: number) => void;
@@ -51,8 +58,13 @@ interface YourBuildProps {
   showSystemBalance?: boolean;
   className?: string;
   isManagerMode?: boolean;
-  allParts?: Part[];
+  recommendationState?: ReturnType<typeof useLiveBuildRecommendations>;
+  autoRecommendationsEnabled?: boolean;
+  onAutoRecommendationsChange?: (enabled: boolean) => void;
   onAddPrebuilt?: (data: PrebuiltBuilderAddFormSchema, operationId?: string) => void | Promise<import('@/lib/product-identity').CreatedProduct | void>;
+  editingPrebuilt?: PrebuiltSystem | null;
+  onUpdatePrebuilt?: () => void | Promise<void>;
+  isUpdatingPrebuilt?: boolean;
   analysis?: unknown;
   onAnalysisUpdate?: (analysis: any) => void;
   onCategorySelect?: (category: string) => void;
@@ -66,12 +78,17 @@ const savedCategories = [...requiredCategories, "Monitor", "Keyboard", "Mouse", 
 
 export function YourBuild({
   build, onClearBuild, onRemovePart, onAnalyze, showSystemBalance = true,
+  openReservation = false,
   className, isManagerMode = false, onAddPrebuilt, analysis, onAnalysisUpdate,
   onCategorySelect, categories, resolution, onResolutionChange, workload, onWorkloadChange,
-  onApplySuggestion, isAiPending: externalIsAiPending,
+  onApplySuggestion, isAiPending: externalIsAiPending, recommendationState,
+  autoRecommendationsEnabled = true, onAutoRecommendationsChange,
+  editingPrebuilt, onUpdatePrebuilt, isUpdatingPrebuilt = false,
 }: YourBuildProps) {
-  const [sidebarTab, setSidebarTab] = useState<"parts" | "analytics">("parts");
+  const [sidebarTab, setSidebarTab] = useState<SidebarTab>("parts");
   const user = useUser();
+  const router = useRouter();
+  const { requireAuth } = usePublicFeatureAuth();
   const firestore = useFirestore();
   const { toast } = useToast();
   const [favorites, setFavorites] = useState<FavoriteBuild[]>([]);
@@ -98,6 +115,14 @@ export function YourBuild({
     if (isBuildComplete) setShowMissingValidation(false);
   }, [isBuildComplete]);
 
+  useEffect(() => {
+    if (editingPrebuilt && !isBuildComplete) setShowMissingValidation(true);
+  }, [editingPrebuilt, isBuildComplete]);
+
+  useEffect(() => {
+    if (!recommendationState && sidebarTab === "budget") setSidebarTab("parts");
+  }, [recommendationState, sidebarTab]);
+
   const selectedParts = Object.values(build).reduce<number>(
     (sum, value) => sum + (Array.isArray(value) ? value.length : value ? 1 : 0), 0
   );
@@ -115,6 +140,11 @@ export function YourBuild({
   }, 0);
   const psu = build.PSU;
   const psuWattage = psu && !Array.isArray(psu) ? psu.wattage || 0 : 0;
+  const budget = autoRecommendationsEnabled ? recommendationState?.budget : undefined;
+  const minimumCompleteTotal = recommendationState?.projection?.minimumCompleteTotal;
+  const budgetShortfall = budget && minimumCompleteTotal != null
+    ? Math.max(0, minimumCompleteTotal - budget)
+    : null;
   const activeFilter = categories?.filter((category) => category.selected);
   const activeCategory = activeFilter?.length === 1 ? activeFilter[0].name : null;
 
@@ -202,6 +232,10 @@ export function YourBuild({
         <Menu.Item
           leftSection={<Bookmark size={15} className="text-cyan-500" />}
           onClick={() => {
+            if (!user) {
+              router.push(PUBLIC_FEATURE_SIGN_IN_URL);
+              return;
+            }
             setSaveName(`Build ${new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" })}`);
             setSaveOpen(true);
           }}
@@ -214,7 +248,7 @@ export function YourBuild({
         {!isManagerMode && (
           <Menu.Item
             leftSection={<Download size={15} className="text-cyan-500" />}
-            onClick={() => void downloadBuildPdf()}
+            onClick={() => requireAuth(() => { void downloadBuildPdf(); })}
             disabled={!isBuildComplete || isDownloadingPdf}
             className="min-h-11 text-xs font-medium rounded-md hover:bg-slate-100 dark:hover:bg-white/5 transition-colors"
           >
@@ -279,20 +313,30 @@ export function YourBuild({
         totalWattage={totalWattage}
         psuWattage={psuWattage}
         totalPrice={totalPrice}
+        budget={budget}
+        budgetShortfall={budgetShortfall}
       />
       <BuildActionFooter
         build={build}
+        openReservation={openReservation}
         totalPrice={totalPrice}
         selectedParts={selectedParts}
         missingCategories={missingCategories}
         isManagerMode={isManagerMode}
+        isGuest={!user}
         isAiPending={effectiveIsAiPending}
         isCheckingOut={isCheckingOut}
         analysis={analysis}
         onAnalyze={() => { if (isBuildComplete) void handleAnalyze(); }}
-        onReserve={(onSuccess) => { if (isBuildComplete) void handleCheckout(onSuccess); }}
+        onReserve={(onSuccess, paymentMethod) => {
+          if (isBuildComplete) void handleCheckout(onSuccess, paymentMethod);
+        }}
         onAddPrebuilt={(name) => { if (isBuildComplete) handleAddPrebuiltWithAi(name); }}
+        editingPrebuiltName={editingPrebuilt?.name}
+        onUpdatePrebuilt={onUpdatePrebuilt}
+        isUpdatingPrebuilt={isUpdatingPrebuilt}
         onIncompleteAction={() => setShowMissingValidation(true)}
+        onSignIn={() => router.push(PUBLIC_FEATURE_SIGN_IN_URL)}
         showMissingValidation={showMissingValidation}
       />
     </>
@@ -302,7 +346,7 @@ export function YourBuild({
     <>
       <div className="hidden lg:block">
         <Paper withBorder radius="lg" shadow="sm" className={cn(
-          "sticky top-20 max-h-[calc(100vh-6rem)] overflow-y-auto border-slate-200 dark:border-white/10 bg-white dark:bg-[#111722] shadow-slate-900/5 dark:shadow-black/30",
+          "sticky top-20 border-slate-200 dark:border-white/10 bg-white dark:bg-[#111722] shadow-slate-900/5 dark:shadow-black/30",
           className
         )}>
           <Box className="p-3 border-b border-slate-200 dark:border-white/10 bg-slate-50/50 dark:bg-white/[0.02]">
@@ -341,13 +385,21 @@ export function YourBuild({
             totalCategoriesCount={requiredCategories.length}
             activeTab={sidebarTab}
             onTabChange={setSidebarTab}
+            budgetContent={recommendationState ? (
+              <LiveRecommendationsPanel
+                state={recommendationState}
+                workload={workload}
+                onWorkloadChange={onWorkloadChange}
+                autoRecommendationsEnabled={autoRecommendationsEnabled}
+                onAutoRecommendationsChange={onAutoRecommendationsChange ?? (() => undefined)}
+              />
+            ) : undefined}
           >
             {renderContent()}
           </DualSidebarAnalyzer>
         </Paper>
       </div>
 
-      {/* Mobile FAB Trigger & Right Drawer Sheet */}
       <div className="lg:hidden">
         <Sheet>
           <SheetTrigger asChild>
@@ -412,6 +464,15 @@ export function YourBuild({
                 totalCategoriesCount={requiredCategories.length}
                 activeTab={sidebarTab}
                 onTabChange={setSidebarTab}
+                budgetContent={recommendationState ? (
+                  <LiveRecommendationsPanel
+                    state={recommendationState}
+                    workload={workload}
+                    onWorkloadChange={onWorkloadChange}
+                    autoRecommendationsEnabled={autoRecommendationsEnabled}
+                    onAutoRecommendationsChange={onAutoRecommendationsChange ?? (() => undefined)}
+                  />
+                ) : undefined}
               >
                 {renderContent()}
               </DualSidebarAnalyzer>
@@ -420,7 +481,6 @@ export function YourBuild({
         </Sheet>
       </div>
 
-      {/* Save Build Modal */}
       <Modal
         opened={saveOpen}
         onClose={() => setSaveOpen(false)}
@@ -504,7 +564,6 @@ export function YourBuild({
         </form>
       </Modal>
 
-      {/* Clear Build Modal */}
       <Modal
         opened={clearOpen}
         onClose={() => setClearOpen(false)}

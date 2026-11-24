@@ -12,12 +12,101 @@ export interface CompatibilityIssue {
 
 export const normalize = (s?: string | number | null) => s?.toString().trim().toLowerCase() || '';
 
-const resolveSocket = (part?: Pick<Part | ComponentData, 'socket' | 'specifications'> | null) =>
-  normalize(part?.specifications?.['Socket'] || part?.specifications?.['socket'] || part?.socket)
+type SocketSource = {
+  name?: string;
+  model?: string;
+  socket?: string;
+  specifications?: Record<string, string | number>;
+};
+
+export const resolveSocket = (part?: SocketSource | null) => {
+  const explicit = normalize(part?.specifications?.['Socket'] || part?.specifications?.['socket'] || part?.socket)
     .replace(/[\s-]/g, '');
+  if (explicit) return explicit;
+
+  const label = `${part?.name || ''} ${part?.model || ''}`.toUpperCase();
+  if (/\b(?:X870|B850|B650|X670|A620)[A-Z]*\b/.test(label)) return 'am5';
+  if (/\b(?:X570|B550|A520|X470|B450|A320)[A-Z]*\b/.test(label)) return 'am4';
+  if (/\b(?:Z890|B860|H810)[A-Z]*\b/.test(label)) return 'lga1851';
+  if (/\b(?:Z790|B760|H770|Z690|B660|H670|H610)[A-Z]*\b/.test(label)) return 'lga1700';
+
+  const ryzenModel = label.match(/\bRYZEN\s+[3579]\s+(\d{4})/i)?.[1];
+  if (ryzenModel) return /^[789]/.test(ryzenModel) ? 'am5' : 'am4';
+  if (/\bCORE\s+ULTRA\s+[3579]\s+2\d{2}/i.test(label)) return 'lga1851';
+  const intelGeneration = label.match(/\bCORE\s+I[3579][\s-]?(\d{4,5})/i)?.[1];
+  if (intelGeneration) {
+    const generation = intelGeneration.length === 5
+      ? Number(intelGeneration.slice(0, 2))
+      : Number(intelGeneration.slice(0, 1));
+    if (generation >= 12 && generation <= 14) return 'lga1700';
+    if (generation >= 10 && generation <= 11) return 'lga1200';
+  }
+  return '';
+};
 
 const resolveRamType = (part?: Pick<Part | ComponentData, 'ramType' | 'specifications'> | null) =>
   normalize(part?.specifications?.['Memory Type'] || part?.specifications?.['RAM Type'] || part?.specifications?.['Memory'] || part?.specifications?.['Generation'] || part?.specifications?.['Type'] || part?.ramType);
+
+const parseMaxNumber = (raw: string | number | undefined | null): number => {
+  if (typeof raw === 'number' && Number.isFinite(raw) && raw > 0) return raw;
+  if (!raw) return 0;
+  const matches = String(raw).match(/\d+(?:\.\d+)?/g);
+  if (!matches || matches.length === 0) return 0;
+  const nums = matches.map((m) => parseFloat(m)).filter((n) => Number.isFinite(n) && n > 0);
+  return nums.length > 0 ? Math.max(...nums) : 0;
+};
+
+const getSpec = (part: SocketSource | null | undefined, keys: string[]): string => {
+  if (!part?.specifications) return '';
+  for (const key of keys) {
+    const direct = part.specifications[key];
+    if (direct !== undefined && direct !== null && String(direct).trim() !== '') {
+      return String(direct).trim();
+    }
+    const lower = key.toLowerCase();
+    const matched = Object.entries(part.specifications).find(
+      ([k]) => k.trim().toLowerCase() === lower
+    );
+    if (matched && matched[1] !== undefined && matched[1] !== null && String(matched[1]).trim() !== '') {
+      return String(matched[1]).trim();
+    }
+  }
+  return '';
+};
+
+export const resolveCoolerRadiatorMm = (cooler?: SocketSource | null): number => {
+  if (!cooler) return 0;
+  const explicitRad = parseMaxNumber(getSpec(cooler, ['Radiator Size', 'Radiator Size (mm)']));
+  if (explicitRad >= 120) return explicitRad;
+  const nameLower = `${cooler.name || ''} ${cooler.model || ''}`.toLowerCase();
+  const typeLower = getSpec(cooler, ['Type']).toLowerCase();
+  const isAio =
+    nameLower.includes('aio') ||
+    nameLower.includes('liquid') ||
+    nameLower.includes('kraken') ||
+    nameLower.includes('ryujin') ||
+    nameLower.includes('ls720') ||
+    nameLower.includes('lt720') ||
+    nameLower.includes('ls520') ||
+    nameLower.includes('arctic liquid') ||
+    nameLower.includes('galahad') ||
+    nameLower.includes('nautilus') ||
+    typeLower.includes('aio') ||
+    typeLower.includes('liquid');
+  if (!isAio) return 0;
+  if (nameLower.includes('420')) return 420;
+  if (nameLower.includes('360')) return 360;
+  if (nameLower.includes('280')) return 280;
+  if (nameLower.includes('120')) return 120;
+  return 240;
+};
+
+export const resolveCaseMaxRadiatorMm = (casePart?: SocketSource | null): number => {
+  if (!casePart) return 0;
+  return parseMaxNumber(
+    getSpec(casePart, ['Max Radiator Size (mm)', 'Radiator Support (mm)', 'Radiator Support'])
+  );
+};
 
 export const getComponentName = (comp?: any): string => {
     if (!comp) return '';
@@ -30,9 +119,9 @@ const ffOrder: Record<string, number> = {
     'EATX': 4,
     'EXTENDEDATX': 4,
     'ATX': 3,
-    'MATX': 2, 
+    'MATX': 2,
     'MICROATX': 2,
-    'ITX': 1, 
+    'ITX': 1,
     'MINIITX': 1,
     'THINMINIITX': 1
 };
@@ -42,16 +131,13 @@ export const caseFFMatch = (caseSupport: string, moboFF: string, caseType: strin
 
     const normalizedMobo = normalizeFF(moboFF);
     const targetSize = ffOrder[normalizedMobo] || 0;
-    if (targetSize === 0) return true; // Unknown mobo format, skip
+    if (targetSize === 0) return true;
 
-    // 1. Check explicit list (split by comma first to preserve multi-word factors like "Micro ATX")
     const supported = (caseSupport || '').split(',').map(s => normalizeFF(s.trim())).filter(Boolean);
     let isSupported = supported.some(ff => (ffOrder[ff] || 0) >= targetSize);
 
-    // 2. Fallback to case type name (e.g. "ATX Mid Tower") if no explicit support list is found or if it's still false
     if (!isSupported && caseType) {
         const normalizedType = normalizeFF(caseType);
-        // Check if any known FF is in the type string and supports the target size
         Object.keys(ffOrder).forEach(ff => {
             if (normalizedType.includes(ff) && ffOrder[ff] >= targetSize) {
                 isSupported = true;
@@ -65,7 +151,6 @@ export const caseFFMatch = (caseSupport: string, moboFF: string, caseType: strin
 export const checkCompatibility = (part: Part, currentBuild: Record<string, ComponentData | ComponentData[] | null>): CompatibilityResult => {
   const category = part.category;
 
-  // Accessories are always compatible
   const accessoryCategories = ['Monitor', 'Keyboard', 'Mouse', 'Headset'];
   if (accessoryCategories.includes(category)) {
     return { compatible: true, message: '' };
@@ -79,7 +164,6 @@ export const checkCompatibility = (part: Part, currentBuild: Record<string, Comp
   const partSocket = resolveSocket(part);
   const partRamType = resolveRamType(part);
 
-  // CPU Validation
   if (category === 'CPU') {
     if (mobo) {
       const moboSocket = resolveSocket(mobo);
@@ -89,7 +173,6 @@ export const checkCompatibility = (part: Part, currentBuild: Record<string, Comp
     }
   }
 
-  // Motherboard Validation
   if (category === 'Motherboard') {
     if (cpu) {
       const cpuSocket = resolveSocket(cpu);
@@ -136,7 +219,6 @@ export const checkCompatibility = (part: Part, currentBuild: Record<string, Comp
     }
   }
 
-  // RAM Validation
   if (category === 'RAM') {
     if (!mobo) {
       return { compatible: false, message: 'Please add a Motherboard before selecting RAM.' };
@@ -149,7 +231,6 @@ export const checkCompatibility = (part: Part, currentBuild: Record<string, Comp
         }
       }
 
-      // RAM Slot Check
       const totalSlots = parseInt(mobo.specifications?.['Memory Slots']?.toString() || "4");
       const usedSlots = currentRams.reduce((sum, r) => sum + parseInt(r.specifications?.['Stick Count']?.toString() || "1"), 0);
       const partStickCount = parseInt(part.specifications?.['Stick Count']?.toString() || "1");
@@ -160,7 +241,6 @@ export const checkCompatibility = (part: Part, currentBuild: Record<string, Comp
     }
   }
 
-  // Storage Validation
   if (category === 'Storage') {
     if (!mobo) {
       return { compatible: false, message: 'Please add a Motherboard before selecting Storage.' };
@@ -186,39 +266,25 @@ export const checkCompatibility = (part: Part, currentBuild: Record<string, Comp
     }
   }
 
-  // Cooler Validation
   if (category === 'Cooler') {
     const case_ = (currentBuild['Case'] as ComponentData | null);
     if (case_) {
-      const coolerModel = part.name.toLowerCase();
-      const radiatorSizeRaw = part.specifications?.["Radiator Size"] || "";
-      const radiatorSize = parseInt(String(radiatorSizeRaw).match(/(\d+)/)?.[0] || "0");
-      const isAio = coolerModel.includes("aio") || coolerModel.includes("liquid") || radiatorSize > 0;
+      const radiatorSize = resolveCoolerRadiatorMm(part);
+      const caseMaxRad = resolveCaseMaxRadiatorMm(case_);
 
-      if (isAio && radiatorSize > 0) {
-        const caseMaxRadRaw = case_.specifications?.["Max Radiator Size (mm)"] || 0;
-        const caseMaxRad = typeof caseMaxRadRaw === 'string' ? parseFloat(caseMaxRadRaw) : caseMaxRadRaw;
-
-        if (caseMaxRad > 0 && radiatorSize > caseMaxRad) {
-          return { compatible: false, message: `Radiator Mismatch: This ${radiatorSize}mm cooler exceeds the max radiator size (${caseMaxRad}mm) for your selected case.` };
-        }
+      if (radiatorSize > 0 && caseMaxRad > 0 && radiatorSize > caseMaxRad) {
+        return { compatible: false, message: `Radiator Mismatch: This ${radiatorSize}mm cooler exceeds the max radiator size (${caseMaxRad}mm) for your selected case.` };
       }
     }
   }
 
-  // Case Validation
   if (category === 'Case') {
     const cooler = (currentBuild['Cooler'] as ComponentData | null);
     if (cooler) {
-      const caseMaxRadRaw = part.specifications?.["Max Radiator Size (mm)"] || 0;
-      const caseMaxRad = typeof caseMaxRadRaw === 'string' ? parseFloat(caseMaxRadRaw) : caseMaxRadRaw;
+      const caseMaxRad = resolveCaseMaxRadiatorMm(part);
+      const radiatorSize = resolveCoolerRadiatorMm(cooler);
 
-      const coolerModel = getComponentName(cooler).toLowerCase();
-      const radiatorSizeRaw = cooler.specifications?.["Radiator Size"] || "";
-      const radiatorSize = parseInt(String(radiatorSizeRaw).match(/(\d+)/)?.[0] || "0");
-      const isAio = (coolerModel.includes("aio") || coolerModel.includes("liquid") || radiatorSize > 0);
-
-      if (isAio && radiatorSize > 0 && caseMaxRad > 0 && radiatorSize > caseMaxRad) {
+      if (radiatorSize > 0 && caseMaxRad > 0 && radiatorSize > caseMaxRad) {
         return { compatible: false, message: `Case Incompatible: This case supports up to ${caseMaxRad}mm radiators, but your selected cooler is ${radiatorSize}mm.` };
       }
     }
@@ -266,17 +332,15 @@ export const checkFullBuildCompatibility = (build: Record<string, ComponentData 
     }
 
     if (mobo) {
-        // RAM Slot Check
         const totalSlots = parseInt(mobo.specifications?.['Memory Slots']?.toString() || "4");
         const usedSlots = rams.reduce((sum, r) => sum + parseInt(r.specifications?.['Stick Count']?.toString() || "1"), 0);
         if (usedSlots > totalSlots) {
             issues.push({ severity: 'critical', message: `Too much RAM: This motherboard only has ${totalSlots} slots, but you're using ${usedSlots}.` });
         }
 
-        // Storage Slot Check
         const storageData = build['Storage'];
         const storagesList = Array.isArray(storageData) ? storageData : (storageData ? [storageData as ComponentData] : []);
-        
+
         const totalNvme = parseInt(mobo.specifications?.['NVMe Slots']?.toString() || "0");
         const usedNvme = storagesList.filter(s => normalize(s.specifications?.['Type']).includes('nvme')).length;
         if (usedNvme > totalNvme) {
@@ -291,17 +355,10 @@ export const checkFullBuildCompatibility = (build: Record<string, ComponentData 
     }
 
     if (cooler && case_) {
-        const coolerModel = getComponentName(cooler).toLowerCase();
-        const radiatorSizeRaw = cooler.specifications?.["Radiator Size"] || "";
-        const radiatorSize = parseInt(String(radiatorSizeRaw).match(/(\d+)/)?.[0] || "0");
-        const isAio = (coolerModel.includes("aio") || coolerModel.includes("liquid") || radiatorSize > 0);
-
-        if (isAio && radiatorSize > 0) {
-            const caseMaxRadRaw = case_.specifications?.["Max Radiator Size (mm)"] || 0;
-            const caseMaxRad = typeof caseMaxRadRaw === 'string' ? parseFloat(caseMaxRadRaw) : caseMaxRadRaw;
-            if (caseMaxRad > 0 && radiatorSize > caseMaxRad) {
-                issues.push({ severity: 'critical', message: `${radiatorSize}mm cooler exceeds the max radiator size (${caseMaxRad}mm) for your selected case.` });
-            }
+        const radiatorSize = resolveCoolerRadiatorMm(cooler);
+        const caseMaxRad = resolveCaseMaxRadiatorMm(case_);
+        if (radiatorSize > 0 && caseMaxRad > 0 && radiatorSize > caseMaxRad) {
+            issues.push({ severity: 'critical', message: `Radiator Mismatch: ${radiatorSize}mm AIO radiator exceeds the max radiator size (${caseMaxRad}mm) for your selected case.` });
         }
     }
 

@@ -6,10 +6,13 @@ import { Badge } from "@mantine/core";
 
 interface SectionHeaderProps {
     title: string;
-    subtitle?: string;
+    subtitle?: React.ReactNode;
     badge?: string;
     centered?: boolean;
     className?: string;
+    subtitleClassName?: string;
+    id?: string;
+    action?: React.ReactNode;
 }
 
 export function SectionHeader({
@@ -18,6 +21,9 @@ export function SectionHeader({
     badge,
     centered = true,
     className,
+    subtitleClassName,
+    id,
+    action,
 }: SectionHeaderProps) {
     const { theme } = useTheme();
     const isDark = theme === 'dark';
@@ -43,19 +49,25 @@ export function SectionHeader({
                     <div className="h-px w-8 bg-cyan-500/40" />
                 </div>
             )}
-            <h2 className={cn(
+            <h2 id={id} className={cn(
                 "text-3xl sm:text-5xl md:text-6xl font-black tracking-tight font-headline uppercase leading-tight",
                 isDark ? "text-slate-100" : "text-slate-900"
             )}>
                 {title}
             </h2>
             {subtitle && (
-                <p className={cn(
-                    "max-w-2xl text-base sm:text-lg md:text-xl font-medium leading-relaxed",
-                    isDark ? "text-slate-400" : "text-slate-600"
+                <div className={cn(
+                    "max-w-3xl text-base sm:text-lg md:text-xl font-medium leading-relaxed",
+                    isDark ? "text-slate-400" : "text-slate-600",
+                    subtitleClassName
                 )}>
                     {subtitle}
-                </p>
+                </div>
+            )}
+            {action && (
+                <div className="mt-2">
+                    {action}
+                </div>
             )}
         </div>
     );

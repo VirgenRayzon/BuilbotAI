@@ -5,23 +5,25 @@ import { SalesAnalytics } from '@/components/sales-analytics';
 import type { Part, PrebuiltSystem, Order } from '@/lib/types';
 
 interface SalesTabProps {
-    orders: Order[];
+    orders?: Order[];
     parts: Part[];
     prebuiltSystems: PrebuiltSystem[];
+    activeSubTab?: 'overview' | 'popularity';
 }
 
 export function SalesTab({
-    orders,
+    orders: _orders,
     parts,
-    prebuiltSystems
+    prebuiltSystems,
+    activeSubTab = 'overview',
 }: SalesTabProps) {
     return (
         <div className="space-y-6">
             <div className="w-full">
                 <SalesAnalytics
-                    orders={orders || []}
                     parts={parts || []}
                     prebuilts={prebuiltSystems || []}
+                    activeSubTab={activeSubTab}
                 />
             </div>
         </div>

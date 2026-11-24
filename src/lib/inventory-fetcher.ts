@@ -1,15 +1,6 @@
 import { getAdminFirestore } from "@/firebase/server-init";
 import { inventoryCategorySlug, inventoryItemsPath } from "@/lib/inventory-paths";
-
-interface CacheEntry {
-    data: string[];
-    timestamp: number;
-}
-
-const inventoryCache = new Map<string, CacheEntry>();
-const CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
-
-const structuredCache = new Map<string, { data: StructuredPart[], timestamp: number }>();
+import { getCatalogMeta } from "@/lib/server/catalog-meta-store";
 
 export interface StructuredPart {
     id: string;
@@ -29,15 +20,114 @@ export interface StructuredPart {
     specifications?: Record<string, unknown>;
 }
 
-export function clearInventoryCache() {
-    console.log("[Inventory Cache] Invalidation triggered.");
-    inventoryCache.clear();
-    structuredCache.clear();
+export interface InventoryCacheEntry<T> {
+    data: T;
+    timestamp: number;
+    version: number;
 }
 
-/**
- * Maps frontend category keys to Firestore collection names.
- */
+export interface VersionedInventoryStoreOptions {
+    versionReader?: () => Promise<number>;
+    versionCheckWindowMs?: number;
+    cacheTtlMs?: number;
+}
+
+export class VersionedInventoryStore {
+    private inventoryCache = new Map<string, InventoryCacheEntry<string[]>>();
+    private structuredCache = new Map<string, InventoryCacheEntry<StructuredPart[]>>();
+    private currentCatalogVersion = -1;
+    private lastVersionCheck = 0;
+    private readonly versionCheckWindowMs: number;
+    private readonly cacheTtlMs: number;
+    private readonly versionReader: () => Promise<number>;
+
+    constructor(options?: VersionedInventoryStoreOptions) {
+        this.versionCheckWindowMs = options?.versionCheckWindowMs ?? 3000;
+        this.cacheTtlMs = options?.cacheTtlMs ?? 5 * 60 * 1000;
+        this.versionReader = options?.versionReader ?? (async () => {
+            const meta = await getCatalogMeta();
+            return meta.catalogVersion;
+        });
+    }
+
+    public async syncCatalogVersion(): Promise<number> {
+        const now = Date.now();
+        if (this.currentCatalogVersion !== -1 && now - this.lastVersionCheck < this.versionCheckWindowMs) {
+            return this.currentCatalogVersion;
+        }
+        try {
+            const version = await this.versionReader();
+            this.lastVersionCheck = Date.now();
+            if (this.currentCatalogVersion !== -1 && version !== this.currentCatalogVersion) {
+                this.inventoryCache.clear();
+                this.structuredCache.clear();
+            }
+            this.currentCatalogVersion = version;
+            return version;
+        } catch {
+            return this.currentCatalogVersion !== -1 ? this.currentCatalogVersion : 0;
+        }
+    }
+
+    public getCachedInventory(key: string, version: number): string[] | null {
+        const cached = this.inventoryCache.get(key);
+        if (cached && cached.version === version && Date.now() - cached.timestamp < this.cacheTtlMs) {
+            return cached.data;
+        }
+        return null;
+    }
+
+    public setCachedInventory(key: string, data: string[], version: number): void {
+        this.inventoryCache.set(key, {
+            data,
+            timestamp: Date.now(),
+            version,
+        });
+    }
+
+    public getCachedStructured(key: string, version: number): StructuredPart[] | null {
+        const cached = this.structuredCache.get(key);
+        if (cached && cached.version === version && Date.now() - cached.timestamp < this.cacheTtlMs) {
+            return cached.data;
+        }
+        return null;
+    }
+
+    public setCachedStructured(key: string, data: StructuredPart[], version: number): void {
+        this.structuredCache.set(key, {
+            data,
+            timestamp: Date.now(),
+            version,
+        });
+    }
+
+    public clear(): void {
+        this.inventoryCache.clear();
+        this.structuredCache.clear();
+        this.currentCatalogVersion = -1;
+        this.lastVersionCheck = 0;
+    }
+
+    public getInventoryCacheSize(): number {
+        return this.inventoryCache.size;
+    }
+
+    public getStructuredCacheSize(): number {
+        return this.structuredCache.size;
+    }
+
+    public getCurrentVersion(): number {
+        return this.currentCatalogVersion;
+    }
+}
+
+export const defaultInventoryStore = new VersionedInventoryStore();
+
+export function clearInventoryCache() {
+    console.log("[Inventory Cache] Invalidation triggered.");
+    defaultInventoryStore.clear();
+}
+
 const CATEGORY_MAP: Record<string, string> = {
     'cpu': 'CPU',
     'gpu': 'GPU',
@@ -57,40 +147,35 @@ const CATEGORY_MAP: Record<string, string> = {
     'headset': 'Headset'
 };
 
-/**
- * Fetches parts exclusively from the live Firestore database collections.
- */
 export async function getInventoryFromFirestore(category: string, searchTerm?: string, limitCount: number = 50, includeImage: boolean = true): Promise<string[]> {
     const normalizedCat = category.toLowerCase();
     const cacheKey = `${normalizedCat}:${searchTerm || ''}:${limitCount}:${includeImage}`;
-    
+
     try {
-        const cached = inventoryCache.get(cacheKey);
-        if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+        const version = await defaultInventoryStore.syncCatalogVersion();
+        const cached = defaultInventoryStore.getCachedInventory(cacheKey, version);
+        if (cached) {
             console.log(`[Inventory Cache Hit] Key: ${cacheKey}`);
-            return cached.data;
+            return cached;
         }
 
         const db = getAdminFirestore();
         const collectionName = CATEGORY_MAP[normalizedCat] || category;
-        
+
         const items = db.collection(inventoryItemsPath(collectionName));
         let query = items.where('isArchived', '==', false);
-        
-        // Native Firestore query on searchKeywords using array-contains for the first search term
+
         if (searchTerm && searchTerm !== "undefined" && searchTerm.trim() !== "") {
             const terms = searchTerm.toLowerCase().split(/[\s\-_/,\(\)]+/).map(t => t.replace(/[^a-z0-9]/g, '').trim()).filter(t => t.length > 0);
             if (terms.length > 0) {
                 query = query.where('searchKeywords', 'array-contains', terms[0]);
             }
         }
-        
-        // 2. Fetch the snapshot
+
         const snapshot = await query.limit(searchTerm ? limitCount * 2 : limitCount).get();
-        
+
         let docs = snapshot.docs;
- 
-        // 3. Manual filtering / refinement for multi-word matches
+
         if (searchTerm && searchTerm !== "undefined" && searchTerm.trim() !== "") {
             const terms = searchTerm.toLowerCase().split(/[\s\-_/,\(\)]+/).map(t => t.replace(/[^a-z0-9]/g, '').trim()).filter(t => t.length > 0);
             if (terms.length > 0) {
@@ -100,18 +185,17 @@ export async function getInventoryFromFirestore(category: string, searchTerm?: s
                     const brand = (data.brand || '').toLowerCase();
                     const series = (data.series || '').toLowerCase();
                     const model = (data.model || '').toLowerCase();
-                    
-                    // Verify that every search term word matches at least one field
-                    return terms.every(term => 
-                        name.includes(term) || 
-                        brand.includes(term) || 
+
+                    return terms.every(term =>
+                        name.includes(term) ||
+                        brand.includes(term) ||
                         series.includes(term) ||
                         model.includes(term)
                     );
-                }).slice(0, limitCount); // Trim back to requested limit
+                }).slice(0, limitCount);
             }
         }
-        
+
         if (docs.length === 0) {
             console.log(`[Inventory] No results found for category: ${category}${searchTerm && searchTerm !== "undefined" ? `, searchTerm: ${searchTerm}` : ''}`);
         }
@@ -121,25 +205,21 @@ export async function getInventoryFromFirestore(category: string, searchTerm?: s
             const brand = data.brand || '';
             const name = data.name || 'Unknown Part';
             const model = data.model || '';
-            
+
             let displayName = name;
-            // Ensure brand and model are part of the name if not already there
             if (brand && !displayName.toLowerCase().includes(brand.toLowerCase())) {
                 displayName = `${brand} ${displayName}`;
             }
             if (model && !displayName.toLowerCase().includes(model.toLowerCase())) {
                 displayName = `${displayName} ${model}`;
             }
-            
+
             const price = typeof data.price === 'number' ? ` - Price: ₱${data.price.toLocaleString()}` : '';
             const imageUrl = includeImage && data.imageUrl ? ` - Image: ${data.imageUrl}` : '';
             return `[ID: ${doc.id}] [${category.toUpperCase()}] Name: "${displayName}"${price}${imageUrl}`;
         });
 
-        inventoryCache.set(cacheKey, {
-            data: results,
-            timestamp: Date.now()
-        });
+        defaultInventoryStore.setCachedInventory(cacheKey, results, version);
 
         return results;
     } catch (error) {
@@ -148,37 +228,35 @@ export async function getInventoryFromFirestore(category: string, searchTerm?: s
     }
 }
 
-/**
- * Fetches structured parts from Firestore collections.
- */
-export async function getStructuredInventory(category: string, searchTerm?: string, limitCount: number = 50): Promise<StructuredPart[]> {
+export async function getStructuredInventory(category: string, searchTerm?: string, limitCount: number = 50, fresh = false): Promise<StructuredPart[]> {
     const normalizedCat = category.toLowerCase();
     const cacheKey = `${normalizedCat}:${searchTerm || ''}:${limitCount}`;
-    
+
     try {
-        const cached = structuredCache.get(cacheKey);
-        if (cached && Date.now() - cached.timestamp < CACHE_TTL_MS) {
+        const version = await defaultInventoryStore.syncCatalogVersion();
+        const cached = !fresh ? defaultInventoryStore.getCachedStructured(cacheKey, version) : null;
+        if (cached) {
             console.log(`[Structured Inventory Cache Hit] Key: ${cacheKey}`);
-            return cached.data;
+            return cached;
         }
 
         const db = getAdminFirestore();
         const collectionName = CATEGORY_MAP[normalizedCat] || category;
-        
+
         const items = db.collection(inventoryItemsPath(collectionName));
         let query = items.where('isArchived', '==', false);
-        
+
         if (searchTerm && searchTerm !== "undefined" && searchTerm.trim() !== "") {
             const terms = searchTerm.toLowerCase().split(/[\s\-_/,\(\)]+/).map(t => t.replace(/[^a-z0-9]/g, '').trim()).filter(t => t.length > 0);
             if (terms.length > 0) {
                 query = query.where('searchKeywords', 'array-contains', terms[0]);
             }
         }
-        
+
         const snapshot = await query.limit(searchTerm ? limitCount * 2 : limitCount).get();
-        
+
         let docs = snapshot.docs;
-  
+
         if (searchTerm && searchTerm !== "undefined" && searchTerm.trim() !== "") {
             const terms = searchTerm.toLowerCase().split(/[\s\-_/,\(\)]+/).map(t => t.replace(/[^a-z0-9]/g, '').trim()).filter(t => t.length > 0);
             if (terms.length > 0) {
@@ -188,23 +266,23 @@ export async function getStructuredInventory(category: string, searchTerm?: stri
                     const brand = (data.brand || '').toLowerCase();
                     const series = (data.series || '').toLowerCase();
                     const model = (data.model || '').toLowerCase();
-                    
-                    return terms.every(term => 
-                        name.includes(term) || 
-                        brand.includes(term) || 
+
+                    return terms.every(term =>
+                        name.includes(term) ||
+                        brand.includes(term) ||
                         series.includes(term) ||
                         model.includes(term)
                     );
                 }).slice(0, limitCount);
             }
         }
-        
+
         const results: StructuredPart[] = docs.map(doc => {
             const data = doc.data();
             const brand = data.brand || '';
             const name = data.name || 'Unknown Part';
             const model = data.model || '';
-            
+
             let displayName = name;
             if (brand && !displayName.toLowerCase().includes(brand.toLowerCase())) {
                 displayName = `${brand} ${displayName}`;
@@ -212,7 +290,7 @@ export async function getStructuredInventory(category: string, searchTerm?: stri
             if (model && !displayName.toLowerCase().includes(model.toLowerCase())) {
                 displayName = `${displayName} ${model}`;
             }
-            
+
             return {
                 id: doc.id,
                 name: displayName,
@@ -232,10 +310,7 @@ export async function getStructuredInventory(category: string, searchTerm?: stri
             };
         });
 
-        structuredCache.set(cacheKey, {
-            data: results,
-            timestamp: Date.now()
-        });
+        defaultInventoryStore.setCachedStructured(cacheKey, results, version);
 
         return results;
     } catch (error) {
@@ -243,4 +318,3 @@ export async function getStructuredInventory(category: string, searchTerm?: stri
         return [];
     }
 }
-

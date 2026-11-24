@@ -52,7 +52,7 @@ const sheetVariants = cva(
 interface SheetContentProps
   extends React.ComponentPropsWithoutRef<typeof SheetPrimitive.Content>,
     VariantProps<typeof sheetVariants> {
-  hideClose?: boolean;
+  hideClose?: boolean
 }
 
 const SheetContent = React.forwardRef<
@@ -128,7 +128,7 @@ const SheetDescription = React.forwardRef<
     {...props}
   />
 ))
-SheetDescription.displayName = SheetPrimitive.Description.displayName
+SheetDescription.displayName = SheetDescription.displayName
 
 export {
   Sheet,

@@ -11,31 +11,26 @@ export function parseScannedContent(content: string): DecodedQRResult | null {
   const trimmed = content.trim();
   if (!trimmed) return null;
 
-  // 1. Direct PRD-000123 format
   const prdMatch = trimmed.match(/^PRD-\d{6,}$/i);
   if (prdMatch) {
     return { raw: trimmed, productId: prdMatch[0].toUpperCase() };
   }
 
-  // 2. Direct SKU format
   const skuMatch = trimmed.match(/^SKU-[A-Z]{2,3}[23456789ABCDEFGHJKMNPQRSTVWXYZ]{8}$/i);
   if (skuMatch) {
     return { raw: trimmed, sku: skuMatch[0].toUpperCase() };
   }
 
-  // 3. Raw 32-character hex QR token
   const tokenMatch = trimmed.match(/^[a-f0-9]{32}$/i);
   if (tokenMatch) {
     return { raw: trimmed, token: tokenMatch[0].toLowerCase() };
   }
 
-  // 4. Relative /q/<token> path
   const relativeMatch = trimmed.match(/^(?:\/q\/|q\/)([a-f0-9]{32})$/i);
   if (relativeMatch) {
     return { raw: trimmed, token: relativeMatch[1].toLowerCase() };
   }
 
-  // 5. Full URL containing /q/<token>
   try {
     const origin = typeof window !== 'undefined' && window.location?.origin ? window.location.origin : 'https://buildbotai.local';
     const url = new URL(trimmed, origin);
@@ -44,9 +39,7 @@ export function parseScannedContent(content: string): DecodedQRResult | null {
       return { raw: trimmed, token: pathMatch[1].toLowerCase() };
     }
   } catch {
-    // Not a valid URL
   }
-
 
   return null;
 }
@@ -60,7 +53,6 @@ export async function decodeFrame(
   const height = video.videoHeight;
   if (!width || !height) return null;
 
-  // 1. Try native BarcodeDetector API if supported
   if (typeof window !== 'undefined' && 'BarcodeDetector' in window) {
     try {
       const Detector = Reflect.get(window, 'BarcodeDetector') as new (options: { formats: string[] }) => {
@@ -72,11 +64,9 @@ export async function decodeFrame(
         return barcodes[0].rawValue;
       }
     } catch {
-      // Fall through to jsQR
     }
   }
 
-  // 2. Fallback to jsQR via canvas
   const scale = Math.min(1, 720 / Math.max(width, height));
   const scanWidth = Math.max(1, Math.round(width * scale));
   const scanHeight = Math.max(1, Math.round(height * scale));
@@ -94,4 +84,42 @@ export async function decodeFrame(
   });
 
   return code?.data || null;
+}
+
+export async function decodeQRImage(file: File): Promise<string | null> {
+  let source: ImageBitmap | HTMLImageElement;
+  let release: (() => void) | undefined;
+
+  if (typeof createImageBitmap === 'function') {
+    source = await createImageBitmap(file);
+    release = () => source instanceof ImageBitmap && source.close();
+  } else {
+    const objectUrl = URL.createObjectURL(file);
+    source = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error('The selected image could not be opened.'));
+      image.src = objectUrl;
+    });
+    release = () => URL.revokeObjectURL(objectUrl);
+  }
+
+  try {
+    const width = source.width;
+    const height = source.height;
+    if (!width || !height) return null;
+    const scale = Math.min(1, 1600 / Math.max(width, height));
+    const canvas = document.createElement('canvas');
+    canvas.width = Math.max(1, Math.round(width * scale));
+    canvas.height = Math.max(1, Math.round(height * scale));
+    const context = canvas.getContext('2d', { willReadFrequently: true });
+    if (!context) return null;
+    context.drawImage(source, 0, 0, canvas.width, canvas.height);
+    const imageData = context.getImageData(0, 0, canvas.width, canvas.height);
+    return jsQR(imageData.data, imageData.width, imageData.height, {
+      inversionAttempts: 'attemptBoth',
+    })?.data || null;
+  } finally {
+    release?.();
+  }
 }

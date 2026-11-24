@@ -6,11 +6,9 @@ import { useFirestore } from "@/firebase";
 import { collection, query, where, onSnapshot } from "firebase/firestore";
 import { Order } from "@/lib/types";
 import { useToast } from "@/hooks/use-toast";
-import { updateReservationStatus } from "@/app/checkout-actions";
+import { updateReservationStatus, autoCancelExpiredOrder } from "@/app/checkout-actions";
+import { isOrderPendingWithNoProgression, isOrderExpired } from "@/lib/order-expiration";
 
-/**
- * Hook to manage user reservations (fetching, cancelling, deleting).
- */
 export function useReservations() {
     const { authUser, loading: userLoading } = useUserProfile();
     const firestore = useFirestore();
@@ -42,6 +40,14 @@ export function useReservations() {
                 const dateB = b.createdAt?.toDate?.() || 0;
                 return new Date(dateB).getTime() - new Date(dateA).getTime();
             });
+
+            for (const order of fetchedOrders) {
+                if (isOrderPendingWithNoProgression(order) && isOrderExpired(order.createdAt)) {
+                    authUser.getIdToken().then((token) => {
+                        autoCancelExpiredOrder(order.id, token).catch(() => {});
+                    }).catch(() => {});
+                }
+            }
 
             setReservations(fetchedOrders);
             setLoading(false);

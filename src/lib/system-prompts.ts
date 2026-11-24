@@ -1,8 +1,3 @@
-/**
- * system-prompts.ts — Centralized resolution and caching of active AI System Prompts.
- * Reads configured prompts from Firestore `siteSettings/main` (under `systemPrompts`),
- * falling back to the defaults defined in `default-system-prompts.ts`.
- */
 
 import { getAdminFirestore } from '@/firebase/server-init';
 import {
@@ -23,10 +18,9 @@ export interface SystemPromptsConfig {
 
 export type SystemPromptKey = 'chatbot' | 'buildAdvisor' | 'prebuiltAdvisor' | 'partExtractor';
 
-// In-memory cache to prevent excessive Firestore reads across rapid chat messages and advisor calls
 let cachedPrompts: SystemPromptsConfig | null = null;
 let lastCacheTime = 0;
-const CACHE_TTL_MS = 15000; // 15 seconds
+const CACHE_TTL_MS = 15000;
 
 export function invalidateSystemPromptsCache() {
   cachedPrompts = null;

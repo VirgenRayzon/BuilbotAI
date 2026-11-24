@@ -1,5 +1,9 @@
 # Error and edge-case flows
 
+## Simple explanation
+
+This flowchart shows how the app handles common problems. It covers loading, missing data, bad form values, blocked access, and failed save actions. The app should keep the user on a safe page and explain what went wrong. Retry, sign-in, back, or cancel actions are shown when they can help. These paths stop a failed request from looking like a successful one.
+
 ```mermaid
 flowchart TD
   Start([User action]) --> Layer{Where does it fail?}
@@ -21,6 +25,10 @@ flowchart TD
   Stock --> RetryAction
   Action --> RetryAction
   Pdf --> RetryAction
+  Denied --> Finish([END])
+  RetryAction --> Finish
+  Ai --> Finish
+  Cancel --> Finish
 ```
 
 | Case | Checked-in behavior and source |

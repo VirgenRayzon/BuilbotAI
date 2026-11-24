@@ -7,7 +7,6 @@ const MAX_RECORDS = 10000;
 const rows = (snapshot: QuerySnapshot): QRHealthRecord[] => snapshot.docs.map(doc => ({ id: doc.id, path: doc.ref.path, data: doc.data() }));
 
 export async function auditQRHealth(db: Firestore) {
-  // One consistent, bounded read-only snapshot. Never report partial results as healthy.
   return db.runTransaction(async transaction => {
     const catalogPaths = [...INVENTORY_CATEGORY_SLUGS.map(inventoryItemsPath), 'prebuiltSystems'];
     const catalog = await Promise.all(catalogPaths.map(path => transaction.get(db.collection(path)

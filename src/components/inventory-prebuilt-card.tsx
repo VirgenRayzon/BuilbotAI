@@ -1,8 +1,3 @@
-/**
- * InventoryPrebuiltCard — Grid card for a prebuilt system in the admin inventory dashboard.
- * Styled to match the user-facing pre-builts page with Mantine UI primitives, identical
- * specs dropdown (Collapse + Paper), image canvas, and side-by-side admin action buttons.
- */
 'use client';
 import { productAdminUrl } from '@/lib/product-identity';
 
@@ -16,7 +11,6 @@ import {
   Group,
   Stack,
   Box,
-  Collapse,
   ActionIcon,
   Paper,
 } from '@mantine/core';
@@ -26,6 +20,7 @@ import { PrebuiltCardSpecs } from './prebuilt-card-specs';
 import type { Part, PrebuiltSystem } from '@/lib/types';
 import { formatCurrency, getOptimizedStorageUrl, cn } from '@/lib/utils';
 import { getMissingParts } from '@/lib/prebuilt-utils';
+import { INCLUDED_INTEGRATED_GPU_ID, createIntegratedGpuPart } from '@/lib/integrated-graphics';
 import { useSiteSettings } from '@/context/site-settings-context';
 import {
   Trash2,
@@ -38,17 +33,7 @@ import {
   ExternalLink,
   QrCode,
 } from 'lucide-react';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from '@/components/ui/alert-dialog';
+import { ConfirmationAlertDialog } from '@/components/ui/confirmation-alert-dialog';
 
 interface InventoryPrebuiltCardProps {
   system: PrebuiltSystem;
@@ -94,6 +79,11 @@ export function InventoryPrebuiltCard({
       const resolvedIds = Array.isArray(partId) ? partId.filter(Boolean) : partId ? [partId] : [];
       if (resolvedIds.length === 0) return 'part-missing';
       for (const resolvedId of resolvedIds) {
+        if (key === 'gpu' && resolvedId === INCLUDED_INTEGRATED_GPU_ID) {
+          const cpu = parts.find(part => part.id === componentsRecord.cpu);
+          if (!cpu || !createIntegratedGpuPart(cpu)) return 'part-missing';
+          continue;
+        }
         const foundPart = parts.find((part) => part.id === resolvedId);
         if (!foundPart) return 'part-missing';
         if (foundPart.stock <= 0) return 'out-of-stock';
@@ -123,16 +113,13 @@ export function InventoryPrebuiltCard({
           }
         }}
       >
-        {/* Multi-select Checkmark (shown only when selected) */}
         {isSelected && (
           <div className="absolute top-3 left-3 z-30 p-1 rounded-md bg-cyan-600 text-white shadow-lg animate-in zoom-in-50 duration-200">
             <Check className="h-4 w-4 stroke-[3px]" />
           </div>
         )}
 
-        {/* --- Top Content Stack --- */}
         <Stack gap="xs">
-          {/* Header Row: Tier Badge on left, Stock Badge & Admin Actions on right */}
           <Group justify="space-between" align="center" wrap="nowrap">
             <Badge
               size="xs"
@@ -165,7 +152,6 @@ export function InventoryPrebuiltCard({
                 </Badge>
               )}
 
-              {/* Open QR & details action */}
               {system.productId && (
                 <ActionIcon
                   component={Link}
@@ -182,10 +168,8 @@ export function InventoryPrebuiltCard({
                 </ActionIcon>
               )}
 
-              {/* Archive / Restore Action */}
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <ActionIcon
+              <ConfirmationAlertDialog
+                trigger={<ActionIcon
                     variant="subtle"
                     color="gray"
                     size="sm"
@@ -195,45 +179,18 @@ export function InventoryPrebuiltCard({
                     className="text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 hover:bg-cyan-500/10 transition-colors"
                   >
                     {isArchiveView ? <RotateCcw size={15} /> : <Archive size={15} />}
-                  </ActionIcon>
-                </AlertDialogTrigger>
-                <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>
-                      {isArchiveView ? "Restore System?" : "Archive System?"}
-                    </AlertDialogTitle>
-                    <AlertDialogDescription>
-                      {isArchiveView
-                        ? `This will restore ${system.name} to the active showcase.`
-                        : `This will move ${system.name} to the archive. It will no longer be visible to customers.`}
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel onClick={(e) => e.stopPropagation()}>
-                      Cancel
-                    </AlertDialogCancel>
-                    <AlertDialogAction
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onArchive(system.id, !isArchiveView);
-                      }}
-                      className={
-                        isArchiveView
-                          ? "bg-cyan-600 hover:bg-cyan-700"
-                          : "bg-orange-500 hover:bg-orange-600"
-                      }
-                    >
-                      {isArchiveView ? "Restore" : "Archive"}
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+                  </ActionIcon>}
+                icon={isArchiveView ? <RotateCcw size={16} /> : <Archive size={16} />}
+                title={isArchiveView ? "Restore System" : "Archive System"}
+                description={isArchiveView ? `This will restore ${system.name} to the active showcase.` : `This will move ${system.name} to the archive. It will no longer be visible to customers.`}
+                actionLabel={isArchiveView ? "Restore" : "Archive"}
+                tone={isArchiveView ? "cyan" : "orange"}
+                onConfirm={() => onArchive(system.id, !isArchiveView)}
+              />
 
-              {/* Super Admin Delete Action */}
               {isSuperAdmin && (
-                <AlertDialog>
-                  <AlertDialogTrigger asChild>
-                    <ActionIcon
+                <ConfirmationAlertDialog
+                  trigger={<ActionIcon
                       variant="subtle"
                       color="red"
                       size="sm"
@@ -243,36 +200,18 @@ export function InventoryPrebuiltCard({
                       className="text-slate-400 hover:text-red-500 hover:bg-red-500/10 transition-colors"
                     >
                       <Trash2 size={15} />
-                    </ActionIcon>
-                  </AlertDialogTrigger>
-                  <AlertDialogContent onClick={(e) => e.stopPropagation()}>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        This action cannot be undone. This will permanently delete the prebuilt system: {system.name}.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel onClick={(e) => e.stopPropagation()}>
-                        Cancel
-                      </AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onDelete(system.id);
-                        }}
-                        className="bg-red-600 hover:bg-red-700"
-                      >
-                        Delete
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
+                    </ActionIcon>}
+                  icon={<Trash2 size={16} />}
+                  title="Delete System"
+                  description={<>This action cannot be undone. This will permanently delete <strong>{system.name}</strong>.</>}
+                  actionLabel="Delete"
+                  tone="red"
+                  onConfirm={() => onDelete(system.id)}
+                />
               )}
             </Group>
           </Group>
 
-          {/* Clean Rounded Image Canvas */}
           <Box
             className={cn(
               "aspect-square relative -mx-3 w-auto overflow-hidden",
@@ -288,7 +227,6 @@ export function InventoryPrebuiltCard({
             />
           </Box>
 
-          {/* Title & Description below image */}
           <Stack gap={4}>
             <Text
               size="md"
@@ -309,32 +247,19 @@ export function InventoryPrebuiltCard({
             </Text>
           </Stack>
 
-          {/* Collapsible Component Breakdown — Identical to user Prebuilts page */}
-          <Collapse in={isExpanded}>
+          <div className="mt-2">
             <Paper
               withBorder
               radius="md"
               p="xs"
-              mt="xs"
               className="bg-slate-50/70 dark:bg-white/[0.02] border-slate-200/60 dark:border-white/5"
             >
-              <Text
-                size="xs"
-                fw={700}
-                c="dimmed"
-                tt="uppercase"
-                className="tracking-wider mb-1.5 text-[10px]"
-              >
-                Component Breakdown
-              </Text>
-              <PrebuiltCardSpecs components={system.components} expanded={true} />
+              <PrebuiltCardSpecs components={system.components} expanded={isExpanded} />
             </Paper>
-          </Collapse>
+          </div>
         </Stack>
 
-        {/* --- Bottom Price & Dual Action Area --- */}
         <Stack gap="xs" mt="md">
-          {/* Price & Expand Chevron */}
           <Group justify="space-between" align="center">
             <Stack gap={0}>
               <Text
@@ -364,14 +289,14 @@ export function InventoryPrebuiltCard({
                 e.stopPropagation();
                 onToggleExpand();
               }}
-              title={isExpanded ? "Hide Specs" : "Show Specs"}
+              title={isExpanded ? "Hide Specs" : "Show Remaining Specs"}
+              aria-label={isExpanded ? "Hide Specs" : "Show Remaining Specs"}
               className="text-slate-500 hover:text-cyan-500"
             >
               {isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
             </ActionIcon>
           </Group>
 
-          {/* Side-by-side Action Buttons: Edit System & Launch Page */}
           <Group gap="xs" mt="xs" wrap="nowrap">
             <AddPrebuiltDialog
               initialData={system}

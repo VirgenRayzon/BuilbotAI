@@ -18,3 +18,7 @@ flowchart TD
   Stock --> RetryAction
   Action --> RetryAction
   Pdf --> RetryAction
+  Denied --> Finish([END])
+  RetryAction --> Finish
+  Ai --> Finish
+  Cancel --> Finish

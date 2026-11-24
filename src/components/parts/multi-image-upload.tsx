@@ -16,9 +16,6 @@ interface MultiImageUploadProps {
   className?: string;
 }
 
-/**
- * Compresses an image file to a max dimension of 1200px and returns base64.
- */
 function compressImage(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -82,7 +79,6 @@ export function MultiImageUpload({
         const updatedImages = [...images, ...compressedList];
         onImagesChange(updatedImages);
 
-        // If no cover image yet, set the first newly added image as cover
         if (!coverImage && updatedImages.length > 0) {
           onCoverImageChange(updatedImages[0]);
         }
@@ -137,7 +133,6 @@ export function MultiImageUpload({
     const updatedImages = images.filter((_, idx) => idx !== indexToRemove);
     onImagesChange(updatedImages);
 
-    // If the removed image was the cover, reassign to first available
     if (coverImage === removedImage) {
       onCoverImageChange(updatedImages[0] || "");
     }
@@ -166,12 +161,10 @@ export function MultiImageUpload({
     setLinkError("");
   };
 
-  // Determine effective cover
   const effectiveCover = coverImage || images[0] || "";
 
   return (
     <div className={cn("space-y-4", className)}>
-      {/* Hidden File Input supporting multiple files */}
       <input
         ref={fileInputRef}
         type="file"
@@ -181,7 +174,6 @@ export function MultiImageUpload({
         onChange={handleFileInputChange}
       />
 
-      {/* Main Drag & Drop Zone */}
       <div
         onDragOver={handleDragOver}
         onDragEnter={handleDragEnter}
@@ -225,7 +217,6 @@ export function MultiImageUpload({
         </MantineButton>
       </div>
 
-      {/* Uploaded Photos Gallery */}
       {images.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center justify-between text-[10px] uppercase font-bold tracking-wider text-muted-foreground">
@@ -254,7 +245,6 @@ export function MultiImageUpload({
                     className="object-contain p-1.5"
                   />
 
-                  {/* Cover Photo Badge */}
                   {isCover && (
                     <div className="absolute top-1.5 left-1.5 z-10">
                       <Badge className="bg-emerald-600 hover:bg-emerald-600 text-[8px] font-bold uppercase tracking-wider py-0 px-1.5 h-4 flex items-center gap-1 shadow-sm">
@@ -264,8 +254,22 @@ export function MultiImageUpload({
                     </div>
                   )}
 
-                  {/* Overlay Controls */}
-                  <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 p-1">
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      handleRemoveImage(index);
+                    }}
+                    aria-label={`Remove product photo ${index + 1}`}
+                    title="Remove Photo"
+                    className="absolute right-1.5 top-1.5 z-40 h-7 w-7 rounded-full border border-white/40 bg-slate-900/70 text-white shadow-sm hover:bg-rose-600"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </Button>
+
+                  <div className="absolute inset-0 z-40 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2 p-1 pointer-events-none">
                     {!isCover && (
                       <Button
                         type="button"
@@ -276,25 +280,12 @@ export function MultiImageUpload({
                           handleSetCover(imgUrl);
                         }}
                         title="Set as Cover Photo"
-                        className="h-7 w-7 rounded-full bg-white/20 hover:bg-emerald-600 text-white transition-colors"
+                        className="pointer-events-auto h-7 w-7 rounded-full bg-white/20 hover:bg-emerald-600 text-white transition-colors"
                       >
                         <Star className="h-3.5 w-3.5" />
                       </Button>
                     )}
 
-                    <Button
-                      type="button"
-                      size="icon"
-                      variant="ghost"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRemoveImage(index);
-                      }}
-                      title="Remove Photo"
-                      className="h-7 w-7 rounded-full bg-white/20 hover:bg-rose-600 text-white transition-colors"
-                    >
-                      <X className="h-3.5 w-3.5" />
-                    </Button>
                   </div>
                 </div>
               );

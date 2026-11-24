@@ -2,6 +2,7 @@ import type { AiBuildAdvisorRecommendationsOutput } from '@/ai/schemas/build-adv
 import { checkFullBuildCompatibility } from '@/lib/compatibility';
 import type { StructuredPart } from '@/lib/inventory-fetcher';
 import type { ComponentData } from '@/lib/types';
+import { INCLUDED_INTEGRATED_GPU_ID, createIntegratedGpuComponent } from '@/lib/integrated-graphics';
 
 const CATEGORIES = ['cpu', 'gpu', 'motherboard', 'ram', 'storage', 'psu', 'case', 'cooler'] as const;
 
@@ -18,8 +19,22 @@ export function validateAdvisorBuild(
 
   for (const category of CATEGORIES) {
     const component = output[category];
+    if (category === 'gpu' && component.partId === INCLUDED_INTEGRATED_GPU_ID) {
+      const cpu = output.cpu.partId ? selectedById.get(output.cpu.partId) : undefined;
+      const cpuSource = cpu || {
+        id: 'advisor-external-cpu',
+        name: output.cpu.model,
+        specifications: output.cpu.integratedGraphics ? { 'Integrated Graphics': output.cpu.integratedGraphics } : {},
+      };
+      const included = createIntegratedGpuComponent(cpuSource);
+      if (!included || component.estimatedPrice !== 0) {
+        issues.push('The included GPU requires a CPU with integrated graphics and a ₱0 price.');
+      } else {
+        chosenBuild.GPU = included;
+      }
+      continue;
+    }
     const isZeroPriceAllowed =
-      (category === 'gpu' && (component?.estimatedPrice === 0 || /integrated|uhd|iris|radeon|vega|apu|none|n\/a|onboard/i.test(component?.model || ''))) ||
       (category === 'cooler' && (component?.estimatedPrice === 0 || /stock|bundled|included/i.test(component?.model || '')));
 
     if (

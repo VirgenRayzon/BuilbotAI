@@ -1,14 +1,12 @@
 "use client";
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { getAiBuildCritique } from "@/app/actions";
+import { experimental_useObject as useObject } from '@ai-sdk/react';
 import { useToast } from "@/hooks/use-toast";
 import { showAdvisorProgressToast, showAdvisorReadyToast } from '@/components/advisor-job-toast';
+import { aiBuildCritiqueOutputSchema } from '@/ai/schemas/critique-schemas';
 
-/**
- * Helper to generate a unique key for a given build state.
- */
 export function getBuildKey(state: any) {
     if (!state) return "";
     const partKey = (part: any) => part ? {
@@ -40,42 +38,106 @@ export function getCritiqueCacheKey(state: any, preferences?: { intendedUse?: st
     });
 }
 
-/**
- * Hook to handle AI build critique logic, including caching and error management.
- */
 export function useCritiqueLogic(isAiKillSwitch: boolean) {
     const { toast } = useToast();
     const router = useRouter();
-    const [critiqueAnalysis, setCritiqueAnalysis] = useState<any>(null);
+    const [cachedAnalysis, setCachedAnalysis] = useState<any>(null);
     const [critiqueDuration, setCritiqueDuration] = useState<number | null>(null);
-    const [critiqueLoading, setCritiqueLoading] = useState(false);
     const [critiqueError, setCritiqueError] = useState<string | null>(null);
     const [activeCritiqueKey, setActiveCritiqueKey] = useState<string | null>(null);
-    const abortControllerRef = useRef<AbortController | null>(null);
     const progressToastRef = useRef<ReturnType<typeof showAdvisorProgressToast> | null>(null);
+    const generationStartTimeRef = useRef<number | null>(null);
+    const currentBuildKeyRef = useRef<string | null>(null);
 
-    // Cleanup abort controller on unmount
+    const latestStreamedObjectRef = useRef<any>(null);
+
+    const { object: streamedObject, submit, isLoading: isStreaming, stop, error: streamError } = useObject({
+        api: '/api/ai/build-advisor/critique',
+        schema: aiBuildCritiqueOutputSchema,
+        onError: (err) => {
+            progressToastRef.current?.dismiss();
+            progressToastRef.current = null;
+            console.error("[useCritiqueLogic] Streaming error:", err);
+            let msg = err.message || "Failed to analyze build.";
+            try { msg = JSON.parse(msg).error || msg; } catch {}
+            setCritiqueError(msg);
+            toast({ variant: "destructive", title: "Review Failed", description: msg });
+        },
+        onFinish: (result) => {
+            progressToastRef.current?.dismiss();
+            progressToastRef.current = null;
+            const validObject = result.object || latestStreamedObjectRef.current;
+            if (validObject && (validObject.pros || validObject.bottleneck)) {
+                const startTime = generationStartTimeRef.current || Date.now();
+                const duration = (Date.now() - startTime) / 1000;
+                setCritiqueDuration(duration);
+                setCachedAnalysis(validObject);
+                setCritiqueError(null);
+
+                const buildKey = currentBuildKeyRef.current;
+                if (buildKey) {
+                    try {
+                        const cache = localStorage.getItem('pc_critique_cache') || '{}';
+                        const parsedCache = JSON.parse(cache);
+                        parsedCache[buildKey] = {
+                            analysis: validObject,
+                            duration,
+                            timestamp: Date.now(),
+                        };
+                        const keys = Object.keys(parsedCache);
+                        if (keys.length > 10) delete parsedCache[keys[0]];
+                        localStorage.setItem('pc_critique_cache', JSON.stringify(parsedCache));
+                    } catch (e) {}
+                }
+                showAdvisorReadyToast('Build review ready', startTime, () => router.push('/ai-build-advisor#critique'));
+            } else {
+                let errorMsg = "The AI model finished without generating a complete build critique.";
+                if (result.error) {
+                    const rawMsg = result.error.message || String(result.error);
+                    try {
+                        const parsed = JSON.parse(rawMsg);
+                        if (Array.isArray(parsed) && parsed[0]?.message) {
+                            const path = parsed[0].path?.join('.') || 'output';
+                            errorMsg = `Validation error in ${path}: ${parsed[0].message}`;
+                        } else {
+                            errorMsg = rawMsg;
+                        }
+                    } catch {
+                        errorMsg = rawMsg;
+                    }
+                }
+                console.error("[useCritiqueLogic] Incomplete or invalid critique output:", result.error || errorMsg);
+                setCritiqueError(errorMsg);
+                toast({
+                    variant: "destructive",
+                    title: "Review Generation Failed",
+                    description: errorMsg,
+                });
+            }
+        }
+    });
+
+    useEffect(() => {
+        if (streamedObject) {
+            latestStreamedObjectRef.current = streamedObject;
+        }
+    }, [streamedObject]);
+
     useEffect(() => {
         return () => {
-            if (abortControllerRef.current) {
-                abortControllerRef.current.abort();
-            }
+            progressToastRef.current?.dismiss();
         };
     }, []);
 
     const handleCancelCritique = useCallback(() => {
-        if (abortControllerRef.current) {
-            abortControllerRef.current.abort();
-            abortControllerRef.current = null;
-        }
-        setCritiqueLoading(false);
+        stop();
         progressToastRef.current?.dismiss();
         progressToastRef.current = null;
         toast({
             title: "Analysis Cancelled",
             description: "Stopped showing this analysis.",
         });
-    }, [toast]);
+    }, [stop, toast]);
 
     const handleCritique = useCallback(async (
         builderState: any, 
@@ -89,6 +151,8 @@ export function useCritiqueLogic(isAiKillSwitch: boolean) {
         if (!builderState) return;
 
         const buildKey = getCritiqueCacheKey(builderState, preferences);
+        currentBuildKeyRef.current = buildKey;
+
         if (!forceRefresh) {
             const cache = localStorage.getItem('pc_critique_cache');
             if (cache) {
@@ -98,11 +162,10 @@ export function useCritiqueLogic(isAiKillSwitch: boolean) {
                     if (cachedEntry?.timestamp && Date.now() - cachedEntry.timestamp < 60 * 60 * 1000) {
                         setActiveCritiqueKey(buildKey);
                         if (cachedEntry && typeof cachedEntry === 'object' && 'analysis' in cachedEntry) {
-                            setCritiqueAnalysis(cachedEntry.analysis);
+                            setCachedAnalysis(cachedEntry.analysis);
                             setCritiqueDuration(cachedEntry.duration ?? null);
                         } else {
-                            // Backward compatibility fallback for flat cache
-                            setCritiqueAnalysis(cachedEntry);
+                            setCachedAnalysis(cachedEntry);
                             setCritiqueDuration(null);
                         }
                         return;
@@ -111,13 +174,9 @@ export function useCritiqueLogic(isAiKillSwitch: boolean) {
             }
         }
 
-        setCritiqueLoading(true);
         setCritiqueError(null);
+        setCachedAnalysis(null);
         setActiveCritiqueKey(buildKey);
-
-        // Initialize new abort controller
-        const controller = new AbortController();
-        abortControllerRef.current = controller;
 
         const buildData: any = {};
         Object.entries(builderState).forEach(([key, val]) => {
@@ -154,62 +213,31 @@ export function useCritiqueLogic(isAiKillSwitch: boolean) {
         });
 
         const startTime = Date.now();
-        const progressToast = showAdvisorProgressToast('Reviewing your build', startTime);
-        progressToastRef.current = progressToast;
-        try {
-            const result = await getAiBuildCritique({
-                build: buildData,
-                intendedUse: preferences?.intendedUse,
-                performanceLevel: preferences?.performanceLevel,
-                additionalNotes: preferences?.additionalNotes,
-            });
-            
-            if (controller.signal.aborted) return;
-            if ('error' in result) {
-                setCritiqueError(result.error as string);
-                toast({ title: 'Build review failed', description: result.error as string, variant: 'destructive' });
-            } else {
-                const duration = (Date.now() - startTime) / 1000;
-                setCritiqueAnalysis(result);
-                setCritiqueDuration(duration);
-                const cache = localStorage.getItem('pc_critique_cache') || '{}';
-                try {
-                    const parsedCache = JSON.parse(cache);
-                    parsedCache[buildKey] = {
-                        analysis: result,
-                        duration: duration,
-                        timestamp: Date.now(),
-                    };
-                    const keys = Object.keys(parsedCache);
-                    if (keys.length > 10) delete parsedCache[keys[0]];
-                    localStorage.setItem('pc_critique_cache', JSON.stringify(parsedCache));
-                } catch (e) {}
-                showAdvisorReadyToast('Build review ready', startTime, () => router.push('/ai-build-advisor#critique'));
-            }
-        } catch (err: any) {
-            if (err.name === 'AbortError' || err.message === 'ABORTED') {
-                console.log("Critique aborted by user.");
-                return;
-            }
-            setCritiqueError("An unexpected error occurred during analysis.");
-            toast({ title: 'Build review failed', description: 'An unexpected error occurred during analysis.', variant: 'destructive' });
-        } finally {
-            progressToast.dismiss();
-            if (progressToastRef.current === progressToast) progressToastRef.current = null;
-            if (abortControllerRef.current === controller) {
-                abortControllerRef.current = null;
-                setCritiqueLoading(false);
-            }
+        generationStartTimeRef.current = startTime;
+        progressToastRef.current = showAdvisorProgressToast('Reviewing your build', startTime);
+
+        submit({
+            build: buildData,
+            intendedUse: preferences?.intendedUse,
+            performanceLevel: preferences?.performanceLevel,
+            additionalNotes: preferences?.additionalNotes,
+        });
+    }, [isAiKillSwitch, submit, toast]);
+
+    const critiqueAnalysis = useMemo(() => {
+        if (isStreaming && streamedObject) {
+            return streamedObject;
         }
-    }, [isAiKillSwitch, router, toast]);
+        return cachedAnalysis;
+    }, [isStreaming, streamedObject, cachedAnalysis]);
 
     return {
         critiqueAnalysis,
-        setCritiqueAnalysis,
+        setCritiqueAnalysis: setCachedAnalysis,
         critiqueDuration,
         setCritiqueDuration,
-        critiqueLoading,
-        critiqueError,
+        critiqueLoading: isStreaming,
+        critiqueError: critiqueError || (streamError ? streamError.message : null),
         activeCritiqueKey,
         handleCritique,
         handleCancelCritique,

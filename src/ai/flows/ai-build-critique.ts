@@ -2,8 +2,9 @@
 
 import { ai } from "@/ai/genkit";
 import { z } from "genkit";
-import { createHash } from 'node:crypto';
 import { AdvisorTiming } from '@/lib/advisor-timing';
+import { buildCritiqueCacheKey } from '@/lib/server/ai-cache-keys';
+import { computeExpiresAt, isExpiredAt } from '@/lib/ttl-policies';
 
 import { calculateBottleneck } from "@/lib/bottleneck";
 import { checkFullBuildCompatibility } from "@/lib/compatibility";
@@ -11,8 +12,10 @@ import { retrieveLocalKnowledge } from "@/lib/knowledge-retriever";
 import { getInventoryFromFirestore } from "@/lib/inventory-fetcher";
 import { getAdminFirestore } from "@/firebase/server-init";
 import { getGenkitModelName, safeGenkitGenerate } from '@/lib/ai-model-resolver';
+import { INCLUDED_INTEGRATED_GPU_ID } from '@/lib/integrated-graphics';
 
 const ComponentDataSchema = z.object({
+    id: z.string().optional(),
     model: z.string(),
     price: z.number(),
     brand: z.string().optional(),
@@ -29,6 +32,7 @@ const ComponentDataSchema = z.object({
         depth: z.number(),
     }).optional(),
     specifications: z.record(z.string(), z.any()).optional(),
+    isIntegratedGraphics: z.boolean().optional(),
 });
 
 const AiBuildCritiqueInputSchema = z.object({
@@ -47,9 +51,6 @@ const SuggestionSchema = z.object({
     reason: z.string(),
 });
 
-/**
- * Unified Output Schema for the AI Critique.
- */
 const aiBuildCritiqueOutputSchema = z.object({
     pros: z.array(z.string()),
     cons: z.array(z.string()),
@@ -65,28 +66,10 @@ const aiBuildCritiqueOutputSchema = z.object({
 });
 
 import { estimateFPS } from "@/lib/fps-estimator";
-import { Resolution, WorkloadType } from "@/lib/types";
+import { WorkloadType } from "@/lib/types";
 
 const CRITIQUE_CACHE_COLLECTION = 'ai_critique_cache_v1';
 
-/**
- * Generate a cache key for the entire critique output.
- */
-function generateCritiqueCacheKey(input: AiBuildCritiqueInput, modelSettings: unknown): string {
-    const parts = Object.entries(input.build || {}).sort(([a], [b]) => a.localeCompare(b));
-    return createHash('sha256').update(JSON.stringify({
-        version: 2,
-        parts,
-        intendedUse: (input.intendedUse || '').trim().toLowerCase(),
-        performanceLevel: (input.performanceLevel || '').trim().toLowerCase(),
-        additionalNotes: (input.additionalNotes || '').trim().toLowerCase(),
-        modelSettings,
-    })).digest('hex');
-}
-
-/**
- * Clean redundant marketing boilerplate for focused knowledge retrieval.
- */
 function cleanPartName(name: string): string {
     return name
         .replace(/\b(80\s*Plus\s*(Bronze|Gold|Platinum|Silver|Titanium))\b/gi, '')
@@ -117,7 +100,6 @@ export async function aiBuildCritiqueAction(input: AiBuildCritiqueInput, deferCa
     const db = getAdminFirestore();
     let settingsData: FirebaseFirestore.DocumentData | undefined;
 
-    // 0. Check Maintenance Mode (Kill Switch)
     try {
         const settingsSnap = await db.collection('siteSettings').doc('main').get();
         settingsData = settingsSnap.data();
@@ -130,8 +112,7 @@ export async function aiBuildCritiqueAction(input: AiBuildCritiqueInput, deferCa
     }
     timing.mark('settings');
 
-    // 1. Tier 1 Cache Check: Full Critique Cache
-    const critiqueCacheKey = generateCritiqueCacheKey(input, {
+    const critiqueCacheKey = buildCritiqueCacheKey(input, {
         routing: settingsData?.featureModelRouting?.buildAdvisor || settingsData?.aiModelProvider,
         defaultModel: settingsData?.defaultGeminiModel,
         tunedModel: settingsData?.fineTunedModelId,
@@ -142,8 +123,9 @@ export async function aiBuildCritiqueAction(input: AiBuildCritiqueInput, deferCa
             const critiqueSnap = await db.collection(CRITIQUE_CACHE_COLLECTION).doc(critiqueCacheKey).get();
             if (critiqueSnap.exists) {
                 const cacheData = critiqueSnap.data();
+                const isExpired = isExpiredAt(cacheData?.expiresAt);
                 const ageInDays = (Date.now() - (cacheData?.timestamp || 0)) / (1000 * 60 * 60 * 24);
-                if (ageInDays < 1 / 24 && cacheData?.output) {
+                if (!isExpired && ageInDays < 1 / 24 && cacheData?.output) {
                     console.log(`[AI Critique Cache] Hit for key: ${critiqueCacheKey}`);
                     timing.mark('cache');
                     timing.finish('cache_hit');
@@ -156,14 +138,9 @@ export async function aiBuildCritiqueAction(input: AiBuildCritiqueInput, deferCa
     }
     timing.mark('cache');
 
-    // 2. Perform deterministic local analysis
     const bottleneck = calculateBottleneck(build as any);
     const compatibilityIssues = checkFullBuildCompatibility(build as any);
 
-    // Deterministic FPS Baseline Calculation (Anchors for AI)
-    const normRes: Resolution = (performanceLevel === '4K' || performanceLevel === '1080p' || performanceLevel === '1440p')
-        ? performanceLevel
-        : '1440p';
     const normWorkload: WorkloadType = (intendedUse === 'Esports' || intendedUse === 'AAA')
         ? intendedUse
         : 'Balanced';
@@ -188,6 +165,9 @@ CRITICAL: Use these deterministic baseline numbers as reference anchors for your
                 const brandModel = `${p.brand || ''} ${p.model}`.trim();
                 const priceStr = typeof p.price === 'number' ? `₱${p.price.toLocaleString()}` : (p.price ? `₱${p.price}` : '');
                 let text = `${brandModel} (${priceStr})`;
+                if (category === 'GPU' && (p.id === INCLUDED_INTEGRATED_GPU_ID || p.isIntegratedGraphics)) {
+                    text += ' — included CPU graphics, shared system memory, no dedicated graphics card';
+                }
                 if (p.description && p.description.trim()) {
                     const maxChars = ['CPU', 'GPU', 'Motherboard'].includes(category) ? 900 : 280;
                     const highlights = p.description.trim().slice(0, maxChars);
@@ -202,7 +182,6 @@ CRITICAL: Use these deterministic baseline numbers as reference anchors for your
         })
         .join('\n\n');
 
-    // 3. Deduplicated & Cleaned Local Knowledge Retrieval (Top 4 ranked sections)
     const uniqueCleanModels = Array.from(
         new Set(
             Object.values(build)
@@ -213,7 +192,6 @@ CRITICAL: Use these deterministic baseline numbers as reference anchors for your
         )
     );
     const cleanKnowledgeQuery = `bottleneck compatibility ${uniqueCleanModels.join(' ')}`;
-    // 4. Fetch knowledge, inventory, and model routing concurrently.
     const buildCategories = Object.keys(build);
     const [knowledgeResults, inventoryResults, dynamicModel] = await Promise.all([
         retrieveLocalKnowledge(cleanKnowledgeQuery, 4),
@@ -263,6 +241,7 @@ ${analysisContext}
 INSTRUCTIONS:
 1. Pros and Cons: Provide a detailed list. Directly reference specific hardware features (e.g. VRM power stages, USB/networking ports, PCIe 5.0 lanes, cache) from the provided Product Highlights.
 2. Bottleneck Analysis: Explain the bottleneck balance between CPU and GPU.
+   If the GPU is integrated with the CPU, identify it as included graphics with shared system memory. Do not describe it as a dedicated card or separate purchase, and keep game estimates conservative with settings appropriate for integrated graphics.
 3. FPS Estimates: Provide realistic estimates for 6 different games using the deterministic baseline FPS anchors above.
    DIVERSITY RULE: DO NOT always pick the same games. Select games relevant to the user's Intended Use (e.g., if 'E-sports', pick Valorant, CS2, Apex; if 'AAA', pick Cyberpunk 2077, Black Myth: Wukong, Alan Wake 2; if 'General', pick a balanced mix).
 4. Suggestions: Recommend alternatives that provide better value or perfect the build.
@@ -304,7 +283,6 @@ Output strictly the JSON object.`;
         }
         timing.mark('model_complete');
 
-        // Save to full critique cache (Tier 1)
         if (critiqueCacheKey.length > 5) {
             const saveCache = async () => {
                 try {
@@ -312,6 +290,7 @@ Output strictly the JSON object.`;
                         input,
                         output: response.output,
                         timestamp: Date.now(),
+                        expiresAt: computeExpiresAt('aiCritiqueCache'),
                     });
                     console.log(`[AI Critique Cache] Saved new entry for: ${critiqueCacheKey}`);
                 } catch (e) {
@@ -332,4 +311,3 @@ Output strictly the JSON object.`;
         throw error;
     }
 }
-

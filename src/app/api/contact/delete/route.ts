@@ -1,4 +1,3 @@
-import * as admin from 'firebase-admin';
 import type { NextRequest } from 'next/server';
 import { getAdminFirestore } from '@/firebase/server-init';
 import { z } from 'zod';
@@ -49,7 +48,6 @@ async function handleDelete(request: NextRequest) {
 
     const inquiry = snapshot.data();
 
-    // Verify permission: Must be either staff or the customer who owns the inquiry
     try {
       await requireContactStaff(token);
     } catch {
@@ -62,14 +60,12 @@ async function handleDelete(request: NextRequest) {
       }
     }
 
-    // Delete subcollection messages in batch
     const messagesSnapshot = await inquiryRef.collection('messages').get();
     const batch = firestore.batch();
     for (const messageDoc of messagesSnapshot.docs) {
       batch.delete(messageDoc.ref);
     }
 
-    // Delete the inquiry document
     batch.delete(inquiryRef);
     await batch.commit();
 

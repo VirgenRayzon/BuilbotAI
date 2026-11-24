@@ -3,8 +3,6 @@
 import { Suspense, useState, type ReactNode } from 'react';
 import { Dialog, DialogContent, DialogDescription, DialogTitle, DialogTrigger } from './dialog';
 
-/** Keep card/trigger markup eager; mount the existing dialog only on first use.
- * After loading, its own open/busy/draft behavior remains mounted unchanged. */
 export function DeferredDialog({ children, render, label }: {
   children?: ReactNode;
   render: () => ReactNode;
