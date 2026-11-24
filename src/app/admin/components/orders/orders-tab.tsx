@@ -4,7 +4,7 @@ import type { StaffPaymentRequest } from '@/lib/order-payment';
 import type { OrderOperation } from '@/lib/server/order-operations';
 import { useOrderActions } from '../../hooks/use-order-actions';
 import { OrderStageDialog } from './order-stage-dialog';
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { Button } from '@mantine/core';
 import { useMediaQuery } from '@mantine/hooks';
@@ -21,6 +21,7 @@ import {
 } from './order-action-modals';
 import { OrderCard } from './order-card';
 import { OrderHistoryModal } from './order-history-modal';
+import { OrderItemsModal } from './order-items-modal';
 import { OrdersEmptyState, OrdersHeaderBar } from './orders-header-bar';
 import { OrderCardSkeleton } from '@/components/loading/order-card-skeleton';
 import type { OrderUnifiedFilterStage } from './order-status-config';
@@ -85,6 +86,8 @@ export function OrdersTab({
   const [mobileFiltersOpened, setMobileFiltersOpened] = useState(false);
 
   const [detailsOrderId, setDetailsOrderId] = useState<string | null>(null);
+  const [itemsOrderId, setItemsOrderId] = useState<string | null>(null);
+  const [assemblyVerifiedMap, setAssemblyVerifiedMap] = useState<Record<string, boolean>>({});
   const [pendingAction, setPendingAction] = useState<{
     order: Order;
     action: OrderAdminActionType;
@@ -139,6 +142,17 @@ export function OrdersTab({
     [orders, detailsOrderId]
   );
 
+  const itemsOrder = useMemo(
+    () => orders.find((o) => o.id === itemsOrderId) || null,
+    [orders, itemsOrderId]
+  );
+
+  const handleAssemblyVerificationChange = useCallback((orderId: string, passed: boolean) => {
+    setAssemblyVerifiedMap((prev) =>
+      prev[orderId] === passed ? prev : { ...prev, [orderId]: passed }
+    );
+  }, []);
+
   const handleReconcile: ReconcileRefund = async (orderId, reference) => {
     if (!onReconcileRefund) return false;
     setReconcilingId(orderId);
@@ -163,31 +177,37 @@ export function OrdersTab({
       />
 
       {ordersLoading ? (
-        <div className="space-y-4 w-full" aria-label="Loading customer orders" aria-busy="true">
+        <div
+          className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full"
+          aria-label="Loading customer orders"
+          aria-busy="true"
+        >
           {Array.from({ length: 4 }, (_, index) => (
             <OrderCardSkeleton key={index} />
           ))}
         </div>
       ) : view.paginatedOrders.length > 0 ? (
-        <div className="space-y-4 w-full">
-            {view.paginatedOrders.map((order) => (
-              <OrderCard
-                key={order.id}
-                order={order}
-                catalogParts={catalogParts}
-                archived={archived}
-                isSuperAdmin={isSuperAdmin}
-                reconcilingId={reconcilingId}
-                onOpenHistory={(targetId) => setDetailsOrderId(targetId)}
-                onRequestAdminAction={(target, action) => setPendingAction({ order: target, action })}
-                onRequestCancel={setCancelTarget}
-                onRequestPaymentStatus={(target, status) => setPaymentChange({ order: target, status })}
-                onRequestRefund={setRefundOrder}
-                onReconcileRefund={onReconcileRefund ? handleReconcile : undefined}
-                onUpdateFulfillmentStage={onUpdateFulfillmentStage ? stageActions.begin : undefined}
-                onConfirmStockReturn={onConfirmStockReturn ? (target) => setStockReturnTarget(target) : undefined}
-              />
-            ))}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 w-full">
+          {view.paginatedOrders.map((order) => (
+            <OrderCard
+              key={order.id}
+              order={order}
+              catalogParts={catalogParts}
+              archived={archived}
+              isSuperAdmin={isSuperAdmin}
+              reconcilingId={reconcilingId}
+              assemblyVerifiedOverride={assemblyVerifiedMap[order.id]}
+              onOpenItems={(targetId) => setItemsOrderId(targetId)}
+              onOpenHistory={(targetId) => setDetailsOrderId(targetId)}
+              onRequestAdminAction={(target, action) => setPendingAction({ order: target, action })}
+              onRequestCancel={setCancelTarget}
+              onRequestPaymentStatus={(target, status) => setPaymentChange({ order: target, status })}
+              onRequestRefund={setRefundOrder}
+              onReconcileRefund={onReconcileRefund ? handleReconcile : undefined}
+              onUpdateFulfillmentStage={onUpdateFulfillmentStage ? stageActions.begin : undefined}
+              onConfirmStockReturn={onConfirmStockReturn ? (target) => setStockReturnTarget(target) : undefined}
+            />
+          ))}
         </div>
       ) : (
         <OrdersEmptyState
@@ -217,6 +237,15 @@ export function OrdersTab({
       )}
 
       <OrderStageDialog actions={stageActions} />
+
+      <OrderItemsModal
+        order={itemsOrder}
+        catalogParts={catalogParts}
+        archived={archived}
+        onClose={() => setItemsOrderId(null)}
+        onRequestPaymentStatus={(target, status) => setPaymentChange({ order: target, status })}
+        onAssemblyVerificationChange={handleAssemblyVerificationChange}
+      />
 
       <OrderHistoryModal
         order={detailsOrder}

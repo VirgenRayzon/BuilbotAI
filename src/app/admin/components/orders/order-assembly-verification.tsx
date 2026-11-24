@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   AlertCircle,
   CheckCircle2,
@@ -89,11 +89,16 @@ export function OrderAssemblyVerification({
     qcNotes,
   ]);
 
+  const onStatusChangeRef = useRef(onStatusChange);
+  useEffect(() => {
+    onStatusChangeRef.current = onStatusChange;
+  }, [onStatusChange]);
+
   useEffect(() => {
     if (verification?.status) {
-      onStatusChange?.(verification.status);
+      onStatusChangeRef.current?.(verification.status);
     }
-  }, [verification?.status, onStatusChange]);
+  }, [verification?.status]);
 
   const handleTogglePickItem = useCallback(
     async (lineId: string, currentVal: boolean) => {
@@ -225,7 +230,7 @@ export function OrderAssemblyVerification({
           </div>
 
           <Collapse in={showPickingDetails}>
-            <div className="mt-2.5 bg-slate-50/50 dark:bg-white/[0.01] overflow-hidden">
+            <div className="mt-2.5 overflow-hidden">
               <div className="divide-y divide-slate-200/70 dark:divide-white/5">
                 {verification.picking.items.map((pickItem) => {
                   const orderItem =

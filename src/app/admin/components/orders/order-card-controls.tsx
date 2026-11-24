@@ -13,9 +13,7 @@ import {
 import { ActionIcon, Button, Menu, Tooltip } from '@mantine/core';
 import { RefundReconcileControl } from './refund-reconcile-control';
 import type { ReconcileRefund } from '@/lib/order-payment';
-import { OrderPaymentControl } from './order-payment-control';
 import {
-  getAllowedStaffPaymentStatuses,
   getOrderFulfillmentStage,
   getRemainingRefundableAmount,
 } from '@/lib/order-workflow';
@@ -52,19 +50,11 @@ export function OrderCardControls({
   const isCancelled = order.status === 'cancelled';
   const currentStage = getOrderFulfillmentStage(order);
 
-  const allowedPaymentStatuses = getAllowedStaffPaymentStatuses(order);
   const refundableAmount = getRemainingRefundableAmount(order);
   const canCancel = !archived && !isCancelled && currentStage !== 'delivered';
 
   return (
     <div className="flex flex-wrap items-center justify-end gap-1.5 sm:gap-2">
-      {!archived && !isCancelled && allowedPaymentStatuses.length > 0 && (
-        <OrderPaymentControl
-          order={order}
-          archived={archived}
-          onRequest={onRequestPaymentStatus}
-        />
-      )}
 
       {isCancelled && order.stockState === 'pending_return' && onConfirmStockReturn && (
         <Button

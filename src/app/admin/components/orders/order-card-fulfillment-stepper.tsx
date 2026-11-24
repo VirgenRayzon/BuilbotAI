@@ -66,10 +66,14 @@ export function OrderCardFulfillmentStepper({
         </div>
       ) : (
         <div
-          className="grid w-full gap-1.5"
-          style={{
-            gridTemplateColumns: `repeat(${stages.length}, minmax(0, 1fr))`,
-          }}
+          className={cn(
+            'grid w-full gap-1.5',
+            stages.length === 4
+              ? 'grid-cols-2 xl:grid-cols-4'
+              : stages.length === 3
+                ? 'grid-cols-1 sm:grid-cols-3'
+                : 'grid-cols-2'
+          )}
         >
           {stages.map((stage, idx) => {
             const isCompleted = idx < currentStageIdx;
@@ -95,7 +99,7 @@ export function OrderCardFulfillmentStepper({
               } else if (stage === 'out_for_delivery') {
                 if (isCustomRig && !assemblyReady) {
                   blockedReason =
-                    'Complete and pass all 4 assembly verification steps below to unlock dispatch.';
+                    'Open this order card to complete and pass all 4 assembly verification steps to unlock dispatch.';
                 } else if (!isOnlinePaymentPaid) {
                   blockedReason = 'Online payment must be confirmed before dispatching.';
                 } else {
